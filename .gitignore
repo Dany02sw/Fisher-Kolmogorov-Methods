@@ -1,0 +1,32 @@
+# Python files
+__pycache__/
+*.pyc
+.jit_utils/
+
+# Logs file
+Logs/
+**/Logs/
+*.log
+*.txt
+
+# vscode properties
+.vscode/
+
+# Result files
+*.pvd
+*.vtu
+*.h5
+*.xdmf
+*.mesh
+
+# zone identifiers
+*:Zone.Identifier
+
+# .stl files
+*.0.stl
+*.stl
+
+# JIT
+jitfailure-*/
+
+data.py
