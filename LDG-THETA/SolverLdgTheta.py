@@ -5,9 +5,25 @@ set_log_active(False)
 parameters["ghost_mode"] = "shared_facet"
 
 class SolverLdgTheta:
+    """!
+    Class for solving Fisher-Kolmogoro equation.
+    
+    - **Space discretization:** LDG
+    - **Time discretization:** Theta-method
+    """
     # Private: ______________________________________________________________________________ 
     # Constructor
     def __init__(self, mesh, D, alpha, C11, C12, c_0):
+        """!
+        Initializes the solver with physical parameters and mesh data.
+
+        @param mesh  The dolfin.Mesh object representing the computational domain.
+        @param D     Diffusion tensor (can be a Constant, Expression, or Matrix).
+        @param alpha Linear reaction coefficient for the Fisher-Kolmogorov model.
+        @param C11   Penalty parameter for concentration jumps (LDG stability).
+        @param C12   Flux weight parameter (usually set as 0.5 * n('+')).
+        @param c_0   Initial condition or analytical solution for convergence tests.
+        """
         self.mesh  = mesh
         self.D     = D
         self.alpha = alpha
@@ -16,7 +32,12 @@ class SolverLdgTheta:
         self.c_0   = c_0  # This will be used as exact solution if run with ConvergenceTest
 
     # Functional spaces constructor
-    def _BuildFunctionSpaces(self, l = 1):
+    def _BuildFunctionSpaces(self, l=1):
+        """!
+        Constructs the mixed function space for the LDG formulation.
+
+        @param l  Polynomial degree for the DG spaces (default: 1).
+        """
         self.W        = FunctionSpace(self.mesh, "DG", l)
         self.R        = VectorFunctionSpace(self.mesh, "DG", l)
         element_c     = self.W.ufl_element()
@@ -26,12 +47,32 @@ class SolverLdgTheta:
 
     # Functions constructor
     def _BuildFunctions(self):
-        self.U     = Function(self.WR)
-        self.U_old = Function(self.WR)
-        self.Phi   = TestFunction(self.WR)
+        """!
+        Initializes the functions and test functions on the mixed space.
+
+        The method defines the solution function U, the old solution U_old 
+        for the time stepping, and the test functions Phi.
+        """
+        self.U         = Function(self.WR)
+        self.U_old     = Function(self.WR)
+        self.Phi       = TestFunction(self.WR)
+        # self.Force     = Function(self.W)
+        # self.Force_old = Function(self.W)
+        # self.gN        = Function(self.R)
+        # self.gN_old    = Function(self.R)
 
     # Variational forms builder(homogeneous Neumann BCs for the moment)
     def _BuildVariationalForms(self, tau, tht, Force, Force_old, gN, gN_old):
+        """!
+        Constructs the LDG variational forms for the coupled system.
+
+        @param tau        Time step size (Constant).
+        @param tht        Theta-method parameter (Constant: 0 explicit, 0.5 CN, 1 implicit).
+        @param Force      Source term at the current time step (Function).
+        @param Force_old  Source term at the previous time step (Function).
+        @param gN         Neumann boundary condition at the current time step (Function).
+        @param gN_old     Neumann boundary condition at the previous time step (Function).
+        """
         # Geometry
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
         n     = FacetNormal(self.mesh)
@@ -54,6 +95,12 @@ class SolverLdgTheta:
         dS = Measure("dS", domain=self.mesh)
         ds = Measure("ds", domain=self.mesh)
 
+        # # Force and Neumann BCs
+        # Force     = self.Force
+        # Force_old = self.Force_old
+        # gN        = self.gN
+        # gN_old    = self.gN_old
+
         # Forms
         Fq = inner(q, r)*dx \
             + inner(c, div(dot(D.T, r)))*dx \
@@ -71,6 +118,12 @@ class SolverLdgTheta:
 
     # Nonlinear solver builder
     def _BuildNonlinearSolver(self, tol=1e-8, maxIt=200):
+        """!
+        Sets up the SNES non-linear solver and the Jacobian matrix.
+
+        @param tol    Absolute and relative tolerance for the Newton solver.
+        @param maxIt  Maximum number of iterations for the non-linear solver.
+        """
         # Jacobian
         self.dU = TrialFunction(self.WR)
         self.J  = derivative(self.Form, self.U, self.dU)
@@ -89,41 +142,93 @@ class SolverLdgTheta:
         prm['snes_solver']['linear_solver']      = 'lu'
         prm['snes_solver']['preconditioner']     = 'none'
 
+    # Method to update old steps
+    def _UpdateOldState(self):
+        """!
+        Updates the state for the next time step.
+        """
+        self.U_old.assign(self.U)
+        self.Force_old.assign(project(self.Force, self.W))
+        self.gN_old.assign(project(self.gN, self.R))
+
+    # method to check correctness of the input parameters
+    def _ValidateInput(self, t0, dt, T, tht, l):
+        """! Internal validation of simulation parameters. """
+        if not (0.0 <= tht <= 1.0):
+            raise ValueError("tht must be between in [0, 1]")
+        if dt <= 0:
+            raise ValueError(f"Time step dt must be positive, got {dt}")
+        if T <= t0:
+            raise ValueError(f"Final time T ({T}) must be greater than initial time t0 ({t0})")
+        if not isinstance(l, int) or l < 0:
+            raise ValueError(f"Polynomial degree l must be a non-negative integer, got {l}")
+
     # Public: ________________________________________________________________________________
     # --- Method for solving FK equation ---
-    def Solve(self, t0, dt, T, tht, l, tol, maxIt):
+    def Solve(self, t0, dt, T, tht, l, tol, maxIt, extForce=None, NeumannBC=None):
+        """!
+        Executes the time-loop to solve the Fisher-Kolmogorov equation.
+
+        @param t0     Initial time.
+        @param dt     Time step size.
+        @param T      Final simulation time.
+        @param tht    Theta-method parameter.
+        @param l      Polynomial degree for DG spaces.
+        @param tol    Solver tolerance.
+        @param maxIt  Maximum solver iterations.
+        @param extForce  External forcing term (lambda function of x and t o Constant, optional).
+        @param NeumannBC Neumann boundary condition (lambda function of x and t o Constant, optional).
+        """
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
         N_el  = self.mesh.num_cells()
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
-
-        # Data
-        Force     = Constant(0.0)
-        Force_old = Constant(0.0) 
-        gN        = Constant((0.0, 0.0))
-        gN_old    = Constant((0.0, 0.0))
-
-        # Functional setting 
-        self._BuildFunctionSpaces(l)
-        self._BuildFunctions()
-        self._BuildVariationalForms(dt, tht, Force, Force_old, gN, gN_old)
-        self._BuildNonlinearSolver(tol, maxIt)
 
         # Time loop parameters
         t_val  = t0 
         t      = Constant(t0)
         nsteps = int((T - t0)/dt)
 
+        # Functional setting 
+        self._BuildFunctionSpaces(l)
+        self._BuildFunctions()
+
+        # Force and Neumann BC
+        self.Force     = extForce(x, t) if extForce else Constant(0.0)
+        self.Force_old = project(self.Force, self.W) 
+        self.gN        = NeumannBC(x, t) if NeumannBC else Constant((0.0, 0.0))
+        self.gN_old    = project(self.gN, self.R)
+
+        # Variational form and solver
+        self._BuildVariationalForms(dt, tht)
+        self._BuildNonlinearSolver(tol, maxIt)
+
         # Initial guess for Nonlinear solver
         assign(self.U_old.sub(0), project(self.c_0(x, t), self.W))
         assign(self.U_old.sub(1), project(dot(self.D, grad(self.c_0(x, t))), self.R))
         self.U.assign(self.U_old)
 
+        # Initialize file
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, "results", self.mesh.name())
+        if not os.path.exists(output_path):
+            os.makedirs(output_path, exist_ok=True)
+        xdmf_path = os.path.join(output_path, "concentration.xdmf")
+        output_file = XDMFFile(self.mesh.mpi_comm(), xdmf_path)
+        output_file.parameters["flush_output"] = True
+        output_file.parameters["rewrite_function_mesh"] = False
+        output_file.parameters["functions_share_mesh"] = True
+
+        # Save initial condition
+        c_h = self.U.sub(0)
+        c_h.rename("concentration", "c")
+        output_file.write(c_h, t_val)
+
         # Time loop
         for i in range(nsteps):
             # Update time step
             t_val += dt
-            self.t.assign(t_val)
+            t.assign(t_val)
 
             # Solve the problem
             self.solver.solve()
@@ -146,18 +251,44 @@ class SolverLdgTheta:
             print(f"  q_h ∈ [{q_min:7.6f}, {q_max:7.6f}]")
             print("-"*70)
 
+            # Save solution
+            c_h = self.U.sub(0)
+            output_file.write(c_h, t_val)
+
+        # Close output file
+        output_file.close()
+
     # --- Method for a convergence test using c_0 as exact solution ---
     def ConvergenceTest(self, t0, dt, T, tht, l, tol, maxIt):
+        """!
+        Performs a convergence analysis using c_0 as the exact solution.
+
+        @param t0     Initial time.
+        @param dt     Time step size.
+        @param T      Final simulation time.
+        @param tht    Theta-method parameter.
+        @param l      Polynomial degree for DG spaces.
+        @param tol    Solver tolerance.
+        @param maxIt  Maximum solver iterations.
+
+        @return E_c   L2 error of the concentration.
+        @return E_q   L2 error of the auxiliary flux.
+        @return h_avg Average mesh size.
+        """
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
         N_el  = self.mesh.num_cells()
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
         dx    = Measure("dx", domain=self.mesh)
 
+        # Time loop parameters
+        t_val  = t0 
+        nsteps = int((T - t0)/dt)
+        t      = Constant(t0)
+
         # Data
         D     = as_tensor(self.D)
         alpha = Constant(self.alpha)
-        t     = Constant(t0)
         c_ex  = self.c_0(x, t)
 
         # Computing forcing term
@@ -166,8 +297,8 @@ class SolverLdgTheta:
         Force   = c_t - Delta_c - alpha*c_ex*(1.0 - c_ex)
 
         # Computing exact gradient and Neumann BC
-        q_ex    = dot(D, grad(c_ex))
-        gN      = q_ex
+        q_ex = dot(D, grad(c_ex))
+        gN   = q_ex
 
         # Functional setting 
         self._BuildFunctionSpaces(l)
@@ -182,10 +313,6 @@ class SolverLdgTheta:
         # Forms ansd solver
         self._BuildVariationalForms(dt, tht, Force, Force_old, gN, gN_old)
         self._BuildNonlinearSolver(tol, maxIt)
-
-        # Time loop parameters
-        t_val  = t0 
-        nsteps = int((T - t0)/dt)
 
         # Initial guess for Nonlinear solver
         assign(self.U_old.sub(0), project(c_ex, self.W))

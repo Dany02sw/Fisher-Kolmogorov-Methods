@@ -4,6 +4,67 @@ import numpy as np
 from datetime import datetime
 
 # =============================================================================
+# POLYNOMIAL CONVERGENCE PLOT
+# =============================================================================
+def plot_polynomial_convergence(errors_c, errors_sigma, l_list, h, save=False):
+    """
+    Function to plot polynomial convergence of both a base variable and a gradient-based one
+    """
+
+    # --- ℓ dynamically adapted ---
+    L_ext = np.arange(l_list[0], l_list[-1] + 1)
+
+    # --- Extract numerical values ---
+    L_num = np.array(l_list)
+    Ec_vals = np.array([errors_c[l-1] for l in l_list])
+    Es_vals = np.array([errors_sigma[l-1] for l in l_list])
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # --- E_c ---
+    ax.semilogy(
+        L_num, Ec_vals, "-o", color="yellowgreen", linewidth=2,
+        markersize=8, label=r"$E_c$-error"
+    )
+
+    # --- E_sigma ---
+    ax.semilogy(
+        L_num, Es_vals, "--s", color="lime", linewidth=2,
+        markersize=8, label=r"$E_{\sigma}$-error"
+    )
+
+    # --- h^ℓ ---
+    ref = Ec_vals[0] * (h ** (L_ext - l_list[0]))
+    ax.semilogy(
+        L_ext, ref, "k--", linewidth=3, label=r"$h^{\ell}$"
+    )
+
+    # --- Aesthetics ---
+    ax.set_xlim(l_list[0], l_list[-1])
+    ax.set_xticks(np.arange(l_list[0], l_list[-1]+1))
+
+    ax.set_xlabel(r"$\ell$", fontsize=16)
+    ax.set_ylabel("Error", fontsize=16)
+    ax.set_title(r"Errors $E_c$ and $E_{\sigma}$", fontsize=20)
+    ax.grid(True, which="both", linestyle=":", alpha=0.7)
+
+    ax.legend(fontsize=14, loc="upper right")
+
+    plt.tight_layout()
+
+    # --- save figure ---
+    if save:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        plot_dir = os.path.join(base_dir, "Plots")
+        os.makedirs(plot_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        out_path = os.path.join(plot_dir, f"polynomial_convergence_{timestamp}.png")
+        plt.savefig(out_path, dpi=300, bbox_inches="tight")
+        print("Polynomial convergence plot saved into Plots folder")
+    plt.show()
+
+
+# =============================================================================
 # DIFFERENT COLORS FOR EACH l
 # =============================================================================
 POLY_COLORS = {
@@ -79,65 +140,6 @@ def plot_spatial_convergence_with_sigma(h_dict, err_c_dict, err_s_dict, l_list):
     print("Space convergence plot saved into Plots folder!")
     plt.show()
 
-# =============================================================================
-# POLYNOMIAL CONVERGENCE PLOT
-# =============================================================================
-def plot_polynomial_convergence(errors_c, errors_sigma, l_list, h, save=False):
-    """
-    Function to plot polynomial convergence of both a base variable and a gradient-based one
-    """
-
-    # --- ℓ dynamically adapted ---
-    L_ext = np.arange(l_list[0], l_list[-1] + 1)
-
-    # --- Extract numerical values ---
-    L_num = np.array(l_list)
-    Ec_vals = np.array([errors_c[l-1] for l in l_list])
-    Es_vals = np.array([errors_sigma[l-1] for l in l_list])
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    # --- E_c ---
-    ax.semilogy(
-        L_num, Ec_vals, "-o", color="yellowgreen", linewidth=2,
-        markersize=8, label=r"$E_c$-error"
-    )
-
-    # --- E_sigma ---
-    ax.semilogy(
-        L_num, Es_vals, "--s", color="lime", linewidth=2,
-        markersize=8, label=r"$E_{\sigma}$-error"
-    )
-
-    # --- h^ℓ ---
-    ref = Ec_vals[0] * (h ** (L_ext - l_list[0]))
-    ax.semilogy(
-        L_ext, ref, "k--", linewidth=3, label=r"$h^{\ell}$"
-    )
-
-    # --- Aesthetics ---
-    ax.set_xlim(l_list[0], l_list[-1])
-    ax.set_xticks(np.arange(l_list[0], l_list[-1]+1))
-
-    ax.set_xlabel(r"$\ell$", fontsize=16)
-    ax.set_ylabel("Error", fontsize=16)
-    ax.set_title(r"Errors $E_c$ and $E_{\sigma}$", fontsize=20)
-    ax.grid(True, which="both", linestyle=":", alpha=0.7)
-
-    ax.legend(fontsize=14, loc="upper right")
-
-    plt.tight_layout()
-
-    # --- save figure ---
-    if save:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        plot_dir = os.path.join(base_dir, "Plots")
-        os.makedirs(plot_dir, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        out_path = os.path.join(plot_dir, f"polynomial_convergence_{timestamp}.png")
-        plt.savefig(out_path, dpi=300, bbox_inches="tight")
-        print("Polynomial convergence plot saved into Plots folder")
-    plt.show()
 
 # =============================================================================
 # DIFFERENT COLORS FOR EACH nu

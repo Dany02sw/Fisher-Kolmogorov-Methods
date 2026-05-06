@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Meshes import create_unite_square_mesh
-from plotClass import ConvType
+from EnumUtilities import ConvType
 from plotUtilities import plot_polynomial_convergence
 
 if __name__ == "__main__":
@@ -28,6 +28,13 @@ if __name__ == "__main__":
     tol = 1e-12
     maxIt = 200
 
+    # Exact solution
+    c_space = lambda x: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)
+    if convType == ConvType.TEMPORAL:
+        c_ex = lambda x, t: c_space(x)*exp(-t)
+    else:
+        c_ex = lambda x, t: c_space(x)*(1.0 - t)
+
     if convType == ConvType.SPATIAL:
         # ==================================================
         # === 1) SPACE CONVERGENCE (linear time profile) ===
@@ -36,13 +43,10 @@ if __name__ == "__main__":
         print("====== Space convergence test (time profile: linear) ======")
         print("="*59)
 
-        # Exact solution
-        c_ex = lambda x, t: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)*(1.0 - t)
-
         # Space convergence parameters 
         N_ref     = [2, 3, 4]
         N_list    = [2**n for n in N_ref]
-        l_space   = 2 
+        l_space   = 1 
         T_space   = 3e-2
         dt_space  = 1e-3
         tht_space = 0.5
@@ -87,9 +91,6 @@ if __name__ == "__main__":
         print("===== Polynomial degree convergence test (time profile: linear) =====")
         print("="*69)
 
-        # Exact solution
-        c_ex = lambda x, t: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)*(1.0 - t)
-
         # Polynomial degree convergence parameters 
         N_poly   = 8
         l_list   = [1, 2, 3]
@@ -110,7 +111,7 @@ if __name__ == "__main__":
             parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
             SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
             E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt_poly, T=T_poly, l=l, 
+                t0=t0, dt=dt_poly, T=T_poly, tht=tht_poly, l=l, 
                 tol=tol, maxIt=maxIt
             )
             errors_polynomial_c.append(E_c)
@@ -140,15 +141,12 @@ if __name__ == "__main__":
         print("===== Time convergence test (time profile: exponential) =====")
         print("="*61)
 
-        # Exact solution
-        c_ex = lambda x, t: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)*exp(-t)
-
         # Time convergence parameters 
         N_time   = 32
         l_time   = 2
-        T_time   = 3
+        T_time   = 2
         dt_list  = [0.5, 0.25, 0.125]
-        tht_time = 0.5
+        tht_time = 1.0
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -164,7 +162,7 @@ if __name__ == "__main__":
             print(f"\n --- dt = {dt:.4f} ---")
             SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
             E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt, T=T_time, l=l_time, 
+                t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 
                 tol=tol, maxIt=maxIt
             )
             errors_time_c.append(E_c)

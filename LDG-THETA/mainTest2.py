@@ -1,12 +1,12 @@
 from SolverLdgTheta import SolverLdgTheta
-from Meshes import create_rectangle_mesh
 from dolfin import *
 import numpy as np
 from ufl import tanh
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from plotClass import ConvType
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from Meshes import create_rectangle_mesh
+from EnumUtilities import ConvType
 from plotUtilities import plot_polynomial_convergence
 
 if __name__ == "__main__":
@@ -33,6 +33,10 @@ if __name__ == "__main__":
     # Exact solution
     c_ex = lambda x, t: 0.25*(1.0 + tanh(8.0 - sqrt(alpha/(24.0*d_ext))*(x[0] - v*t)))**2
 
+    # Mesh verteces
+    P1 = Point((0.0, 0.0))
+    P2 = Point((3.0, 1.0))
+
     if convType == ConvType.SPATIAL:
         # ==================================================
         # === 1) SPACE CONVERGENCE (linear time profile) ===
@@ -58,10 +62,10 @@ if __name__ == "__main__":
         # Loop over the meshes 
         for N in N_list:
             print(f"\n --- N = {N} ---")
-            mesh = create_rectangle_mesh(N, unstructured=False, plots=False)
+            mesh = create_rectangle_mesh(N, P1, P2, unstructured=False, plots=False)
             SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
             E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt_space, T=T_space, l=l_space, 
+                t0=t0, dt=dt_space, T=T_space, tht=tht_space, l=l_space, 
                 tol=tol, maxIt=maxIt
             )
             errors_space_c.append(E_c)
@@ -101,7 +105,7 @@ if __name__ == "__main__":
         errors_polynomial_q = []
 
         # Mesh
-        mesh = create_rectangle_mesh(N_poly, unstructured=False, plots=False)
+        mesh = create_rectangle_mesh(N_poly, P1, P2, unstructured=False, plots=False)
 
         # Loop over l_list 
         for l in l_list:
@@ -109,7 +113,7 @@ if __name__ == "__main__":
             parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
             SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
             E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt_poly, T=T_poly, l=l, 
+                t0=t0, dt=dt_poly, T=T_poly, tht=tht_poly, l=l, 
                 tol=tol, maxIt=maxIt
             )
             errors_polynomial_c.append(E_c)
@@ -142,7 +146,7 @@ if __name__ == "__main__":
         # Time convergence parameters 
         N_time   = 32
         l_time   = 2
-        T_time   = 3
+        T_time   = 2
         dt_list  = [0.5, 0.25, 0.125]
         tht_time = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
@@ -152,7 +156,7 @@ if __name__ == "__main__":
         errors_time_q = []
 
         # Mesh
-        mesh = create_rectangle_mesh(N_time, unstructured=False, plots=False)
+        mesh = create_rectangle_mesh(N_time, P1, P2, unstructured=False, plots=False)
 
         # Loop over dt_list 
         print(f"\n>>> Running theta = {tht_time} ...")
@@ -160,7 +164,7 @@ if __name__ == "__main__":
             print(f"\n --- dt = {dt:.4f} ---")
             SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
             E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt, T=T_time, l=l_time, 
+                t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 
                 tol=tol, maxIt=maxIt
             )
             errors_time_c.append(E_c)
