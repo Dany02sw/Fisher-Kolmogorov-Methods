@@ -1,4 +1,5 @@
 from dolfin import *
+import ufl
 import os
 
 set_log_active(False)
@@ -22,13 +23,13 @@ class SolverLdgTheta:
         @param alpha Linear reaction coefficient for the Fisher-Kolmogorov model.
         @param C11   Penalty parameter for concentration jumps (LDG stability).
         @param C12   Flux weight parameter (usually set as 0.5 * n('+')).
-        @param c_0   Initial condition or analytical solution for convergence tests.
+        @param c_0   Initial condition or analytical solution for convergence tests(lambda function of x and t).
         """
         self.mesh  = mesh
-        self.D     = D
-        self.alpha = alpha
-        self.C11   = C11
-        self.C12   = C12
+        self.D     = as_tensor(D)
+        self.alpha = alpha if isinstance(alpha, ufl.core.expr.Expr) else Constant(alpha)
+        self.C11   = C11   if isinstance(C11,   ufl.core.expr.Expr) else Constant(C11)
+        self.C12   = C12   if isinstance(C12,   ufl.core.expr.Expr) else Constant(C12)
         self.c_0   = c_0  # This will be used as exact solution if run with ConvergenceTest
 
     # Functional spaces constructor
@@ -55,23 +56,14 @@ class SolverLdgTheta:
         """
         self.U         = Function(self.WR)
         self.U_old     = Function(self.WR)
-        self.Phi       = TestFunction(self.WR)
-        # self.Force     = Function(self.W)
-        # self.Force_old = Function(self.W)
-        # self.gN        = Function(self.R)
-        # self.gN_old    = Function(self.R)
 
     # Variational forms builder(homogeneous Neumann BCs for the moment)
-    def _BuildVariationalForms(self, tau, tht, Force, Force_old, gN, gN_old):
+    def _BuildVariationalForms(self, tau, tht):
         """!
         Constructs the LDG variational forms for the coupled system.
 
         @param tau        Time step size (Constant).
         @param tht        Theta-method parameter (Constant: 0 explicit, 0.5 CN, 1 implicit).
-        @param Force      Source term at the current time step (Function).
-        @param Force_old  Source term at the previous time step (Function).
-        @param gN         Neumann boundary condition at the current time step (Function).
-        @param gN_old     Neumann boundary condition at the previous time step (Function).
         """
         # Geometry
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
@@ -79,27 +71,28 @@ class SolverLdgTheta:
 
         # Data
         tau   = Constant(tau)
-        D     = as_tensor(self.D)
-        alpha = Constant(self.alpha)
         tht   = Constant(tht)
-        C11   = Constant(self.C11)
-        C12   = Constant(self.C12)*n('+')
+        D     = self.D
+        alpha = self.alpha
+        C11   = self.C11
+        C12   = self.C12*n('+')
 
         # Extract functions
         (c, q)         = split(self.U)
         (c_old, q_old) = split(self.U_old)
-        (v, r)         = split(self.Phi)
+        Phi            = TestFunction(self.WR)
+        (v, r)         = split(Phi)
+
+        # Force term and Neumann BC
+        Force     = self.Force
+        Force_old = self.Force_old
+        gN        = self.gN
+        gN_old    = self.gN_old
 
         # Measures
         dx = Measure("dx", domain=self.mesh)
         dS = Measure("dS", domain=self.mesh)
         ds = Measure("ds", domain=self.mesh)
-
-        # # Force and Neumann BCs
-        # Force     = self.Force
-        # Force_old = self.Force_old
-        # gN        = self.gN
-        # gN_old    = self.gN_old
 
         # Forms
         Fq = inner(q, r)*dx \
@@ -125,12 +118,12 @@ class SolverLdgTheta:
         @param maxIt  Maximum number of iterations for the non-linear solver.
         """
         # Jacobian
-        self.dU = TrialFunction(self.WR)
-        self.J  = derivative(self.Form, self.U, self.dU)
+        dU = TrialFunction(self.WR)
+        J  = derivative(self.Form, self.U, dU)
 
         # Nonlinear solver
-        self.problem = NonlinearVariationalProblem(self.Form, self.U, J=self.J)
-        self.solver  = NonlinearVariationalSolver(self.problem)
+        problem = NonlinearVariationalProblem(self.Form, self.U, J=J)
+        self.solver  = NonlinearVariationalSolver(problem)
         prm          = self.solver.parameters
 
         prm['nonlinear_solver']                  = 'snes'
@@ -151,7 +144,7 @@ class SolverLdgTheta:
         self.Force_old.assign(project(self.Force, self.W))
         self.gN_old.assign(project(self.gN, self.R))
 
-    # method to check correctness of the input parameters
+    # Method to check correctness of the input parameters
     def _ValidateInput(self, t0, dt, T, tht, l):
         """! Internal validation of simulation parameters. """
         if not (0.0 <= tht <= 1.0):
@@ -179,15 +172,19 @@ class SolverLdgTheta:
         @param extForce  External forcing term (lambda function of x and t o Constant, optional).
         @param NeumannBC Neumann boundary condition (lambda function of x and t o Constant, optional).
         """
+        self._ValidateInput(t0, dt, T, tht, l)
+        
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
         N_el  = self.mesh.num_cells()
+        h_min = self.mesh.hmin()
+        h_max = self.mesh.hmax()
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
 
         # Time loop parameters
         t_val  = t0 
+        nsteps = round((T - t0)/dt)
         t      = Constant(t0)
-        nsteps = int((T - t0)/dt)
 
         # Functional setting 
         self._BuildFunctionSpaces(l)
@@ -195,18 +192,18 @@ class SolverLdgTheta:
 
         # Force and Neumann BC
         self.Force     = extForce(x, t) if extForce else Constant(0.0)
-        self.Force_old = project(self.Force, self.W) 
         self.gN        = NeumannBC(x, t) if NeumannBC else Constant((0.0, 0.0))
-        self.gN_old    = project(self.gN, self.R)
+        self.Force_old = Function(self.W)
+        self.gN_old    = Function(self.R)
+
+        # Initial guess for solver and old terms
+        assign(self.U.sub(0), project(self.c_0(x, t), self.W))
+        assign(self.U.sub(1), project(dot(self.D, grad(self.c_0(x, t))), self.R))
+        self._UpdateOldState() # This
 
         # Variational form and solver
         self._BuildVariationalForms(dt, tht)
         self._BuildNonlinearSolver(tol, maxIt)
-
-        # Initial guess for Nonlinear solver
-        assign(self.U_old.sub(0), project(self.c_0(x, t), self.W))
-        assign(self.U_old.sub(1), project(dot(self.D, grad(self.c_0(x, t))), self.R))
-        self.U.assign(self.U_old)
 
         # Initialize file
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -243,16 +240,16 @@ class SolverLdgTheta:
             q_max = q_h.vector().max()
 
             # Update old solutions
-            self.U_old.assign(self.U)
+            self._UpdateOldState()
 
             # Print the bounds for both the variables
-            print(f"N_el={N_el:1d}, h={h_avg:.6f}, l={l:1d}, t={t_val:.6f}, tht={tht:.1f}")
+            print(f"N_el={N_el:1d}, l={l:1d}, t={t_val:.6f}, tht={tht:.1f}")
+            print(f"  h   ∈ [{h_min:.6f}, {h_max:.6f}],  h_avg = {h_avg:.6f}")
             print(f"  c_h ∈ [{c_min:7.6f}, {c_max:7.6f}]")
             print(f"  q_h ∈ [{q_min:7.6f}, {q_max:7.6f}]")
             print("-"*70)
 
             # Save solution
-            c_h = self.U.sub(0)
             output_file.write(c_h, t_val)
 
         # Close output file
@@ -275,6 +272,8 @@ class SolverLdgTheta:
         @return E_q   L2 error of the auxiliary flux.
         @return h_avg Average mesh size.
         """
+        self._ValidateInput(t0, dt, T, tht, l)
+
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
         N_el  = self.mesh.num_cells()
@@ -283,41 +282,37 @@ class SolverLdgTheta:
 
         # Time loop parameters
         t_val  = t0 
-        nsteps = int((T - t0)/dt)
+        nsteps = round((T - t0)/dt)
         t      = Constant(t0)
 
         # Data
-        D     = as_tensor(self.D)
-        alpha = Constant(self.alpha)
+        D     = self.D
+        alpha = self.alpha
         c_ex  = self.c_0(x, t)
-
-        # Computing forcing term
-        c_t     = diff(c_ex, t)
-        Delta_c = div(D*grad(c_ex))
-        Force   = c_t - Delta_c - alpha*c_ex*(1.0 - c_ex)
-
-        # Computing exact gradient and Neumann BC
-        q_ex = dot(D, grad(c_ex))
-        gN   = q_ex
 
         # Functional setting 
         self._BuildFunctionSpaces(l)
         self._BuildFunctions()
 
-        # Old terms
-        Force_old = Function(self.W)
-        gN_old    = Function(self.R)
-        Force_old.assign(project(Force, self.W))
-        gN_old.assign(project(q_ex, self.R))
+        # Computing forcing term
+        c_t        = diff(c_ex, t)
+        Delta_c    = div(D*grad(c_ex))
+        self.Force = c_t - Delta_c - alpha*c_ex*(1.0 - c_ex)
+
+        # Computing exact gradient and Neumann BC
+        q_ex = dot(D, grad(c_ex))
+        self.gN   = q_ex
+
+        # Initial guess for solver and old terms
+        self.Force_old = Function(self.W)
+        self.gN_old    = Function(self.R)
+        assign(self.U.sub(0), project(c_ex, self.W))
+        assign(self.U.sub(1), project(q_ex, self.R))
+        self._UpdateOldState()
 
         # Forms ansd solver
-        self._BuildVariationalForms(dt, tht, Force, Force_old, gN, gN_old)
+        self._BuildVariationalForms(dt, tht)
         self._BuildNonlinearSolver(tol, maxIt)
-
-        # Initial guess for Nonlinear solver
-        assign(self.U_old.sub(0), project(c_ex, self.W))
-        assign(self.U_old.sub(1), project(dot(self.D, grad(c_ex)), self.R))
-        self.U.assign(self.U_old)
 
         # Initialize error lists
         E_c = None
@@ -346,9 +341,7 @@ class SolverLdgTheta:
             q_max = q_h.vector().max()
 
             # Update old solutions
-            Force_old.assign(project(Force, self.W))
-            gN_old.assign(project(q_ex, self.R))
-            self.U_old.assign(self.U)
+            self._UpdateOldState()
 
             # Print the bounds for both the variables
             print(f"N_el={N_el:1d}, h={h_avg:.6f}, l={l:1d}, t={t_val:.6f}, tht={tht:.1f}")
@@ -359,4 +352,3 @@ class SolverLdgTheta:
             print("-"*70)
 
         return E_c, E_q, h_avg
-

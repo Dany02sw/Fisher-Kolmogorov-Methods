@@ -1,0 +1,64 @@
+from SolverLdgTheta import SolverLdgTheta
+from dolfin import *
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from Meshes import importBrainMesh2D
+from EnumUtilities import BrainSection
+from InitialConditions import get_initial_condition
+
+if __name__ == "__main__":
+    print("\n")
+    print("#"*59)
+    print(23*"#"+" LDG + THETA "+ 23*"#")
+    print("#"*59)
+
+    # Mesh import
+    plane            = BrainSection.SAGITTAL  # Plane section to simulate on
+    mesh, subdomains = importBrainMesh2D(plane=plane, plotMesh=False)
+    c_0              = get_initial_condition(plane=plane)
+
+    # DG0 function to store subdomain tags
+    DG0                         = FunctionSpace(mesh, 'DG', 0)
+    subdomains_tags             = Function(DG0)
+    subdomains_tags.vector()[:] = subdomains.array() 
+
+    # Reaction coefficient
+    alpha_grey  = Constant(0.5)   # Reaction coefficient in the grey matter [alpha_grey_matter] = 1/year 
+    alpha_white = Constant(1.0)   # Reaction coefficient in the grey matter [alpha_grey_matter] = 1/year
+    alpha       = conditional(
+        le(subdomains_tags, 1.5), alpha_grey, alpha_white
+    )
+
+    # Diffusion tensor
+    a       = as_tensor((1.0, 1.0))  # Axonal directions 
+    d_ext   = Constant(8e-3)         # [d_ext] = m^{2}/year
+    d_axn   = Constant(8e-2)         # [d_axn] = m^{2}/year
+    D_grey  = d_ext*Identity(2)                     # Tensor in the grey matter (Identity is already an as_tensor)
+    D_white = d_ext*Identity(2) + d_axn*outer(a, a) # Tensor in the grey matter (Identity is already an as_tensor, outer dives us the cross product)
+    D       = conditional(
+        le(subdomains_tags, 1.5), D_grey, D_white
+    )
+    
+    # Other data
+    l   = 2
+    C11 = 10.0
+    C12 = 0.5
+    t0  = 0.0
+    T   = 50.0
+    dt  = 2.5e-1
+    tht = 0.5
+
+    # Solver parameters
+    tol = 1e-6
+    maxIt = 500
+
+    # Set the quadrature degree
+    parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
+
+    # Solve the problem 
+    print("\n" + "="*42)
+    print("====== Spreading of alpha-synuclein ======")
+    print("="*42)
+    SLT = SolverLdgTheta(mesh, D, alpha, C11, C12, c_0)
+    SLT.Solve(t0=t0, dt=dt, T=T, tht=tht, l=l, tol=tol, maxIt=maxIt)

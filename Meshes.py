@@ -59,28 +59,29 @@ def importBrainMesh2D(plane=BrainSection.SAGITTAL, plotMesh=False):
 
     # Build the correct directory 
     if plane == BrainSection.SAGITTAL:
-        mesh_path = script_dir / "BrainMeshes" / "MeshSrc" / "sagittal.xdmf"
-        mesh_path_str = str(mesh_path)
+        mesh_path = script_dir / "BrainMeshes" / "MeshSrc" / "test-sagittal.xdmf"
+        mesh_name = "sagittal"
 
     elif plane == BrainSection.CORONAL:
-        mesh_path = script_dir / "BrainMeshes" / "MeshSrc" / "coronal.xdmf"
-        mesh_path_str = str(mesh_path)
+        mesh_path = script_dir / "BrainMeshes" / "MeshSrc" / "test-coronal.xdmf"
+        mesh_name = "coronal"
 
     elif plane == BrainSection.HORIZONTAL:
         print("loading horizontal section mesh...")
-        mesh_path = script_dir / "BrainMeshes" / "MeshSrc" / "horizontal.xdmf"
-        mesh_path_str = str(mesh_path)
+        mesh_path = script_dir / "BrainMeshes" / "MeshSrc" / "test-horizontal.xdmf"
+        mesh_name = "horizontal"
 
     # Build an empty Mesh object 
     mesh = Mesh()
 
     # Read the .xdmf file 
     try:
-        with XDMFFile(mesh_path_str) as infile:
+        with XDMFFile(str(mesh_path)) as infile:
             infile.read(mesh)
             subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
             infile.read(subdomains, "subdomains")
-        print(f"2D brain mesh succesfully loaded!")
+        mesh.rename(mesh_name, mesh_name)
+        print(f"2D brain {mesh_name} section mesh succesfully loaded!")
         print(f"Number of nodes: {mesh.num_vertices()}")
         print(f"Number of elements (triangles): {mesh.num_cells()}")
         print(f"Max cell size: {mesh.hmax()}")

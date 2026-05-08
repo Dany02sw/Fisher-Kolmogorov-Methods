@@ -1,12 +1,12 @@
 from SolverLdgTheta import SolverLdgTheta
 from dolfin import *
-import numpy as np
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Meshes import create_unite_square_mesh
 from EnumUtilities import ConvType
-from plotUtilities import plot_polynomial_convergence
+from PlotUtilities import plot_polynomial_convergence
+from FunctionUtilities import compute_rate, compute_exponential_fit
 
 if __name__ == "__main__":
     print("\n")
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     print(23*"#"+" LDG + THETA "+ 23*"#")
     print("#"*59)
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.TEMPORAL
 
     # Data
     alpha = Constant(1.0)
@@ -72,15 +72,15 @@ if __name__ == "__main__":
 
         # Loop to print space rates for E_c 
         print(f"\n=== Space convergence rates for l = {l_space} (t = T) ===")
-        print("\n Rates for E_c ")
+        print("\n--- Rates for E_c ---")
         for i in range(1, len(N_list)):
-            rate_c = np.log(errors_space_c[i-1]/errors_space_c[i]) / np.log(hs[i-1]/hs[i])
+            rate_c = compute_rate(errors_space_c, hs, i)
             print(f"N={N_list[i-1]} → N={N_list[i]}: E_c rate ≈ {rate_c:.2f} (expected = {l_space+1:.2f})")
 
         # Loop to print space rates for D*grad(c) 
-        print("\n Rates for E_q ")
+        print("\n--- Rates for E_q ---")
         for i in range(1, len(N_list)):
-            rate_q = np.log(errors_space_q[i-1]/errors_space_q[i]) / np.log(hs[i-1]/hs[i])
+            rate_q = compute_rate(errors_space_q, hs, i)
             print(f"N={N_list[i-1]} → N={N_list[i]}: E_q rate ≈ {rate_q:.2f} (expected = {l_space:.2f})")
 
     elif convType == ConvType.POLYNOMIAL:
@@ -119,16 +119,18 @@ if __name__ == "__main__":
 
         # Loop to print convergence rates wrt polynomial degree for c 
         print("\n=== Polynomial degree convergence rates (t = T) ===")
-        print("\n Rates for E_c ")
-        for i in range(1, len(l_list)):
-            rate_c = np.log(errors_polynomial_c[i-1]/errors_polynomial_c[i]) / np.log(l_list[i]/l_list[i-1])
-            print(f"l={l_list[i-1]} → l={l_list[i]}: E_c rate ≈ {rate_c:.2f} (expected = exponential decay)")
+        beta_c, fitted_c, res_c = compute_exponential_fit(errors_polynomial_c, l_list)
+        print("\n--- Rates for E_c ---")
+        for i in range(len(l_list)):
+            print(f"  l={l_list[i]}: E_c = {errors_polynomial_c[i]:.4e}  (fit = {fitted_c[i]:.4e})")
+        print(f"  → E_c ~ exp(-{beta_c:.2f} * l),  residual = {res_c:.2e}")
 
         # Loop to print convergence rates wrt polynomial degree for D*grad(c) 
-        print("\n Rates for E_q ")
-        for i in range(1, len(l_list)):
-            rate_q = np.log(errors_polynomial_q[i-1]/errors_polynomial_q[i]) / np.log(l_list[i]/l_list[i-1])
-            print(f"l={l_list[i-1]} → l={l_list[i]}: E_q rate ≈ {rate_q:.2f} (expected = exponential decay)")
+        beta_q, fitted_q, res_q = compute_exponential_fit(errors_polynomial_q, l_list)
+        print("\n--- Rates for E_q ---")
+        for i in range(len(l_list)):
+            print(f"  l={l_list[i]}: E_q = {errors_polynomial_q[i]:.4e}  (fit = {fitted_q[i]:.4e})")
+        print(f"  → E_q ~ exp(-{beta_q:.2f} * l),  residual = {res_q:.2e}")
 
         # Plot the rates for correct visualization 
         plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, save=False)
@@ -146,7 +148,7 @@ if __name__ == "__main__":
         l_time   = 2
         T_time   = 2
         dt_list  = [0.5, 0.25, 0.125]
-        tht_time = 1.0
+        tht_time = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -170,13 +172,14 @@ if __name__ == "__main__":
 
         # Loop to print time convergence rates for c 
         print(f"\n=== Time convergence rates for theta = {tht_time} (t = T) ===")
-        print("\n Rates for E_c ")
+        expected_time_rate = 2.0 if tht_time==0.5 else 1.0
+        print("\n--- Rates for E_c ---")
         for i in range(1, len(dt_list)):
-            rate = np.log(errors_time_c[i-1] / errors_time_c[i]) / np.log(dt_list[i-1] / dt_list[i])
-            print(f"dt={dt_list[i-1]} → {dt_list[i]}: E_c rate ≈ {rate:.3f} (expected {1.0/tht_time:.2f})")
+            rate_c = compute_rate(errors_time_c, dt_list, i)
+            print(f"dt={dt_list[i-1]} → {dt_list[i]}: E_c rate ≈ {rate_c:.3f} (expected {expected_time_rate:.2f})")
 
         # Loop to print time convergence rates for D*grad(c) 
-        print("\n Rates for E_q ")
+        print("\n--- Rates for E_q ---")
         for i in range(1, len(dt_list)):
-            rate = np.log(errors_time_q[i-1] / errors_time_q[i]) / np.log(dt_list[i-1] / dt_list[i])
-            print(f"dt={dt_list[i-1]} → {dt_list[i]}: E_sigma rate ≈ {rate:.3f} (expected {1.0/tht_time:.2f})")
+            rate_q = compute_rate(errors_time_q, dt_list, i)
+            print(f"dt={dt_list[i-1]} → {dt_list[i]}: E_q rate ≈ {rate_q:.3f} (expected {expected_time_rate:.2f})")
