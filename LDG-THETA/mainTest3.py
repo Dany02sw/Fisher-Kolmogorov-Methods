@@ -1,11 +1,10 @@
 from SolverLdgTheta import SolverLdgTheta
+
 from dolfin import *
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Meshes import importBrainMesh2D
-from EnumUtilities import BrainSection
-from InitialConditions import get_initial_condition
+
+from Meshes.Meshes import importBrainMesh2D
+from Utilities.EnumUtilities import BrainSection
+from Utilities.InitialConditions import get_initial_condition
 
 if __name__ == "__main__":
     print("\n")

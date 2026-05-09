@@ -16,3 +16,8 @@ class BrainSection(Enum):
     SAGITTAL   = auto()
     CORONAL    = auto()
     HORIZONTAL = auto()
+
+# Enum for time discretization type
+class TimeMethod(Enum):
+    BDF   = auto()
+    THETA = auto()

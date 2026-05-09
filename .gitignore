@@ -1,4 +1,7 @@
-# Python files
+# Python package
+*.egg-info/
+dist/
+build/
 __pycache__/
 *.pyc
 .jit_utils/
@@ -18,6 +21,7 @@ Logs/
 *.h5
 *.xdmf
 *.mesh
+*.zip
 
 # zone identifiers
 *:Zone.Identifier
@@ -28,5 +32,3 @@ Logs/
 
 # JIT
 jitfailure-*/
-
-data.py

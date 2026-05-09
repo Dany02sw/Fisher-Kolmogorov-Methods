@@ -1,13 +1,12 @@
 from SolverLdgTheta import SolverLdgTheta
+
 from dolfin import *
 from ufl import tanh
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Meshes import create_rectangle_mesh
-from EnumUtilities import ConvType
-from PlotUtilities import plot_polynomial_convergence
-from FunctionUtilities import compute_rate, compute_exponential_fit
+
+from Meshes.Meshes import create_rectangle_mesh
+from Utilities.EnumUtilities import ConvType
+from Utilities.PlotUtilities import plot_polynomial_convergence
+from Utilities.MathUtilities import compute_rate, compute_exponential_fit
 
 if __name__ == "__main__":
     print("\n")

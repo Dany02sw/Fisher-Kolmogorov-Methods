@@ -1,7 +1,25 @@
+## Installation
+
+Clone the repository and install in editable mode:
+
+    git clone https://github.com/username/fisher-kolmogorov.git
+    cd fisher-kolmogorov
+    pip install -e .
+
+### Dependencies
+
+This project requires FEniCS, which is best installed via conda:
+
+    conda create -n fenics-env -c conda-forge fenics
+    conda activate fenics-env
+
+
 # Discontinuous Galerkin methods for Fisher-Kolmogorov
+
 This repository contains various Discontinuous Galerkin (DG) methods for solving the Fisher-Kolmogorov equation. We provide three different spatial discretizations for the diffusive term, each paired with two temporal schemes: a BDF (Backward Differentiation Formula) scheme for higher-order time accuracy, and a $\theta$-method (which includes the Crank-Nicolson scheme).
 
 # Mathematical Model
+
 The Fisher-Kolmogorov equation (also known as the Fisher-KPP equation) is a reaction-diffusion model described as:
 $$
 \frac{\partial c}{\partial t} - \nabla \cdot (D \nabla c) = \alpha c (1 - c) + f
@@ -9,6 +27,7 @@ $$
 represents the nonlinear reaction term. This repository focuses on the numerical solution of this equation using Discontinuous Galerkin (DG) methods.
 
 # Space discretization
+
 ## - Local Discontinuous Galerkin (LDG)
 This implementation follows the standard LDG approach for spatial discretization as described in This implementation follows the standard **LDG approach** as described in [this reference](https://www.dam.brown.edu/people/tqin/Files/ReadingGroup2016Summer/err_LDG_Poisson.pdf). It offers an optimal balance between computational efficiency and accuracy. Since this is not a structure-preserving method, it is best suited for applications where minor undershooting or overshooting is acceptable. It is worth noting that at low polynomial approximation degrees, even structure-preserving methods may occasionally exceed physical bounds due to numerical oscillations.
 
@@ -32,6 +51,7 @@ $$
 designed to preserve the entire physical range $[0, 1]$. By enforcing these bounds at the structural level, it provides the most robust and accurate results among the implemented schemes. Although it is the most computationally intensive option, it is the recommended choice for simulations requiring high precision and strict adherence to physical constraints.
 
 # Time Discretization
+
 ## - Backward Differentiation Formula (BDF)
 The BDF time integration enables high-order temporal accuracy. This implementation is particularly suited for scenarios where the initial diffusion is slow or smooth, as it does not currently include a self-starting procedure.
 
@@ -39,6 +59,7 @@ The BDF time integration enables high-order temporal accuracy. This implementati
 The $\theta$-method provides a flexible temporal framework. Depending on the choice of $\theta$, it can recover the first-order Backward Euler scheme ($\theta=1$) or the second-order Crank-Nicolson method ($\theta=0.5$). Unlike the BDF approach, it requires only a single initial condition, making it more straightforward for general applications.
 
 # Tests
+
 ## - Test 1: cosine
 The first test case employs a cosine-based analytical solution to evaluate the formal convergence properties of the models. Specifically, we perform a spatial convergence analysis with respect to both(separately) the mesh size ($h$) and the polynomial degree ($p$), alongside a temporal convergence analysis to validate the accuracy of the BDF and $\theta$-method schemes.
 

@@ -1,12 +1,11 @@
 from SolverLdgTheta import SolverLdgTheta
+
 from dolfin import *
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Meshes import create_unite_square_mesh
-from EnumUtilities import ConvType
-from PlotUtilities import plot_polynomial_convergence
-from FunctionUtilities import compute_rate, compute_exponential_fit
+
+from Meshes.Meshes import create_unite_square_mesh
+from Utilities.EnumUtilities import ConvType, TimeMethod
+from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
+from Utilities.MathUtilities import compute_rate, compute_exponential_fit
 
 if __name__ == "__main__":
     print("\n")
@@ -60,7 +59,7 @@ if __name__ == "__main__":
         # Loop over the meshes 
         for N in N_list:
             print(f"\n --- N = {N} ---")
-            mesh = create_unite_square_mesh(N, unstructured=False, plots=False)
+            mesh = create_unite_square_mesh(N, unstructured=False, plotMesh=False)
             SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
             E_c, E_q, h = SLT.ConvergenceTest(
                 t0=t0, dt=dt_space, T=T_space, tht=tht_space, l=l_space, 
@@ -83,6 +82,9 @@ if __name__ == "__main__":
             rate_q = compute_rate(errors_space_q, hs, i)
             print(f"N={N_list[i-1]} → N={N_list[i]}: E_q rate ≈ {rate_q:.2f} (expected = {l_space:.2f})")
 
+        # Plot the rates
+        plot_spatial_convergence(hs, errors_space_c, errors_space_q, l_space, save=False)
+
     elif convType == ConvType.POLYNOMIAL:
         # ======================================================================
         # === 2) CONVERGENCE WRT THE POLYNOMIAL DEGREE (linear time profile) ===
@@ -103,7 +105,7 @@ if __name__ == "__main__":
         errors_polynomial_q = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_poly, unstructured=False, plots=False)
+        mesh = create_unite_square_mesh(N_poly, unstructured=False, plotMesh=False)
 
         # Loop over l_list 
         for l in l_list:
@@ -148,7 +150,7 @@ if __name__ == "__main__":
         l_time   = 2
         T_time   = 2
         dt_list  = [0.5, 0.25, 0.125]
-        tht_time = 0.5
+        tht_time = 1.0
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -156,7 +158,7 @@ if __name__ == "__main__":
         errors_time_q = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_time, unstructured=False, plots=False)
+        mesh = create_unite_square_mesh(N_time, unstructured=False, plotMesh=False)
 
         # Loop over dt_list 
         print(f"\n>>> Running theta = {tht_time} ...")
@@ -183,3 +185,6 @@ if __name__ == "__main__":
         for i in range(1, len(dt_list)):
             rate_q = compute_rate(errors_time_q, dt_list, i)
             print(f"dt={dt_list[i-1]} → {dt_list[i]}: E_q rate ≈ {rate_q:.3f} (expected {expected_time_rate:.2f})")
+
+        # Plot the rates
+        plot_time_convergence(dt_list, errors_time_c, errors_time_q, tht_time, TimeMethod.THETA, save=False)
