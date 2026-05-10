@@ -21,3 +21,9 @@ class BrainSection(Enum):
 class TimeMethod(Enum):
     BDF   = auto()
     THETA = auto()
+
+# Enum for the space discretization
+class SpaceMethod(Enum):
+    LDG   = auto()
+    PPDG  = auto()
+    SPLDG = auto()

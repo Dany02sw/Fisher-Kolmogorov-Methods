@@ -1,6 +1,8 @@
 from dolfin import *
 import ufl
-import os
+from pathlib import Path
+
+from Utilities.EnumUtilities import SpaceMethod, TimeMethod
 
 set_log_active(False)
 parameters["ghost_mode"] = "shared_facet"
@@ -31,6 +33,8 @@ class SolverLdgTheta:
         self.C11   = C11   if isinstance(C11,   ufl.core.expr.Expr) else Constant(C11)
         self.C12   = C12   if isinstance(C12,   ufl.core.expr.Expr) else Constant(C12)
         self.c_0   = c_0  # This will be used as exact solution if run with ConvergenceTest
+        self.SM    = SpaceMethod.LDG
+        self.TM    = TimeMethod.THETA
 
     # Functional spaces constructor
     def _BuildFunctionSpaces(self, l=1):
@@ -206,12 +210,9 @@ class SolverLdgTheta:
         self._BuildNonlinearSolver(tol, maxIt)
 
         # Initialize file
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_path = os.path.join(script_dir, "results", self.mesh.name())
-        if not os.path.exists(output_path):
-            os.makedirs(output_path, exist_ok=True)
-        xdmf_path = os.path.join(output_path, "concentration.xdmf")
-        output_file = XDMFFile(self.mesh.mpi_comm(), xdmf_path)
+        output_path = Path(__file__).parent / "results" / self.mesh.name()
+        output_path.mkdir(parents=True, exist_ok=True)
+        output_file = XDMFFile(self.mesh.mpi_comm(), str(output_path / "concentration.xdmf"))
         output_file.parameters["flush_output"] = True
         output_file.parameters["rewrite_function_mesh"] = False
         output_file.parameters["functions_share_mesh"] = True

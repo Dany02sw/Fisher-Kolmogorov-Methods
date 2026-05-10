@@ -5,6 +5,7 @@ from dolfin import *
 from Meshes.Meshes import importBrainMesh2D
 from Utilities.EnumUtilities import BrainSection
 from Utilities.InitialConditions import get_initial_condition
+from Utilities.FEniCSUtilities import Normalize
 
 if __name__ == "__main__":
     print("\n")
@@ -16,6 +17,7 @@ if __name__ == "__main__":
     plane            = BrainSection.SAGITTAL  # Plane section to simulate on
     mesh, subdomains = importBrainMesh2D(plane=plane, plotMesh=False)
     c_0              = get_initial_condition(plane=plane)
+    c_0              = Normalize(c_0)
 
     # DG0 function to store subdomain tags
     DG0                         = FunctionSpace(mesh, 'DG', 0)

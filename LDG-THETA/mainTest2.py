@@ -4,9 +4,10 @@ from dolfin import *
 from ufl import tanh
 
 from Meshes.Meshes import create_rectangle_mesh
+from Utilities.TimeUtilities import timer
 from Utilities.EnumUtilities import ConvType
-from Utilities.PlotUtilities import plot_polynomial_convergence
-from Utilities.MathUtilities import compute_rate, compute_exponential_fit
+from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
+from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates
 
 if __name__ == "__main__":
     print("\n")
@@ -53,33 +54,28 @@ if __name__ == "__main__":
         # Storage variables
         errors_space_c = []
         errors_space_q = []
-        hs = []
+        hs             = []
+        N_el_list      = []
 
-        # Loop over the meshes 
-        for N in N_list:
-            print(f"\n --- N = {N} ---")
-            mesh = create_rectangle_mesh(N, P1, P2, unstructured=False, plots=False)
-            SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
-            E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt_space, T=T_space, tht=tht_space, l=l_space, 
-                tol=tol, maxIt=maxIt
-            )
-            errors_space_c.append(E_c)
-            errors_space_q.append(E_q)
-            hs.append(h)
+        # Loop over the meshes + benchmark
+        with timer(f"Space convergence l={l_space}"):
+            for N in N_list:
+                print(f"\n --- N = {N} ---")
+                mesh = create_rectangle_mesh(N, P1, P2, unstructured=False, plots=False)
+                SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
+                E_c, E_q, h = SLT.ConvergenceTest(
+                    t0=t0, dt=dt_space, T=T_space, tht=tht_space, l=l_space, 
+                    tol=tol, maxIt=maxIt
+                )
+                errors_space_c.append(E_c)
+                errors_space_q.append(E_q)
+                hs.append(h)
 
-        # Loop to print space rates for E_c 
-        print(f"\n=== Space convergence rates for l = {l_space} (t = T) ===")
-        print("\n--- Rates for E_c ---")
-        for i in range(1, len(N_list)):
-            rate_c = compute_rate(errors_space_c, hs, i)
-            print(f"N={N_list[i-1]} → N={N_list[i]}: E_c rate ≈ {rate_c:.2f} (expected = {l_space+1:.2f})")
+        # Print the rates
+        print_space_rates(errors_space_c, errors_space_q, hs, N_el_list, l_space, method=SLT.SM)
 
-        # Loop to print space rates for D*grad(c) 
-        print("\n--- Rates for E_q ---")
-        for i in range(1, len(N_list)):
-            rate_q = compute_rate(errors_space_q, hs, i)
-            print(f"N={N_list[i-1]} → N={N_list[i]}: E_q rate ≈ {rate_q:.2f} (expected = {l_space:.2f})")
+        # Plot the rates
+        plot_spatial_convergence(hs, errors_space_c, errors_space_q, l_space, method=SLT.SM, save=False)
 
     elif convType == ConvType.POLYNOMIAL:
         print("\n" + "="*69)
@@ -100,35 +96,24 @@ if __name__ == "__main__":
         # Mesh
         mesh = create_rectangle_mesh(N_poly, P1, P2, unstructured=False, plots=False)
 
-        # Loop over l_list 
-        for l in l_list:
-            print(f"\n --- l = {l} ---")
-            parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
-            SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
-            E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt_poly, T=T_poly, tht=tht_poly, l=l, 
-                tol=tol, maxIt=maxIt
-            )
-            errors_polynomial_c.append(E_c)
-            errors_polynomial_q.append(E_q)
+        # Loop over l_list + benchmark
+        with timer(f"Polynomial convergence"):
+            for l in l_list:
+                print(f"\n --- l = {l} ---")
+                parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
+                SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
+                E_c, E_q, h = SLT.ConvergenceTest(
+                    t0=t0, dt=dt_poly, T=T_poly, tht=tht_poly, l=l, 
+                    tol=tol, maxIt=maxIt
+                )
+                errors_polynomial_c.append(E_c)
+                errors_polynomial_q.append(E_q)
 
-        # Loop to print convergence rates wrt polynomial degree for c 
-        print("\n=== Polynomial degree convergence rates (t = T) ===")
-        beta_c, fitted_c, res_c = compute_exponential_fit(errors_polynomial_c, l_list)
-        print("\n--- Rates for E_c ---")
-        for i in range(len(l_list)):
-            print(f"  l={l_list[i]}: E_c = {errors_polynomial_c[i]:.4e}  (fit = {fitted_c[i]:.4e})")
-        print(f"  → E_c ~ exp(-{beta_c:.2f} * l),  residual = {res_c:.2e}")
-
-        # Loop to print convergence rates wrt polynomial degree for D*grad(c) 
-        beta_q, fitted_q, res_q = compute_exponential_fit(errors_polynomial_q, l_list)
-        print("\n--- Rates for E_q ---")
-        for i in range(len(l_list)):
-            print(f"  l={l_list[i]}: E_q = {errors_polynomial_q[i]:.4e}  (fit = {fitted_q[i]:.4e})")
-        print(f"  → E_q ~ exp(-{beta_q:.2f} * l),  residual = {res_q:.2e}")
+        # Print polynomial fits
+        print_polynomial_rates(errors_polynomial_c, errors_polynomial_q, l_list, method=SLT.SM)
 
         # Plot the rates for correct visualization 
-        plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, save=False)
+        plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, method=SLT.SM, save=False)
 
     elif convType == ConvType.TEMPORAL:
         print("\n" + "="*61)
@@ -150,28 +135,20 @@ if __name__ == "__main__":
         # Mesh
         mesh = create_rectangle_mesh(N_time, P1, P2, unstructured=False, plots=False)
 
-        # Loop over dt_list 
-        print(f"\n>>> Running theta = {tht_time} ...")
-        for dt in dt_list:
-            print(f"\n --- dt = {dt:.4f} ---")
-            SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
-            E_c, E_q, h = SLT.ConvergenceTest(
-                t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 
-                tol=tol, maxIt=maxIt
-            )
-            errors_time_c.append(E_c)
-            errors_time_q.append(E_q)
+        # Loop over dt_list + benchmark
+        with timer(f"Time convergence tht={tht_time}"):
+            for dt in dt_list:
+                print(f"\n --- dt = {dt:.4f} ---")
+                SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
+                E_c, E_q, h = SLT.ConvergenceTest(
+                    t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 
+                    tol=tol, maxIt=maxIt
+                )
+                errors_time_c.append(E_c)
+                errors_time_q.append(E_q)
 
-        # Loop to print time convergence rates for c 
-        print(f"\n=== Time convergence rates for theta = {tht_time} (t = T) ===")
-        expected_time_rate = 2.0 if tht_time==0.5 else 1.0
-        print("\n--- Rates for E_c ---")
-        for i in range(1, len(dt_list)):
-            rate_c = compute_rate(errors_time_c, dt_list, i)
-            print(f"dt={dt_list[i-1]} → {dt_list[i]}: E_c rate ≈ {rate_c:.3f} (expected {expected_time_rate:.2f})")
+        # Print the time convergence rates
+        print_time_rates(errors_time_c, errors_time_q, dt_list, tht_time, time_method=SLT.TM)
 
-        # Loop to print time convergence rates for D*grad(c) 
-        print("\n--- Rates for E_q ---")
-        for i in range(1, len(dt_list)):
-            rate_q = compute_rate(errors_time_q, dt_list, i)
-            print(f"dt={dt_list[i-1]} → {dt_list[i]}: E_q rate ≈ {rate_q:.3f} (expected {expected_time_rate:.2f})")
+        # Plot the rates
+        plot_time_convergence(dt_list, errors_time_c, errors_time_q, tht_time, method=SLT.TM, space_method=SLT.SM, save=False)
