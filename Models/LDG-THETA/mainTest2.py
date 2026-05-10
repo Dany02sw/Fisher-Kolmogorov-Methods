@@ -1,8 +1,9 @@
 from SolverLdgTheta import SolverLdgTheta
 
 from dolfin import *
+from ufl import tanh
 
-from Meshes.Meshes import create_unite_square_mesh
+from Meshes.Meshes import create_rectangle_mesh
 from Utilities.TimeUtilities import timer
 from Utilities.EnumUtilities import ConvType
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
@@ -14,41 +15,39 @@ if __name__ == "__main__":
     print(23*"#"+" LDG + THETA "+ 23*"#")
     print("#"*59)
 
-    convType    = ConvType.SPATIAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
-    d_ext = Constant(1e-3) if convType==ConvType.TEMPORAL else Constant(1.0) 
+    d_ext = Constant(1e-3) 
     D     = d_ext*Identity(2)
+    v     = Constant(5.0*sqrt(alpha*d_ext/6.0))
     C11   = 10.0
     C12   = 0.5
     t0    = 0.0
 
     # Solver parameters
-    tol = 1e-12
-    maxIt = 200
+    tol = 1e-8
+    maxIt = 300
 
     # Exact solution
-    c_space = lambda x: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)
-    if convType == ConvType.TEMPORAL:
-        c_ex = lambda x, t: c_space(x)*exp(-t)
-    else:
-        c_ex = lambda x, t: c_space(x)*(1.0 - t)
+    c_ex = lambda x, t: 0.25*(1.0 + tanh(8.0 - sqrt(alpha/(24.0*d_ext))*(x[0] - v*t)))**2
+
+    # Mesh verteces
+    P1 = Point((0.0, 0.0))
+    P2 = Point((3.0, 1.0))
 
     if convType == ConvType.SPATIAL:
-        # ==================================================
-        # === 1) SPACE CONVERGENCE (linear time profile) ===
-        # ==================================================
-        print("\n" + "="*59)
-        print("====== Space convergence test (time profile: linear) ======")
-        print("="*59)
+        print("\n" + "="*36)
+        print("====== Space convergence test ======")
+        print("="*36)
 
         # Space convergence parameters 
-        N_ref     = [2, 3, 4]
+        N_ref     = [3, 4, 5]
         N_list    = [2**n for n in N_ref]
-        l_space   = 1 
-        T_space   = 3e-2
-        dt_space  = 1e-3
+        l_space   = 2 
+        T_space   = 3e-3
+        dt_space  = 1e-4
         tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
@@ -62,7 +61,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh = create_unite_square_mesh(N, unstructured=False, plotMesh=False)
+                mesh = create_rectangle_mesh(N, P1, P2, unstructured=False, plotMesh=False)
                 N_el_list.append(mesh.num_cells())
                 SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
                 E_c, E_q, h = SLT.ConvergenceTest(
@@ -80,18 +79,15 @@ if __name__ == "__main__":
         plot_spatial_convergence(hs, errors_space_c, errors_space_q, l_space, method=SLT.SM, save=False)
 
     elif convType == ConvType.POLYNOMIAL:
-        # ======================================================================
-        # === 2) CONVERGENCE WRT THE POLYNOMIAL DEGREE (linear time profile) ===
-        # ======================================================================
         print("\n" + "="*69)
-        print("===== Polynomial degree convergence test (time profile: linear) =====")
+        print("===== Polynomial degree convergence test =====")
         print("="*69)
 
         # Polynomial degree convergence parameters 
         N_poly   = 8
-        l_list   = [1, 2, 3]
-        T_poly   = 2.5e-4
-        dt_poly  = 1e-5
+        l_list   = [1, 2]
+        T_poly   = 10.0
+        dt_poly  = 2.5e-2
         tht_poly = 0.5
 
         # Storage variable 
@@ -99,7 +95,7 @@ if __name__ == "__main__":
         errors_polynomial_q = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_poly, unstructured=False, plotMesh=False)
+        mesh = create_rectangle_mesh(N_poly, P1, P2, unstructured=False, plotMesh=False)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):
@@ -121,11 +117,8 @@ if __name__ == "__main__":
         plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, method=SLT.SM, save=False)
 
     elif convType == ConvType.TEMPORAL:
-        # ======================================================
-        # === 3) TIME CONVERGENCE (exponential time profile) ===
-        # ======================================================
         print("\n" + "="*61)
-        print("===== Time convergence test (time profile: exponential) =====")
+        print("===== Time convergence test =====")
         print("="*61)
 
         # Time convergence parameters 
@@ -141,7 +134,7 @@ if __name__ == "__main__":
         errors_time_q = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_time, unstructured=False, plotMesh=False)
+        mesh = create_rectangle_mesh(N_time, P1, P2, unstructured=False, plotMesh=False)
 
         # Loop over dt_list + benchmark
         with timer(f"Time convergence tht={tht_time}"):

@@ -1,17 +1,16 @@
 from dolfin import *
 
 # Local project
-def LocalProject(v, V, solver=None):
+def LocalProject(v, V):
     dv = TrialFunction(V)
     v_ = TestFunction(V)
     a_proj = inner(dv, v_)*dx
     b_proj = inner(v, v_)*dx
-    if solver is None:
-        solver = LocalSolver(a_proj, b_proj)
-        solver.factorize()
+    solver = LocalSolver(a_proj, b_proj)
+    solver.factorize()
     u = Function(V)
     solver.solve_local_rhs(u)
-    return u, solver
+    return u
 
 # Normalization
 def Normalize(c_):

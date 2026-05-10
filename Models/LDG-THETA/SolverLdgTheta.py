@@ -3,13 +3,14 @@ import ufl
 from pathlib import Path
 
 from Utilities.EnumUtilities import SpaceMethod, TimeMethod
+from Utilities.FEniCSUtilities import Normalize
 
 set_log_active(False)
 parameters["ghost_mode"] = "shared_facet"
 
 class SolverLdgTheta:
     """!
-    Class for solving Fisher-Kolmogoro equation.
+    Class for solving Fisher-Kolmogorov equation.
     
     - **Space discretization:** LDG
     - **Time discretization:** Theta-method
@@ -30,9 +31,9 @@ class SolverLdgTheta:
         self.mesh  = mesh
         self.D     = as_tensor(D)
         self.alpha = alpha if isinstance(alpha, ufl.core.expr.Expr) else Constant(alpha)
+        self.c_0   = c_0  # This will be used as exact solution if run with ConvergenceTest
         self.C11   = C11   if isinstance(C11,   ufl.core.expr.Expr) else Constant(C11)
         self.C12   = C12   if isinstance(C12,   ufl.core.expr.Expr) else Constant(C12)
-        self.c_0   = c_0  # This will be used as exact solution if run with ConvergenceTest
         self.SM    = SpaceMethod.LDG
         self.TM    = TimeMethod.THETA
 
@@ -126,7 +127,7 @@ class SolverLdgTheta:
         J  = derivative(self.Form, self.U, dU)
 
         # Nonlinear solver
-        problem = NonlinearVariationalProblem(self.Form, self.U, J=J)
+        problem      = NonlinearVariationalProblem(self.Form, self.U, J=J)
         self.solver  = NonlinearVariationalSolver(problem)
         prm          = self.solver.parameters
 
@@ -153,7 +154,7 @@ class SolverLdgTheta:
         """! Internal validation of simulation parameters. """
         if not (0.0 <= tht <= 1.0):
             raise ValueError("tht must be between in [0, 1]")
-        if dt <= 0:
+        if dt <= 0.0:
             raise ValueError(f"Time step dt must be positive, got {dt}")
         if T <= t0:
             raise ValueError(f"Final time T ({T}) must be greater than initial time t0 ({t0})")
@@ -201,9 +202,12 @@ class SolverLdgTheta:
         self.gN_old    = Function(self.R)
 
         # Initial guess for solver and old terms
-        assign(self.U.sub(0), project(self.c_0(x, t), self.W))
-        assign(self.U.sub(1), project(dot(self.D, grad(self.c_0(x, t))), self.R))
-        self._UpdateOldState() # This
+        c_0 = self.c_0(x, t)
+        c_0 = project(c_0, self.W)
+        c_0 = Normalize(c_0)
+        assign(self.U.sub(0), c_0)
+        assign(self.U.sub(1), project(dot(self.D, grad(c_0)), self.R))
+        self._UpdateOldState()
 
         # Variational form and solver
         self._BuildVariationalForms(dt, tht)
