@@ -1,20 +1,20 @@
 from Utilities.EnumUtilities import SpaceMethod
 
-# Dictionary for labels 
-SPACE_LABELS = {
-    SpaceMethod.LDG:   ("E_c", "E_q",     "D·∇c"),
-    SpaceMethod.SPLDG: ("E_c", "E_sigma", "-∇c"),
-    SpaceMethod.PPDG:  ("E_c", "E_DG",    None),
+# Dictionary for error labels 
+ERROR_LABELS = {
+    SpaceMethod.LDG:   ("E_c",  "E_q"),
+    SpaceMethod.SPLDG: ("E_c",  "E_sigma"),
+    SpaceMethod.PPDG:  ("E_L2", "E_DG"),
 }
 
-# Dictionary for variables
+# Dictionary for variable labels
 VARIABLE_LABELS = {
-    SpaceMethod.LDG:   ("c", "q"),
-    SpaceMethod.SPLDG: ("c", "sigma"),
-    SpaceMethod.PPDG:  ("c", None)
+    SpaceMethod.LDG:   ("c", "q",     "D·∇c"),
+    SpaceMethod.SPLDG: ("c", "sigma", "-∇c"),
+    SpaceMethod.PPDG:  ("c", "c",     None)
 }
 
-# Dictionary for norms labels
+# Dictionary for norm labels
 NORM_LABELS = {
     SpaceMethod.LDG:   ("L2", "L2"),
     SpaceMethod.SPLDG: ("L2", "L2"),

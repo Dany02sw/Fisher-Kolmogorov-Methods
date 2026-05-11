@@ -1,10 +1,10 @@
 from Utilities.EnumUtilities import SpaceMethod, TimeMethod
 from Utilities.MathUtilities import compute_rate, compute_exponential_fit
-from Utilities.DictionaryUtilities import SPACE_LABELS
+from Utilities.DictionaryUtilities import ERROR_LABELS
 
 # Function to print space convergence rates ____________________________________________________________________________________________________________
 def print_space_rates(errors_c, errors_grad, hs, N_list, l, method=SpaceMethod.LDG):
-    label_c, label_grad, _ = SPACE_LABELS[method]
+    label_c, label_grad, _ = ERROR_LABELS[method]
     header = f" Space convergence rates for l = {l} (t = T) "
     print(f"\n{header:=^98}")
     print(f"\n{'N_from':>6} → {'N_to':>6} | {label_c+' from':>12} {label_c+' to':>12} {'rate':>6} {'(expc)':>5} | {label_grad+' from':>12} {label_grad+' to':>12} {'rate':>6} {'(expc)':>5}")
@@ -16,7 +16,7 @@ def print_space_rates(errors_c, errors_grad, hs, N_list, l, method=SpaceMethod.L
 
 # Function to print polynomial convergence rates _______________________________________________________________________________________________________
 def print_polynomial_rates(errors_c, errors_grad, l_list, method=SpaceMethod.LDG):
-    label_c,    label_grad, _        = SPACE_LABELS[method]
+    label_c,    label_grad, _        = ERROR_LABELS[method]
     beta_c,    fitted_c,    res_c    = compute_exponential_fit(errors_c,    l_list)
     beta_grad, fitted_grad, res_grad = compute_exponential_fit(errors_grad, l_list)
     header = f" Polynomial degree convergence rates (t = T) "
@@ -32,7 +32,7 @@ def print_polynomial_rates(errors_c, errors_grad, l_list, method=SpaceMethod.LDG
 
 # Function to print time convergence rates ____________________________________________________________________________________________________________
 def print_time_rates(errors_c, errors_grad, dt_list, order, time_method=TimeMethod.THETA, space_method=SpaceMethod.LDG):
-    label_c, label_grad, _ = SPACE_LABELS[space_method]
+    label_c, label_grad, _ = ERROR_LABELS[space_method]
     expected   = order if time_method == TimeMethod.BDF else (2.0 if abs(order - 0.5) < 1e-10 else 1.0)
     method_str = f"BDF{order}" if time_method == TimeMethod.BDF else f"theta={order}"
     header = f" Time convergence rates for {method_str} (t = T) "

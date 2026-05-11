@@ -305,8 +305,8 @@ class SolverLdgTheta:
         self.Force = c_t - Delta_c - alpha*c_ex*(1.0 - c_ex)
 
         # Computing exact gradient and Neumann BC
-        q_ex = dot(D, grad(c_ex))
-        self.gN   = q_ex
+        q_ex    = dot(D, grad(c_ex))
+        self.gN = q_ex
 
         # Initial guess for solver and old terms
         self.Force_old = Function(self.W)

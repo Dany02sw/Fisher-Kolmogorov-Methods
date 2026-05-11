@@ -3,7 +3,7 @@ from SolverLdgTheta import SolverLdgTheta
 from dolfin import *
 
 from Meshes.Meshes import create_unite_square_mesh
-from Utilities.TimeUtilities import timer
+from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities import ConvType
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates

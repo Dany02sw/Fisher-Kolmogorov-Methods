@@ -5,7 +5,7 @@ from datetime import datetime
 from dolfin import plot
 
 from Utilities.EnumUtilities import SpaceMethod, TimeMethod
-from Utilities.DictionaryUtilities import SPACE_LABELS
+from Utilities.DictionaryUtilities import ERROR_LABELS
 
 # Function to plot the mesh _________________________________________________________________
 def plot_mesh(mesh, title="Mesh", figsize=(10, 8)):
@@ -31,7 +31,7 @@ def plot_spatial_convergence(hs, err_c, err_grad, l, method=SpaceMethod.LDG, sav
     """
     Plots spatial convergence for a single polynomial degree l.
     """
-    label_c, label_grad, _ = SPACE_LABELS[method]
+    label_c, label_grad = ERROR_LABELS[method]
 
     hs   = np.array(hs)
     Ec   = np.array(err_c)
@@ -80,7 +80,7 @@ def plot_polynomial_convergence(errors_c, errors_grad, l_list, h, method=SpaceMe
     """
     Function to plot polynomial convergence of both a base variable and a gradient-based one
     """
-    label_c, label_grad, _ = SPACE_LABELS[method]
+    label_c, label_grad = ERROR_LABELS[method]
 
     L_ext    = np.arange(l_list[0], l_list[-1] + 1)
     L_num    = np.array(l_list)
@@ -139,7 +139,7 @@ def plot_time_convergence(dt_list, err_c, err_grad, order, method=TimeMethod.BDF
     """
     Plots time convergence for BDF or Theta-method.
     """
-    label_c, label_grad, _ = SPACE_LABELS[space_method]
+    label_c, label_grad = ERROR_LABELS[space_method]
 
     dt_arr = np.array(dt_list, dtype=float)
     Ec     = np.array(err_c,    dtype=float)
