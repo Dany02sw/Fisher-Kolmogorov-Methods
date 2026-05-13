@@ -17,9 +17,11 @@ if __name__ == "__main__":
     alpha = Constant(1.0)
     d_ext = Constant(1e-3) if convType==ConvType.TEMPORAL else Constant(1.0) 
     D     = d_ext*Identity(2)
-    C11   = 10.0
-    C12   = 0.5
     t0    = 0.0
+
+    # Model parameters
+    C11 = 10.0
+    C12 = 0.5
 
     # Solver parameters
     tol = 1e-12
@@ -56,8 +58,8 @@ if __name__ == "__main__":
                 print(f"\n --- N = {N} ---")
                 mesh = create_unite_square_mesh(N, unstructured=False, plotMesh=False)
                 N_el_list.append(mesh.num_cells())
-                SLT  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
-                E_c, E_q, h = SLT.ConvergenceTest(
+                Solver  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
+                E_c, E_q, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt_space, T=T_space, tht=tht_space, l=l_space, 
                     tol=tol, maxIt=maxIt
                 )
@@ -66,10 +68,10 @@ if __name__ == "__main__":
                 hs.append(h)
 
         # Print the rates
-        print_space_rates(errors_space_c, errors_space_q, hs, N_el_list, l_space, method=SLT.SM)
+        print_space_rates(errors_space_c, errors_space_q, hs, N_el_list, l_space, method=Solver.SM)
 
         # Plot the rates
-        plot_spatial_convergence(hs, errors_space_c, errors_space_q, l_space, method=SLT.SM, save=False)
+        plot_spatial_convergence(hs, errors_space_c, errors_space_q, l_space, method=Solver.SM, save=False)
 
     elif convType == ConvType.POLYNOMIAL:
         print_subtitle("Polynomial degree convergence test — linear time profile")
@@ -93,8 +95,8 @@ if __name__ == "__main__":
             for l in l_list:
                 print(f"\n --- l = {l} ---")
                 parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
-                SLT  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
-                E_c, E_q, h = SLT.ConvergenceTest(
+                Solver  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
+                E_c, E_q, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt_poly, T=T_poly, tht=tht_poly, l=l, 
                     tol=tol, maxIt=maxIt
                 )
@@ -102,10 +104,10 @@ if __name__ == "__main__":
                 errors_polynomial_q.append(E_q)
 
         # Print polynomial fits
-        print_polynomial_rates(errors_polynomial_c, errors_polynomial_q, l_list, method=SLT.SM)
+        print_polynomial_rates(errors_polynomial_c, errors_polynomial_q, l_list, method=Solver.SM)
 
         # Plot the rates for correct visualization 
-        plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, method=SLT.SM, save=False)
+        plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, method=Solver.SM, save=False)
 
     elif convType == ConvType.TEMPORAL:
         print_subtitle("Time convergence test — exponential time profile")
@@ -129,8 +131,8 @@ if __name__ == "__main__":
         with timer(f"Time convergence tht={tht_time}"):
             for dt in dt_list:
                 print(f"\n --- dt = {dt:.4f} ---")
-                SLT  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
-                E_c, E_q, h = SLT.ConvergenceTest(
+                Solver  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
+                E_c, E_q, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 
                     tol=tol, maxIt=maxIt
                 )
@@ -138,7 +140,7 @@ if __name__ == "__main__":
                 errors_time_q.append(E_q)
 
         # Print the time convergence rates
-        print_time_rates(errors_time_c, errors_time_q, dt_list, tht_time, time_method=SLT.TM)
+        print_time_rates(errors_time_c, errors_time_q, dt_list, tht_time, time_method=Solver.TM)
 
         # Plot the rates
-        plot_time_convergence(dt_list, errors_time_c, errors_time_q, tht_time, method=SLT.TM, space_method=SLT.SM, save=False)
+        plot_time_convergence(dt_list, errors_time_c, errors_time_q, tht_time, method=Solver.TM, space_method=Solver.SM, save=False)

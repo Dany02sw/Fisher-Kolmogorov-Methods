@@ -110,7 +110,7 @@ class SolverSpLdgBDF(SolverBDF):
         # Print the bounds and the errors for both the variables
         print(f"\n{'─'*80}")
         print(f"  t = {t_val:.{self.decimals}f}")
-        print(f"{'─'*80}")
+        print(f"{'-'*80}")
         print(f"  {'c_h':<8} ∈ [{c_min: 7.6f}, {c_max: 7.6f}]      {'‖c_ex  − c_h‖_L²':<20} = {E_c:.4e}")
         print(f"  {'sigma_h':<8} ∈ [{sigma_min: 7.6f}, {sigma_max: 7.6f}]      {'‖∇c_ex + sigma_h‖_L²':<20} = {E_sigma:.4e}")
         print(f"{'─'*80}\n")

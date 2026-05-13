@@ -11,16 +11,18 @@ from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, 
 if __name__ == "__main__":
     print_title("SP-LDG + BDF")
 
-    convType = ConvType.POLYNOMIAL
+    convType = ConvType.TEMPORAL
 
     # Data
     alpha = Constant(1.0)
     d_ext = Constant(1e-3) if convType==ConvType.TEMPORAL else Constant(1.0) 
     D     = d_ext*Identity(2)
+    t0    = 0.0
+
+    # Model parameters
     eps   = 0.0
     eta_0 = 1.0
     theta = -1.0
-    t0    = 0.0
 
     # Solver parameters
     tol = 1e-12
@@ -112,11 +114,11 @@ if __name__ == "__main__":
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 40
-        l_time  = 2
+        N_time  = 32
+        l_time  = 1
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 6
+        nu_time = 1
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 

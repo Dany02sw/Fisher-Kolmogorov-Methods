@@ -40,12 +40,14 @@ if __name__ == "__main__":
     
     # Other data
     l   = 2
-    C11 = 10.0
-    C12 = 0.5
     t0  = 0.0
     T   = 50.0
     dt  = 2.5e-1
     tht = 0.5
+
+    # Model parameters
+    C11 = 10.0
+    C12 = 0.5
 
     # Solver parameters
     tol = 1e-6
@@ -55,7 +57,7 @@ if __name__ == "__main__":
     parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
 
     # Solve the problem 
-    print_subtitle("Spreading of alpha-synuclein")
-    SLT = SolverLdgTheta(mesh, D, alpha, c_0, C11, C12)
+    print_subtitle("Spreading of α-synuclein")
+    Solver = SolverLdgTheta(mesh, D, alpha, c_0, C11, C12)
     with timer(f"Spreading of α-synuclein on {mesh.name()} section"):
-        SLT.Solve(t0=t0, dt=dt, T=T, tht=tht, l=l, tol=tol, maxIt=maxIt)
+        Solver.Solve(t0=t0, dt=dt, T=T, tht=tht, l=l, tol=tol, maxIt=maxIt)

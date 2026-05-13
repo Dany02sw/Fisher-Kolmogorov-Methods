@@ -40,7 +40,7 @@ class EntropicTransformation(Transformation, ABC):
     def invPrime(self, c): ...
 
 class Sigmoid(EntropicTransformation):
-    def __init__(self, eps=1e-10): # constructor for smoothing parameter
+    def __init__(self, eps=1e-14): # constructor for smoothing parameter
         self.eps = Constant(eps)
 
     def __call__(self, w):      return exp(w) / (1.0 + exp(w))

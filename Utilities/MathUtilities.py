@@ -16,7 +16,7 @@ def compute_exponential_fit(errors, l_list):
 
 # Function to compute the decimals of a quantity
 def get_decimals(dt):
-    s = f"{dt}".rstrip('0')
+    s = f"{dt:.20f}".rstrip('0')
     if '.' in s:
         return len(s.split('.')[1])
     return 0
