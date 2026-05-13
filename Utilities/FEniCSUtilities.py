@@ -17,3 +17,15 @@ def Normalize(c_):
     c_.vector()[:] -= c_.vector().min()
     c_.vector()[:] /= (c_.vector().max() - c_.vector().min())
     return c_
+
+# Weighted average operator
+def wavg(gamma, v_):
+    return (1.0-gamma)*v_('+') + gamma*v_('-')
+
+# Harmonic average operator
+def havg(v_):
+    return (2.0*v_('+')*v_('-'))/(v_('+') + v_('-'))
+
+# Function to compute a smoothed max
+def smoothMax(a, b, epsilon=Constant(1e-10)):
+    return (a + b + sqrt((a - b)*(a - b) + epsilon)) / 2.0

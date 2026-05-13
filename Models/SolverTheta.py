@@ -4,11 +4,11 @@ from dolfin import *
 from pathlib import Path
 
 from Utilities.FEniCSUtilities import Normalize
-from Utilities.ClassUtilities import OutputManager
+from Utilities.IOUtilities import OutputManager
 
 class SolverTheta(SolverBase):
-    def __init__(self, mesh, D, alpha, c_0):
-        super.__init__(mesh, D, alpha, c_0)
+    def __init__(self, mesh, D, alpha, c_0, transform):
+        super().__init__(mesh, D, alpha, c_0, transform)
         self.W         = None
         self.R         = None
         self.Force     = None
@@ -20,9 +20,9 @@ class SolverTheta(SolverBase):
         self.U     = Function(self.WR)
         self.U_old = Function(self.WR)
 
-    def _BuildTimeForm(self, tau, u, v, u_old, transform=lambda x: x):
-        dx = Measure("dx", self.mesh)
-        return (1.0/tau)*(transform(u) - transform(u_old))*v*dx
+    def _BuildTimeForm(self, tau, u, v, u_old):
+        dx = self.dx
+        return (1.0/tau)*(self.T(u) - self.T(u_old))*v*dx
     
     def _SetSourceTerm(self, x, t, extForce, NeumannBC):
         super()._SetSourceTerm(x, t, extForce, NeumannBC)
@@ -38,10 +38,11 @@ class SolverTheta(SolverBase):
         super()._ValidateInput(t0, dt, T, l)
         if not (0.0 <= tht <= 1.0):
             raise ValueError("tht must be between in [0, 1]")
-        
+
+
     def Solve(self, t0, dt, T, tht, l, tol, maxIt, extForce=None, NeumannBC=None):
   
-        self._ValidateInput(t0, dt, T, tht, l)
+        self._ValidateInput(t0, dt, tht, T, l)
         
         # Mesh data
         x = SpatialCoordinate(self.mesh)
@@ -62,7 +63,7 @@ class SolverTheta(SolverBase):
         c_0 = self.c_0(x, t)
         c_0 = project(c_0, self.W)
         c_0 = Normalize(c_0)
-        self._SeiInitialCondition(c_0)
+        self._SetInitialCondition(c_0)
         self._UpdateOldState()
 
         # Variational form and solver
@@ -90,7 +91,7 @@ class SolverTheta(SolverBase):
             self._UpdateOldState()
 
             # Print the iteration
-            c_h = self._PrintSolveIteration()
+            c_h = self._SolvePostprocessing(t_val)
 
             # Save solution
             exporter.save(c_h, t_val)
@@ -98,7 +99,7 @@ class SolverTheta(SolverBase):
         # Close output file
         exporter.close()
 
-    # --- Method for a convergence test using c_0 as exact solution ---
+
     def ConvergenceTest(self, t0, dt, T, tht, l, tol, maxIt):
 
         self._ValidateInput(t0, dt, T, tht, l)
@@ -132,7 +133,7 @@ class SolverTheta(SolverBase):
         # Initial guess for solver and old terms
         self.Force_old = Function(self.W)
         self.gN_old    = Function(self.R)
-        self._SeiInitialCondition()
+        self._SetInitialCondition(self.c_ex)
         self._UpdateOldState()
 
         # Forms ansd solver
@@ -157,6 +158,6 @@ class SolverTheta(SolverBase):
             self._UpdateOldState()
 
             # Print convergence iterations
-            E_c, E_grad = self._PrintConvergenceIteration()
+            E_c, E_grad = self._ConvergenceTestPostprocessing(t_val)
 
         return E_c, E_grad, h_avg

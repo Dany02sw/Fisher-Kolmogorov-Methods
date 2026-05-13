@@ -4,7 +4,7 @@ from dolfin import *
 from pathlib import Path
 
 from Utilities.FEniCSUtilities import Normalize
-from Utilities.ClassUtilities import OutputManager
+from Utilities.IOUtilities import OutputManager
 
 BDF_COEFFS = {
     1: {"beta": 1.0,          "a": [1.0]                                                                          },
@@ -17,29 +17,28 @@ BDF_COEFFS = {
 
 
 class SolverBDF(SolverBase):
-    def __init__(self, mesh, D, alpha, c_0):
-        super.__init__(mesh, D, alpha, c_0)
+    def __init__(self, mesh, D, alpha, c_0, transform):
+        super().__init__(mesh, D, alpha, c_0, transform)
         self.W = None
         
-    def _BuildFunctions(self, nu):
+    def _BuildFunctions(self):
         self.U     = Function(self.WR)
-        self.u_old = [Function(self.W) for _ in range(1, nu)] # small letter because when you have mixed spaces the backward steps will only use the first space
+        self.u_old = [Function(self.W) for _ in range(self.nu)] # small letter because when you have mixed spaces the backward steps will only use the first space
 
-    def _BuildTimeForm(self, tau, nu, u, v, u_old, transform=lambda x: x):
-        dx = Measure("dx", self.mesh)
+    def _BuildTimeForm(self, tau, u, v):
+        dx = self.dx
 
         # Import coefficients
-        beta = BDF_COEFFS[nu]["beta"]
-        a    = BDF_COEFFS[nu]["a"]
+        beta = BDF_COEFFS[self.nu]["beta"]
+        a    = BDF_COEFFS[self.nu]["a"]
 
         # Compute the linear combination of backward steps
-        transformed_old_steps = sum(a[j]*transform(u_old[j]) for j in range(len(a)))
+        transformed_old_steps = sum(a[j]*self.T(self.u_old[j]) for j in range(len(a)))
 
-        return (1.0/(tau*beta))*(transform(u) - transformed_old_steps)*v*dx
+        return (1.0/(tau*beta))*(self.T(u) - transformed_old_steps)*v*dx
     
-    def _UpdateOldState(self, nu):
-        u = self.U.sub(0)
-        for j in range(nu-1, 0, -1):
+    def _UpdateOldState(self, u):
+        for j in range(self.nu-1, 0, -1):
             self.u_old[j].assign(self.u_old[j-1])
         self.u_old[0].assign(u)
 
@@ -50,15 +49,16 @@ class SolverBDF(SolverBase):
         
     def Solve(self, t0, dt, T, nu, l, tol, maxIt, extForce=None, NeumannBC=None):
   
-        self._ValidateInput(t0, dt, T, nu, l)
+        self._ValidateInput(t0, dt, nu ,T, l)
         
         # Mesh data
         x = SpatialCoordinate(self.mesh)
 
         # Time loop parameters
-        t_val  = t0 
-        nsteps = round((T - t0)/dt)
-        t      = Constant(t0)
+        t_val   = t0 
+        nsteps  = round((T - t0)/dt)
+        t       = Constant(t0)
+        self.nu = nu
 
         # Functional setting 
         self._BuildFunctionSpaces(l)
@@ -71,11 +71,16 @@ class SolverBDF(SolverBase):
         c_0 = self.c_0(x, t)
         c_0 = project(c_0, self.W)
         c_0 = Normalize(c_0)
-        self._SeiInitialCondition(c_0)
-        self._UpdateOldState()
+        u_0 = project(self.T.inv(c_0), self.W)
+        self.u_old[-1].assign(u_0)
+        for i in range(1, nu):
+            t_val += dt
+            t.assign(t_val)
+            self.u_old[-1-i].assign(u_0)
+        self._SetInitialCondition(c_0)
 
         # Variational form and solver
-        self._BuildVariationalForms(dt, nu)
+        self._BuildVariationalForms(dt)
         self._BuildNonlinearSolver(tol, maxIt)
 
         # Initialize output manager
@@ -87,7 +92,7 @@ class SolverBDF(SolverBase):
         exporter.save(c_0, t_val)
 
         # Time loop
-        for i in range(nsteps):
+        for i in range(nsteps-nu+1):
             # Update time step
             t_val += dt
             t.assign(t_val)
@@ -95,11 +100,11 @@ class SolverBDF(SolverBase):
             # Solve the problem
             self.solver.solve()
 
-            # Update old solutions
-            self._UpdateOldState()
-
             # Print the iteration
-            c_h = self._PrintSolveIteration()
+            c_h, u_h = self._SolvePostprocessing(t_val)
+
+            # Update old solutions
+            self._UpdateOldState(u_h)
 
             # Save solution
             exporter.save(c_h, t_val)
@@ -107,19 +112,19 @@ class SolverBDF(SolverBase):
         # Close output file
         exporter.close()
 
-    # --- Method for a convergence test using c_0 as exact solution ---
     def ConvergenceTest(self, t0, dt, T, nu, l, tol, maxIt):
 
-        self._ValidateInput(t0, dt, T, nu, l)
+        self._ValidateInput(t0, dt, nu ,T, l)
 
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
 
         # Time loop parameters
-        t_val  = t0 
-        nsteps = round((T - t0)/dt)
-        t      = Constant(t0)
+        t_val   = t0 
+        nsteps  = round((T - t0)/dt)
+        t       = Constant(t0)
+        self.nu = nu
 
         # Data
         D         = self.D
@@ -139,11 +144,16 @@ class SolverBDF(SolverBase):
         self.gN = dot(D, grad(self.c_ex))
 
         # Initial guess for solver and old terms
-        self._SeiInitialCondition(self.c_ex)
-        self._UpdateOldState()
+        self.u_old[-1].assign(project(self.T.inv(self.c_ex), self.W))
+        for i in range(1, nu):
+            t_val += dt
+            t.assign(t_val)
+            u_tmp = project(self.T.inv(self.c_ex), self.W)
+            self.u_old[-1-i].assign(u_tmp)
+        self._SetInitialCondition(self.c_ex)
 
         # Forms ansd solver
-        self._BuildVariationalForms(dt, nu)
+        self._BuildVariationalForms(dt)
         self._BuildNonlinearSolver(tol, maxIt)
 
         # Initialize error lists
@@ -151,7 +161,7 @@ class SolverBDF(SolverBase):
         E_grad = None
 
         # Time loop
-        for i in range(nsteps):
+        for i in range(nsteps-nu+1):
 
             # Update time step
             t_val += dt
@@ -160,10 +170,10 @@ class SolverBDF(SolverBase):
             # Solve the problem
             self.solver.solve()
 
-            # Update old solutions
-            self._UpdateOldState()
-
             # Print convergence iterations
-            E_c, E_grad = self._PrintConvergenceIteration()
+            E_c, E_grad, u_h = self._ConvergenceTestPostprocessing(t_val)
+
+            # Update old solutions
+            self._UpdateOldState(u_h)
 
         return E_c, E_grad, h_avg

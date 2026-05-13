@@ -27,3 +27,9 @@ class SpaceMethod(Enum):
     LDG   = auto()
     PPDG  = auto()
     SPLDG = auto()
+
+# Enum for transformations
+class Transformations(Enum):
+    IDENTITY    = auto()
+    EXPONENTIAL = auto()
+    ENTROPIC    = auto()
