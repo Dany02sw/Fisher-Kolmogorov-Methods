@@ -6,13 +6,10 @@ from Meshes.Meshes import create_unite_square_mesh
 from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities import ConvType
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
-from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates
+from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
 
 if __name__ == "__main__":
-    print("\n")
-    print("#"*59)
-    print(23*"#"+" LDG + THETA "+ 23*"#")
-    print("#"*59)
+    print_title("LDG + THETA")
 
     convType = ConvType.SPATIAL
 
@@ -36,17 +33,12 @@ if __name__ == "__main__":
         c_ex = lambda x, t: c_space(x)*(1.0 - t)
 
     if convType == ConvType.SPATIAL:
-        # ==================================================
-        # === 1) SPACE CONVERGENCE (linear time profile) ===
-        # ==================================================
-        print("\n" + "="*59)
-        print("====== Space convergence test (time profile: linear) ======")
-        print("="*59)
+        print_subtitle("Space convergence test — linear time profile")
 
         # Space convergence parameters 
         N_ref     = [2, 3, 4]
         N_list    = [2**n for n in N_ref]
-        l_space   = 1 
+        l_space   = 2 
         T_space   = 3e-2
         dt_space  = 1e-3
         tht_space = 0.5
@@ -64,7 +56,7 @@ if __name__ == "__main__":
                 print(f"\n --- N = {N} ---")
                 mesh = create_unite_square_mesh(N, unstructured=False, plotMesh=False)
                 N_el_list.append(mesh.num_cells())
-                SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
+                SLT  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
                 E_c, E_q, h = SLT.ConvergenceTest(
                     t0=t0, dt=dt_space, T=T_space, tht=tht_space, l=l_space, 
                     tol=tol, maxIt=maxIt
@@ -80,12 +72,7 @@ if __name__ == "__main__":
         plot_spatial_convergence(hs, errors_space_c, errors_space_q, l_space, method=SLT.SM, save=False)
 
     elif convType == ConvType.POLYNOMIAL:
-        # ======================================================================
-        # === 2) CONVERGENCE WRT THE POLYNOMIAL DEGREE (linear time profile) ===
-        # ======================================================================
-        print("\n" + "="*69)
-        print("===== Polynomial degree convergence test (time profile: linear) =====")
-        print("="*69)
+        print_subtitle("Polynomial degree convergence test — linear time profile")
 
         # Polynomial degree convergence parameters 
         N_poly   = 8
@@ -106,7 +93,7 @@ if __name__ == "__main__":
             for l in l_list:
                 print(f"\n --- l = {l} ---")
                 parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
-                SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
+                SLT  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
                 E_c, E_q, h = SLT.ConvergenceTest(
                     t0=t0, dt=dt_poly, T=T_poly, tht=tht_poly, l=l, 
                     tol=tol, maxIt=maxIt
@@ -121,19 +108,14 @@ if __name__ == "__main__":
         plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, method=SLT.SM, save=False)
 
     elif convType == ConvType.TEMPORAL:
-        # ======================================================
-        # === 3) TIME CONVERGENCE (exponential time profile) ===
-        # ======================================================
-        print("\n" + "="*61)
-        print("===== Time convergence test (time profile: exponential) =====")
-        print("="*61)
+        print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
         N_time   = 32
         l_time   = 2
         T_time   = 2
         dt_list  = [0.5, 0.25, 0.125]
-        tht_time = 1.0
+        tht_time = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -147,7 +129,7 @@ if __name__ == "__main__":
         with timer(f"Time convergence tht={tht_time}"):
             for dt in dt_list:
                 print(f"\n --- dt = {dt:.4f} ---")
-                SLT  = SolverLdgTheta(mesh, D, alpha, C11, C12, c_ex)
+                SLT  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
                 E_c, E_q, h = SLT.ConvergenceTest(
                     t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 
                     tol=tol, maxIt=maxIt

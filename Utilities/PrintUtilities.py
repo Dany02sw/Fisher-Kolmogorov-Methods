@@ -43,3 +43,23 @@ def print_time_rates(errors_c, errors_grad, dt_list, order, time_method=TimeMeth
         rate_c    = compute_rate(errors_c,    dt_list, i)
         rate_grad = compute_rate(errors_grad, dt_list, i)
         print(f"{dt_list[i-1]:>10.4f} → {dt_list[i]:>10.4f} | {errors_c[i-1]:>12.4e} {errors_c[i]:>12.4e} {rate_c:>6.3f} ({expected:.2f}) | {errors_grad[i-1]:>12.4e} {errors_grad[i]:>12.4e} {rate_grad:>6.3f} ({expected:.2f})")
+
+# Functions to print banners in mains _________________________________________________________________________________________________________________
+def print_title(title, char="█", width=70):
+    border = char * width
+    inner = width - 2
+    padding = max(0, inner - len(title) - 2)
+    left = padding // 2
+    right = padding - left
+    print(f"\n{border}")
+    print(f"{char}{char * left} {title} {char * right}{char}")
+    print(f"{border}\n")
+
+def print_subtitle(title, char="═", width=70):
+    border = char * width
+    padding = max(0, width - len(title))
+    left = padding // 2
+    right = padding - left
+    print(f"\n{border}")
+    print(f"{' ' * left}{title}{' ' * right}")
+    print(f"{border}\n")

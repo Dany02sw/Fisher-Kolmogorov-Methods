@@ -5,6 +5,7 @@ from pathlib import Path
 
 from Utilities.FEniCSUtilities import Normalize
 from Utilities.IOUtilities import OutputManager
+from Utilities.MathUtilities import get_decimals
 
 class SolverTheta(SolverBase):
     def __init__(self, mesh, D, alpha, c_0, transform):
@@ -20,8 +21,9 @@ class SolverTheta(SolverBase):
         self.U     = Function(self.WR)
         self.U_old = Function(self.WR)
 
-    def _BuildTimeForm(self, tau, u, v, u_old):
-        dx = self.dx
+    def _BuildTimeForm(self, tau, u, v):
+        dx    = self.dx
+        u_old = split(self.U_old)[0]
         return (1.0/tau)*(self.T(u) - self.T(u_old))*v*dx
     
     def _SetSourceTerm(self, x, t, extForce, NeumannBC):
@@ -48,9 +50,10 @@ class SolverTheta(SolverBase):
         x = SpatialCoordinate(self.mesh)
 
         # Time loop parameters
-        t_val  = t0 
-        nsteps = round((T - t0)/dt)
-        t      = Constant(t0)
+        t_val    = t0 
+        nsteps   = round((T - t0)/dt)
+        t        = Constant(t0)
+        self.tht = Constant(tht)
 
         # Functional setting 
         self._BuildFunctionSpaces(l)
@@ -67,7 +70,7 @@ class SolverTheta(SolverBase):
         self._UpdateOldState()
 
         # Variational form and solver
-        self._BuildVariationalForms(dt, tht)
+        self._BuildVariationalForms(dt)
         self._BuildNonlinearSolver(tol, maxIt)
 
         # Initialize output manager
@@ -79,6 +82,7 @@ class SolverTheta(SolverBase):
         exporter.save(c_0, t_val)
 
         # Time loop
+        self.decimals = get_decimals(dt)
         for i in range(nsteps):
             # Update time step
             t_val += dt
@@ -87,11 +91,11 @@ class SolverTheta(SolverBase):
             # Solve the problem
             self.solver.solve()
 
-            # Update old solutions
-            self._UpdateOldState()
-
             # Print the iteration
             c_h = self._SolvePostprocessing(t_val)
+            
+            # Update old solutions
+            self._UpdateOldState()
 
             # Save solution
             exporter.save(c_h, t_val)
@@ -102,16 +106,17 @@ class SolverTheta(SolverBase):
 
     def ConvergenceTest(self, t0, dt, T, tht, l, tol, maxIt):
 
-        self._ValidateInput(t0, dt, T, tht, l)
+        self._ValidateInput(t0, dt, tht, T, l)
 
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
 
         # Time loop parameters
-        t_val  = t0 
-        nsteps = round((T - t0)/dt)
-        t      = Constant(t0)
+        t_val    = t0 
+        nsteps   = round((T - t0)/dt)
+        t        = Constant(t0)
+        self.tht = Constant(tht)
 
         # Data
         D         = self.D
@@ -137,7 +142,7 @@ class SolverTheta(SolverBase):
         self._UpdateOldState()
 
         # Forms ansd solver
-        self._BuildVariationalForms(dt, tht)
+        self._BuildVariationalForms(dt)
         self._BuildNonlinearSolver(tol, maxIt)
 
         # Initialize error lists
@@ -145,6 +150,7 @@ class SolverTheta(SolverBase):
         E_grad = None
 
         # Time loop
+        self.decimals = get_decimals(dt)
         for i in range(nsteps):
 
             # Update time step
@@ -154,10 +160,10 @@ class SolverTheta(SolverBase):
             # Solve the problem
             self.solver.solve()
 
-            # Update old solutions
-            self._UpdateOldState()
-
             # Print convergence iterations
             E_c, E_grad = self._ConvergenceTestPostprocessing(t_val)
+
+            # Update old solutions
+            self._UpdateOldState()
 
         return E_c, E_grad, h_avg

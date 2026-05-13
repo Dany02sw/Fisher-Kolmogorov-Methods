@@ -19,6 +19,7 @@ class Transformation(ABC):
 class Identity(Transformation):
     def __call__(self, u):   return u
     def inv(self, c):        return c
+    def invPrime(self, c):   return Constant(1.0)
 
 # Exponential transformation for PPDG
 class Exponential(Transformation):
@@ -26,7 +27,8 @@ class Exponential(Transformation):
         self.eps = Constant(eps)
 
     def __call__(self, u):   return exp(u)
-    def inv(self, c):        return ln(c)
+    def inv(self, c):        return ln(c + self.eps)
+    def invPrime(self, c):   return 1/(c + self.eps)
 
 # Entropic transformation class for SP-LDG
 class EntropicTransformation(Transformation, ABC):
@@ -42,5 +44,5 @@ class Sigmoid(EntropicTransformation):
         self.eps = Constant(eps)
 
     def __call__(self, w):      return exp(w) / (1.0 + exp(w))
-    def inv(self, c):           return ln(c) - ln(1.0 - c)
-    def invPrime(self, c):      return 1.0 / (c * (1.0 - c)) 
+    def inv(self, c):           return ln(c + self.eps) - ln(1.0 - c + self.eps)
+    def invPrime(self, c):      return 1.0 / (c * (1.0 - c) + self.eps) 

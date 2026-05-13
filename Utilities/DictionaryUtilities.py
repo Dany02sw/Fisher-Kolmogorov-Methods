@@ -9,9 +9,9 @@ ERROR_LABELS = {
 
 # Dictionary for variable labels
 VARIABLE_LABELS = {
-    SpaceMethod.LDG:   ("c", "q",     "D·∇c"),
-    SpaceMethod.SPLDG: ("c", "sigma", "-∇c"),
-    SpaceMethod.PPDG:  ("c", "c",     None)
+    SpaceMethod.LDG:   ("c_h", "q_h",     "D·∇c_ex"),
+    SpaceMethod.SPLDG: ("c_h", "sigma_h", "-∇c_ex"),
+    SpaceMethod.PPDG:  ("c_h", "c_h",     None)
 }
 
 # Dictionary for norm labels

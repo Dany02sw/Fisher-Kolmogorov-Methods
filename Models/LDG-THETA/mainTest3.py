@@ -6,12 +6,10 @@ from Meshes.Meshes import importBrainMesh2D
 from Utilities.EnumUtilities import BrainSection
 from Utilities.InitialConditions import get_initial_condition
 from Utilities.ProfilingUtilities import timer
+from Utilities.PrintUtilities import print_title, print_subtitle
 
 if __name__ == "__main__":
-    print("\n")
-    print("#"*59)
-    print(23*"#"+" LDG + THETA "+ 23*"#")
-    print("#"*59)
+    print_title("LDG + THETA")
 
     # Mesh import
     plane            = BrainSection.SAGITTAL  # Plane section to simulate on
@@ -57,9 +55,7 @@ if __name__ == "__main__":
     parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
 
     # Solve the problem 
-    print("\n" + "="*42)
-    print("====== Spreading of alpha-synuclein ======")
-    print("="*42)
-    SLT = SolverLdgTheta(mesh, D, alpha, C11, C12, c_0)
+    print_subtitle("Spreading of alpha-synuclein")
+    SLT = SolverLdgTheta(mesh, D, alpha, c_0, C11, C12)
     with timer(f"Spreading of α-synuclein on {mesh.name()} section"):
         SLT.Solve(t0=t0, dt=dt, T=T, tht=tht, l=l, tol=tol, maxIt=maxIt)

@@ -75,8 +75,11 @@ class SolverLdgBDF(SolverBDF):
         q_max = q_h.vector().max()
 
         # Print the bounds for both the variables
-        print(f"t={t_val:.6f} | c_h ∈ [{c_min:7.6f}, {c_max:7.6f}] | q_h ∈ [{q_min:7.6f}, {q_max:7.6f}]")
-        print("-"*70)
+        print(f"  t = {t_val:.{self.decimals}f}")
+        print(f"{'-'*80}")
+        print(f"  c_h  ∈ [{c_min: 7.6f}, {c_max: 7.6f}]")
+        print(f"  q_h  ∈ [{q_min: 7.6f}, {q_max: 7.6f}]")
+        print(f"{'─'*80}\n")
 
         return c_h, c_h
     
@@ -94,8 +97,12 @@ class SolverLdgBDF(SolverBDF):
         q_min = q_h.vector().min()
         q_max = q_h.vector().max()
 
-        # Print the bounds for both the variables
-        print(f"t = {t_val:.4f} | c_h ∈ [{c_min:7.6f}, {c_max:7.6f}] ||c_ex - c_h||_L2 = {E_c:10.6e} | q_h ∈ [{q_min:7.6f}, {q_max:7.6f}] ||D*grad(c_ex) - q_h||_L2 = {E_q:10.6e}")
-        print("-"*140)
+        # Print the bounds and the errors for both the variables
+        print(f"\n{'─'*80}")
+        print(f"  t = {t_val:.{self.decimals}f}")
+        print(f"{'-'*80}")
+        print(f"  c_h  ∈ [{c_min: 7.6f}, {c_max: 7.6f}]   ‖c_ex  − c_h‖_L²   = {E_c:.4e}")
+        print(f"  q_h  ∈ [{q_min: 7.6f}, {q_max: 7.6f}]   ‖D∇c_ex − q_h‖_L²  = {E_q:.4e}")
+        print(f"{'─'*80}\n")
 
         return E_c, E_q, c_h

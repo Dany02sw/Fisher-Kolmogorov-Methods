@@ -125,8 +125,8 @@ BDF_COLORS = {
 }
 
 THETA_COLORS = {
-    0.0: "tab:gold",       # explicit
-    0.5: "tab:deeppink",     # Crank-Nicolson
+    0.0: "tab:gold",         # explicit
+    0.5: "deeppink",         # Crank-Nicolson
     1.0: "cornflowerblue",   # implicit
 }
 

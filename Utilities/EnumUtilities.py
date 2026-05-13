@@ -33,3 +33,12 @@ class Transformations(Enum):
     IDENTITY    = auto()
     EXPONENTIAL = auto()
     ENTROPIC    = auto()
+
+class MeshType(Enum):
+    UNIT_SQUARE  = auto()
+    RECTANGLE    = auto()
+    BRAIN_2D     = auto()
+
+class MeshStructure(Enum):
+    STRUCTURED   = auto()
+    UNSTRUCTURED = auto()

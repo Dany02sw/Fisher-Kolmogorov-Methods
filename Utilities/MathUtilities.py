@@ -13,3 +13,10 @@ def compute_exponential_fit(errors, l_list):
     fitted   = np.exp(np.polyval(coeffs, ls))
     residual = np.max(np.abs(log_e - np.polyval(coeffs, ls)))
     return beta, fitted, residual
+
+# Function to compute the decimals of a quantity
+def get_decimals(dt):
+    s = f"{dt}".rstrip('0')
+    if '.' in s:
+        return len(s.split('.')[1])
+    return 0

@@ -1,4 +1,4 @@
-from SolverLdgBDF import SolverLdgBDF
+from SolverSpLdgBDF import SolverSpLdgBDF
 
 from dolfin import *
 
@@ -9,16 +9,17 @@ from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_co
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
 
 if __name__ == "__main__":
-    print_title("LDG + BDF")
+    print_title("SP-LDG + BDF")
 
-    convType = ConvType.TEMPORAL
+    convType = ConvType.POLYNOMIAL
 
     # Data
     alpha = Constant(1.0)
     d_ext = Constant(1e-3) if convType==ConvType.TEMPORAL else Constant(1.0) 
     D     = d_ext*Identity(2)
-    C11   = 10.0
-    C12   = 0.5
+    eps   = 0.0
+    eta_0 = 1.0
+    theta = -1.0
     t0    = 0.0
 
     # Solver parameters
@@ -45,10 +46,10 @@ if __name__ == "__main__":
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
-        errors_space_c = []
-        errors_space_q = []
-        hs             = []
-        N_el_list      = []
+        errors_space_c     = []
+        errors_space_sigma = []
+        hs                 = []
+        N_el_list          = []
 
         # Loop over the meshes + benchmark
         with timer(f"Space convergence l={l_space}"):
@@ -56,20 +57,20 @@ if __name__ == "__main__":
                 print(f"\n --- N = {N} ---")
                 mesh = create_unite_square_mesh(N, unstructured=False, plotMesh=False)
                 N_el_list.append(mesh.num_cells())
-                SLT  = SolverLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, C11=C11, C12=C12)
-                E_c, E_q, h = SLT.ConvergenceTest(
+                Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta)
+                E_c, E_sigma, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt_space, T=T_space, nu=nu_space, l=l_space, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_space_c.append(E_c)
-                errors_space_q.append(E_q)
+                errors_space_sigma.append(E_sigma)
                 hs.append(h)
 
         # Print the rates
-        print_space_rates(errors_space_c, errors_space_q, hs, N_el_list, l_space, method=SLT.SM)
+        print_space_rates(errors_space_c, errors_space_sigma, hs, N_el_list, l_space, method=Solver.SM)
 
         # Plot the rates
-        plot_spatial_convergence(hs, errors_space_c, errors_space_q, l_space, method=SLT.SM, save=False)
+        plot_spatial_convergence(hs, errors_space_c, errors_space_sigma, l_space, method=Solver.SM, save=False)
 
     elif convType == ConvType.POLYNOMIAL:
         print_subtitle("Polynomial degree convergence test — linear time profile")
@@ -82,8 +83,8 @@ if __name__ == "__main__":
         nu_poly = 4
 
         # Storage variable 
-        errors_polynomial_c = []
-        errors_polynomial_q = []
+        errors_polynomial_c     = []
+        errors_polynomial_sigma = []
 
         # Mesh
         mesh = create_unite_square_mesh(N_poly, unstructured=False, plotMesh=False)
@@ -93,25 +94,25 @@ if __name__ == "__main__":
             for l in l_list:
                 print(f"\n --- l = {l} ---")
                 parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
-                SLT  = SolverLdgBDF(mesh, D, alpha, c_ex, C11, C12)
-                E_c, E_q, h = SLT.ConvergenceTest(
+                Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta)
+                E_c, E_sigma, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt_poly, T=T_poly, nu=nu_poly, l=l, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_polynomial_c.append(E_c)
-                errors_polynomial_q.append(E_q)
+                errors_polynomial_sigma.append(E_sigma)
 
         # Print polynomial fits
-        print_polynomial_rates(errors_polynomial_c, errors_polynomial_q, l_list, method=SLT.SM)
+        print_polynomial_rates(errors_polynomial_c, errors_polynomial_sigma, l_list, method=Solver.SM)
 
         # Plot the rates for correct visualization 
-        plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_q, l_list, h, method=SLT.SM, save=False)
+        plot_polynomial_convergence(errors_polynomial_c, errors_polynomial_sigma, l_list, h, method=Solver.SM, save=False)
 
     elif convType == ConvType.TEMPORAL:
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 50
+        N_time  = 40
         l_time  = 2
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
@@ -119,8 +120,8 @@ if __name__ == "__main__":
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
-        errors_time_c = []
-        errors_time_q = []
+        errors_time_c     = []
+        errors_time_sigma = []
 
         # Mesh
         mesh = create_unite_square_mesh(N_time, unstructured=False, plotMesh=False)
@@ -129,16 +130,16 @@ if __name__ == "__main__":
         with timer(f"Time convergence ν={nu_time}"):
             for dt in dt_list:
                 print(f"\n --- dt = {dt:.4f} ---")
-                SLT  = SolverLdgBDF(mesh, D, alpha, c_ex, C11, C12)
-                E_c, E_q, h = SLT.ConvergenceTest(
+                Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta)
+                E_c, E_sigma, h = Solver.ConvergenceTest(
                     t0=t0-(nu_time-1)*dt_list[0], dt=dt, T=T_time, nu=nu_time, l=l_time, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_time_c.append(E_c)
-                errors_time_q.append(E_q)
+                errors_time_sigma.append(E_sigma)
 
         # Print the time convergence rates
-        print_time_rates(errors_time_c, errors_time_q, dt_list, nu_time, time_method=SLT.TM)
+        print_time_rates(errors_time_c, errors_time_sigma, dt_list, nu_time, time_method=Solver.TM)
 
         # Plot the rates
-        plot_time_convergence(dt_list, errors_time_c, errors_time_q, nu_time, method=SLT.TM, space_method=SLT.SM, save=False)
+        plot_time_convergence(dt_list, errors_time_c, errors_time_sigma, nu_time, method=Solver.TM, space_method=Solver.SM, save=False)

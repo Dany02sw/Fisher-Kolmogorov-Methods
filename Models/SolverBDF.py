@@ -5,6 +5,7 @@ from pathlib import Path
 
 from Utilities.FEniCSUtilities import Normalize
 from Utilities.IOUtilities import OutputManager
+from Utilities.MathUtilities import get_decimals
 
 BDF_COEFFS = {
     1: {"beta": 1.0,          "a": [1.0]                                                                          },
@@ -92,6 +93,7 @@ class SolverBDF(SolverBase):
         exporter.save(c_0, t_val)
 
         # Time loop
+        self.decimals = get_decimals(dt)
         for i in range(nsteps-nu+1):
             # Update time step
             t_val += dt
@@ -161,6 +163,7 @@ class SolverBDF(SolverBase):
         E_grad = None
 
         # Time loop
+        self.decimals = get_decimals(dt)
         for i in range(nsteps-nu+1):
 
             # Update time step
