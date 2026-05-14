@@ -1,4 +1,4 @@
-from Models.SolverBDF import SolverBDF
+from Models.SolverTheta import SolverTheta
 
 from dolfin import *
 import ufl
@@ -7,14 +7,14 @@ from Utilities.EnumUtilities import SpaceMethod, TimeMethod
 from Utilities.TransformUtilities import Sigmoid
 from Utilities.SpLdgUtilities import div_LDG, grad_LDG, inner_LDG
 
-class SolverSpLdgBDF(SolverBDF):
+class SolverSpLdgTheta(SolverTheta):
     def __init__(self, mesh, D, alpha, c_0, eps, eta_0, theta, smoothing=0.0):
         super().__init__(mesh, D, alpha, c_0, transform=Sigmoid(eps=smoothing))
         self.eps     = eps     if isinstance(eps,     ufl.core.expr.Expr) else Constant(eps)
         self.eta_0   = eta_0   if isinstance(eta_0,   ufl.core.expr.Expr) else Constant(eta_0)
         self.theta   = theta   if isinstance(theta,   ufl.core.expr.Expr) else Constant(theta)
         self.SM      = SpaceMethod.SPLDG
-        self.TM      = TimeMethod.BDF
+        self.TM      = TimeMethod.THETA
 
     def _BuildFunctionSpaces(self, l=1):
         super()._BuildFunctionSpaces(l)
@@ -29,6 +29,7 @@ class SolverSpLdgBDF(SolverBDF):
         # Data
         D     = self.D
         alpha = self.alpha
+        tht   = self.tht
 
         # Geometry
         n         = FacetNormal(self.mesh)
@@ -41,13 +42,16 @@ class SolverSpLdgBDF(SolverBDF):
         gamma     = (dot(n('+'), D('+')*n('+'))) / param_den
 
         # Extract functions
-        (w, sigma, z, r)     = split(self.U)
-        Phi                  = TestFunction(self.WR)
-        (psi, phi, eta, chi) = split(Phi)
+        (w, sigma, z, r)                 = split(self.U)
+        Phi                              = TestFunction(self.WR)
+        (psi, phi, eta, chi)             = split(Phi)
+        (w_old, sigma_old, z_old, r_old) = split(self.U_old)
 
         # Force term and Neumann BC
-        Force = self.Force
-        gN    = self.gN
+        Force     = self.Force
+        Force_old = self.Force_old
+        gN        = self.gN
+        gN_old    = self.gN_old
 
         # Measures
         dx = self.dx
@@ -58,17 +62,17 @@ class SolverSpLdgBDF(SolverBDF):
         F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
         F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx  - inner(D*z, phi)*dx
         F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
-        F4 = self.eps*inner_LDG(w, psi, n, gamma, h_avg, D, dx, dS, alpha) \
-            + div_LDG(r, psi, n, gamma, dx, dS) + inner(gN, n)*psi*ds \
-            + inner((1.0/h_avg)*jump(w, n), jump(psi, n))*dS \
-            - inner(alpha*self.T(w)*(1.0 - self.T(w)), psi)*dx \
-            - inner(Force, psi)*dx 
+        F4 = self.eps*inner_LDG(tht*w + (1.0 - tht)*w_old, psi, n, gamma, h_avg, D, dx, dS, alpha) \
+            + div_LDG(tht*r + (1.0 - tht)*r_old, psi, n, gamma, dx, dS) + tht*inner(gN, n)*psi*ds + (1.0 - tht)*inner(gN_old, n)*psi*ds\
+            + tht*inner((1.0/h_avg)*jump(w, n), jump(psi, n))*dS + (1.0 - tht)*inner((1.0/h_avg)*jump(w_old, n), jump(psi, n))*dS \
+            - inner( alpha*( tht*self.T(w) + (1.0 - tht)*self.T(w_old) )*(1.0 - (tht*self.T(w) + (1.0 - tht)*self.T(w_old))), psi )*dx \
+            - tht*inner(Force, psi)*dx - (1.0 - tht)*inner(Force_old, psi)*dx 
         
         return F1 + F2 + F3 + F4, w, psi
     
     def _SetInitialCondition(self, c_0):
-        assign(self.U.sub(0), project(self.T.s1(c_0),           self.W))
-        assign(self.U.sub(1), project(-grad(c_0),               self.R))
+        assign(self.U.sub(0), project(self.T.s1(c_0),            self.W))
+        assign(self.U.sub(1), project(-grad(c_0),                self.R))
         assign(self.U.sub(2), project(-self.T.s2(c_0)*grad(c_0), self.R))
         assign(self.U.sub(3), project(dot(self.D, -grad(c_0)),   self.R))
 
@@ -90,7 +94,7 @@ class SolverSpLdgBDF(SolverBDF):
         print(f"  sigma_h  ∈ [{sigma_min: 7.6f}, {sigma_max: 7.6f}]")
         print(f"{'─'*80}\n")
 
-        return c_h, w_h
+        return c_h
     
     def _ConvergenceTestPostprocessing(self, t_val):
         # Extract solution
@@ -115,4 +119,4 @@ class SolverSpLdgBDF(SolverBDF):
         print(f"  {'sigma_h':<8} ∈ [{sigma_min: 7.6f}, {sigma_max: 7.6f}]      {'‖∇c_ex + sigma_h‖_L²':<20} = {E_sigma:.4e}")
         print(f"{'─'*80}\n")
 
-        return E_c, E_sigma, w_h
+        return E_c, E_sigma

@@ -9,7 +9,7 @@ from Utilities.ProfilingUtilities import timer
 from Utilities.PrintUtilities import print_title, print_subtitle
 
 if __name__ == "__main__":
-    print_title("LDG + BDF")
+    print_title("SP-LDG + BDFν")
 
     # Mesh import
     plane            = BrainSection.SAGITTAL  # Plane section to simulate on
@@ -46,9 +46,10 @@ if __name__ == "__main__":
     nu  = 6
 
     # Model parameters
-    eps   = 0.0
-    eta_0 = 2.0 
-    theta = 0.5 
+    eps       = 0.0
+    eta_0     = 2.0 
+    theta     = 0.5 
+    smoothing = 1e-9
 
     # Solver parameters
     tol = 1e-6
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
 
     # Solve the problem 
-    print_subtitle("Spreading of α-synuclein")
-    Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_0, eps=eps, eta_0=eta_0, theta=theta)
+    print_subtitle(f"Spreading of α-synuclein on {mesh.name()} section")
+    Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_0, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
     with timer(f"Spreading of α-synuclein on {mesh.name()} section"):
         Solver.Solve(t0=t0, dt=dt, T=T, nu=nu, l=l, tol=tol, maxIt=maxIt)

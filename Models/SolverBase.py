@@ -25,13 +25,14 @@ class SolverBase:
     def _BuildFunctions(self):
         raise NotImplementedError
     
-    def _BuildSpatialForm(self, tau):
+    def _BuildSpatialForm(self):
         raise NotImplementedError
 
     def _BuildTimeForm(self):
         raise NotImplementedError
     
     def _BuildVariationalForms(self, tau):
+        tau           = Constant(tau)
         F_space, u, v = self._BuildSpatialForm()
         F_time        = self._BuildTimeForm(tau, u, v)
         self.Form     = F_space + F_time

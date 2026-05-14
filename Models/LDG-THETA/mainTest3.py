@@ -9,7 +9,7 @@ from Utilities.ProfilingUtilities import timer
 from Utilities.PrintUtilities import print_title, print_subtitle
 
 if __name__ == "__main__":
-    print_title("LDG + THETA")
+    print_title("LDG + θ-METHOD")
 
     # Mesh import
     plane            = BrainSection.SAGITTAL  # Plane section to simulate on
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
 
     # Solve the problem 
-    print_subtitle("Spreading of α-synuclein")
+    print_subtitle(f"Spreading of α-synuclein on {mesh.name()} section")
     Solver = SolverLdgTheta(mesh, D, alpha, c_0, C11, C12)
     with timer(f"Spreading of α-synuclein on {mesh.name()} section"):
         Solver.Solve(t0=t0, dt=dt, T=T, tht=tht, l=l, tol=tol, maxIt=maxIt)

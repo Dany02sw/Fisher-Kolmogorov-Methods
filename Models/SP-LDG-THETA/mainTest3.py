@@ -1,4 +1,4 @@
-from SolverLdgBDF import SolverLdgBDF
+from SolverSpLdgTheta import SolverSpLdgTheta
 
 from dolfin import *
 
@@ -9,7 +9,7 @@ from Utilities.ProfilingUtilities import timer
 from Utilities.PrintUtilities import print_title, print_subtitle
 
 if __name__ == "__main__":
-    print_title("LDG + BDFν")
+    print_title("SP-LDG + θ-METHOD")
 
     # Mesh import
     plane            = BrainSection.SAGITTAL  # Plane section to simulate on
@@ -43,14 +43,16 @@ if __name__ == "__main__":
     t0  = 0.0
     T   = 50.0
     dt  = 2.5e-1
-    nu  = 6
+    tht = 0.5
 
     # Model parameters
-    C11 = 10.0
-    C12 = 0.5
+    eps       = 0.0
+    eta_0     = 2.0 
+    theta     = 0.5
+    smoothing = 1e-9
 
     # Solver parameters
-    tol = 1e-6
+    tol   = 1e-6
     maxIt = 500
 
     # Set the quadrature degree
@@ -58,6 +60,6 @@ if __name__ == "__main__":
 
     # Solve the problem 
     print_subtitle(f"Spreading of α-synuclein on {mesh.name()} section")
-    Solver = SolverLdgBDF(mesh, D, alpha, c_0, C11, C12)
+    Solver = SolverSpLdgTheta(mesh=mesh, D=D, alpha=alpha, c_0=c_0, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
     with timer(f"Spreading of α-synuclein on {mesh.name()} section"):
-        Solver.Solve(t0=t0, dt=dt, T=T, nu=nu, l=l, tol=tol, maxIt=maxIt)
+        Solver.Solve(t0=t0, dt=dt, T=T, tht=tht, l=l, tol=tol, maxIt=maxIt)

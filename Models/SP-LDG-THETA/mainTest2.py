@@ -1,4 +1,4 @@
-from SolverSpLdgBDF import SolverSpLdgBDF
+from SolverSpLdgTheta import SolverSpLdgTheta
 
 from dolfin import *
 from ufl import tanh
@@ -11,7 +11,7 @@ from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, 
 from Utilities.MathUtilities import get_decimals
 
 if __name__ == "__main__":
-    print_title("SP-LDG + BDFν")
+    print_title("SP-LDG + θ-METHOD")
 
     convType = ConvType.SPATIAL
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     smoothing = 1e-12
 
     # Solver parameters
-    tol = 1e-8
+    tol   = 1e-8
     maxIt = 300
 
     # Exact solution
@@ -43,12 +43,12 @@ if __name__ == "__main__":
         print_subtitle("Space convergence test - waves")
 
         # Space convergence parameters 
-        N_ref    = [3, 4, 5]
-        N_list   = [2**n for n in N_ref]
-        l_space  = 2 
-        T_space  = 3e-3
-        dt_space = 1e-4
-        nu_space = 3
+        N_ref     = [3, 4, 5]
+        N_list    = [2**n for n in N_ref]
+        l_space   = 2 
+        T_space   = 3e-3
+        dt_space  = 1e-4
+        tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
@@ -63,9 +63,9 @@ if __name__ == "__main__":
                 print(f"\n --- N = {N} ---")
                 mesh = create_rectangle_mesh(N, P1, P2, unstructured=False, plotMesh=False)
                 N_el_list.append(mesh.num_cells())
-                Solver  = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
+                Solver  = SolverSpLdgTheta(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
-                    t0=t0, dt=dt_space, T=T_space, nu=nu_space, l=l_space, 
+                    t0=t0, dt=dt_space, T=T_space, tht=tht_space, l=l_space, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_space_c.append(E_c)
@@ -82,11 +82,11 @@ if __name__ == "__main__":
         print_subtitle("Polynomial degree convergence test — waves")
 
         # Polynomial degree convergence parameters 
-        N_poly  = 8
-        l_list  = [1, 2]
-        T_poly  = 10.0
-        dt_poly = 2.5e-2
-        nu_poly = 4
+        N_poly   = 8
+        l_list   = [1, 2]
+        T_poly   = 10.0
+        dt_poly  = 2.5e-2
+        tht_poly = 0.5
 
         # Storage variable 
         errors_polynomial_c     = []
@@ -100,9 +100,9 @@ if __name__ == "__main__":
             for l in l_list:
                 print(f"\n --- l = {l} ---")
                 parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
-                Solver  = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
+                Solver  = SolverSpLdgTheta(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
-                    t0=t0, dt=dt_poly, T=T_poly, nu=nu_poly, l=l, 
+                    t0=t0, dt=dt_poly, T=T_poly, tht=tht_poly, l=l, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_polynomial_c.append(E_c)
@@ -118,11 +118,11 @@ if __name__ == "__main__":
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 32
-        l_time  = 2
-        T_time  = 2
-        dt_list = [0.5, 0.25, 0.125]
-        nu_time = 6
+        N_time   = 32
+        l_time   = 2
+        T_time   = 2
+        dt_list  = [0.5, 0.25, 0.125]
+        tht_time = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -133,19 +133,19 @@ if __name__ == "__main__":
         mesh = create_rectangle_mesh(N_time, P1, P2, unstructured=False, plotMesh=False)
 
         # Loop over dt_list + benchmark
-        with timer(f"Time convergence ν={nu_time}"):
+        with timer(f"Time convergence θ={tht_time}"):
             for dt in dt_list:
                 print(f"\n --- τ = {dt:.{get_decimals(dt)}f} ---")
-                Solver  = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
+                Solver  = SolverSpLdgTheta(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
-                    t0=t0, dt=t0-(nu_time-1)*dt, T=T_time, nu=nu_time, l=l_time, 
+                    t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_time_c.append(E_c)
                 errors_time_sigma.append(E_sigma)
 
         # Print the time convergence rates
-        print_time_rates(errors_time_c, errors_time_sigma, dt_list, nu_time, time_method=Solver.TM)
+        print_time_rates(errors_time_c, errors_time_sigma, dt_list, tht_time, time_method=Solver.TM)
 
         # Plot the rates
-        plot_time_convergence(dt_list, errors_time_c, errors_time_sigma, nu_time, method=Solver.TM, space_method=Solver.SM, save=False)
+        plot_time_convergence(dt_list, errors_time_c, errors_time_sigma, tht_time, method=Solver.TM, space_method=Solver.SM, save=False)

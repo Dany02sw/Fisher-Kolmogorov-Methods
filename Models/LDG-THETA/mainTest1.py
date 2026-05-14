@@ -7,11 +7,12 @@ from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities import ConvType
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
+from Utilities.MathUtilities import get_decimals
 
 if __name__ == "__main__":
-    print_title("LDG + THETA")
+    print_title("LDG + θ-METHOD")
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.TEMPORAL
 
     # Data
     alpha = Constant(1.0)
@@ -128,9 +129,9 @@ if __name__ == "__main__":
         mesh = create_unite_square_mesh(N_time, unstructured=False, plotMesh=False)
 
         # Loop over dt_list + benchmark
-        with timer(f"Time convergence tht={tht_time}"):
+        with timer(f"Time convergence θ={tht_time}"):
             for dt in dt_list:
-                print(f"\n --- dt = {dt:.4f} ---")
+                print(f"\n --- τ = {dt:.{get_decimals(dt)}f} ---")
                 Solver  = SolverLdgTheta(mesh, D, alpha, c_ex, C11, C12)
                 E_c, E_q, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt, T=T_time, tht=tht_time, l=l_time, 

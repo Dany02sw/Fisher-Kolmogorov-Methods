@@ -7,9 +7,10 @@ from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities import ConvType
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
+from Utilities.MathUtilities import get_decimals
 
 if __name__ == "__main__":
-    print_title("SP-LDG + BDF")
+    print_title("SP-LDG + BDFν")
 
     convType = ConvType.TEMPORAL
 
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     # Exact solution
     c_space = lambda x: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)
     if convType == ConvType.TEMPORAL:
-        c_ex = lambda x, t: c_space(x)*exp(-t)
+        c_ex = lambda x, t: c_space(x)*(1.0/(1.0 + exp(t)))
     else:
         c_ex = lambda x, t: c_space(x)*(1.0 - t)
 
@@ -114,11 +115,11 @@ if __name__ == "__main__":
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 32
-        l_time  = 1
+        N_time  = 45
+        l_time  = 2
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 1
+        nu_time = 5
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -131,10 +132,10 @@ if __name__ == "__main__":
         # Loop over dt_list + benchmark
         with timer(f"Time convergence ν={nu_time}"):
             for dt in dt_list:
-                print(f"\n --- dt = {dt:.4f} ---")
+                print(f"\n --- τ = {dt:.{get_decimals(dt)}f} ---")
                 Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
-                    t0=t0-(nu_time-1)*dt_list[0], dt=dt, T=T_time, nu=nu_time, l=l_time, 
+                    t0=t0-(nu_time-1)*dt, dt=dt, T=T_time, nu=nu_time, l=l_time, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_time_c.append(E_c)

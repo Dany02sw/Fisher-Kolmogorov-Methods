@@ -141,7 +141,7 @@ def plot_time_convergence(dt_list, err_c, err_grad, order, method=TimeMethod.BDF
     """
     label_c, label_grad = ERROR_LABELS[space_method]
 
-    dt_arr = np.array(dt_list, dtype=float)
+    dt_arr = np.array(dt_list,  dtype=float)
     Ec     = np.array(err_c,    dtype=float)
     Egrad  = np.array(err_grad, dtype=float)
 
