@@ -138,7 +138,7 @@ if __name__ == "__main__":
                 print(f"\n --- τ = {dt:.{get_decimals(dt)}f} ---")
                 Solver  = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
-                    t0=t0, dt=t0-(nu_time-1)*dt, T=T_time, nu=nu_time, l=l_time, 
+                    t0=t0, dt=dt, T=T_time, nu=nu_time, l=l_time, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_time_c.append(E_c)

@@ -3,7 +3,7 @@ from Models.SolverBDF import SolverBDF
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities import SpaceMethod, TimeMethod
+from Utilities.EnumUtilities import SpaceMethod
 from Utilities.TransformUtilities import Sigmoid
 from Utilities.SpLdgUtilities import div_LDG, grad_LDG, inner_LDG
 
@@ -14,7 +14,6 @@ class SolverSpLdgBDF(SolverBDF):
         self.eta_0   = eta_0   if isinstance(eta_0,   ufl.core.expr.Expr) else Constant(eta_0)
         self.theta   = theta   if isinstance(theta,   ufl.core.expr.Expr) else Constant(theta)
         self.SM      = SpaceMethod.SPLDG
-        self.TM      = TimeMethod.BDF
 
     def _BuildFunctionSpaces(self, l=1):
         super()._BuildFunctionSpaces(l)
@@ -111,7 +110,7 @@ class SolverSpLdgBDF(SolverBDF):
         print(f"\n{'─'*80}")
         print(f"  t = {t_val:.{self.decimals}f}")
         print(f"{'-'*80}")
-        print(f"  {'c_h':<8} ∈ [{c_min: 7.6f}, {c_max: 7.6f}]      {'‖c_ex  − c_h‖_L²':<20} = {E_c:.4e}")
+        print(f"  {'c_h':<8} ∈ [{c_min: 7.6f}, {c_max: 7.6f}]      {'‖c_ex  − u(w_h)‖_L²':<20} = {E_c:.4e}")
         print(f"  {'sigma_h':<8} ∈ [{sigma_min: 7.6f}, {sigma_max: 7.6f}]      {'‖∇c_ex + sigma_h‖_L²':<20} = {E_sigma:.4e}")
         print(f"{'─'*80}\n")
 

@@ -12,7 +12,7 @@ from Utilities.MathUtilities import get_decimals
 if __name__ == "__main__":
     print_title("LDG + θ-METHOD")
 
-    convType = ConvType.TEMPORAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)

@@ -3,7 +3,7 @@ from Models.SolverTheta import SolverTheta
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities import SpaceMethod, TimeMethod
+from Utilities.EnumUtilities import SpaceMethod
 from Utilities.TransformUtilities import Identity
 
 class SolverLdgTheta(SolverTheta):
@@ -12,7 +12,6 @@ class SolverLdgTheta(SolverTheta):
         self.C11   = C11   if isinstance(C11,   ufl.core.expr.Expr) else Constant(C11)
         self.C12   = C12   if isinstance(C12,   ufl.core.expr.Expr) else Constant(C12)
         self.SM    = SpaceMethod.LDG
-        self.TM    = TimeMethod.THETA
 
     def _BuildFunctionSpaces(self, l=1):
         super()._BuildFunctionSpaces(l)

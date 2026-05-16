@@ -114,7 +114,7 @@ if __name__ == "__main__":
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 50
+        N_time  = 64
         l_time  = 2
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
@@ -134,7 +134,7 @@ if __name__ == "__main__":
                 print(f"\n --- τ = {dt:.{get_decimals(dt)}f} ---")
                 Solver  = SolverLdgBDF(mesh, D, alpha, c_ex, C11, C12)
                 E_c, E_q, h = Solver.ConvergenceTest(
-                    t0=t0-(nu_time-1)*dt_list[0], dt=dt, T=T_time, nu=nu_time, l=l_time, 
+                    t0=t0, dt=dt, T=T_time, nu=nu_time, l=l_time, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_time_c.append(E_c)

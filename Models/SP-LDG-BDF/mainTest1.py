@@ -115,11 +115,11 @@ if __name__ == "__main__":
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 45
+        N_time  = 32
         l_time  = 2
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 5
+        nu_time = 3
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
                 print(f"\n --- τ = {dt:.{get_decimals(dt)}f} ---")
                 Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
-                    t0=t0-(nu_time-1)*dt, dt=dt, T=T_time, nu=nu_time, l=l_time, 
+                    t0=t0, dt=dt, T=T_time, nu=nu_time, l=l_time, 
                     tol=tol, maxIt=maxIt
                 )
                 errors_time_c.append(E_c)

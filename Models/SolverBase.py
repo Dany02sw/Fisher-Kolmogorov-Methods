@@ -32,7 +32,7 @@ class SolverBase:
         raise NotImplementedError
     
     def _BuildVariationalForms(self, tau):
-        tau           = Constant(tau)
+        self.tau      = Constant(tau)
         F_space, u, v = self._BuildSpatialForm()
         F_time        = self._BuildTimeForm(tau, u, v)
         self.Form     = F_space + F_time

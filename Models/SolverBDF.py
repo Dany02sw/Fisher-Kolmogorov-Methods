@@ -4,6 +4,7 @@ from dolfin import *
 from pathlib import Path
 
 from Utilities.FEniCSUtilities import Normalize
+from Utilities.EnumUtilities import TimeMethod
 from Utilities.IOUtilities import OutputManager
 from Utilities.MathUtilities import get_decimals
 
@@ -20,6 +21,7 @@ BDF_COEFFS = {
 class SolverBDF(SolverBase):
     def __init__(self, mesh, D, alpha, c_0, transform):
         super().__init__(mesh, D, alpha, c_0, transform)
+        self.TM      = TimeMethod.BDF
         self.W = None
         
     def _BuildFunctions(self):
@@ -123,9 +125,9 @@ class SolverBDF(SolverBase):
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
 
         # Time loop parameters
-        t_val   = t0 
-        nsteps  = round((T - t0)/dt)
-        t       = Constant(t0)
+        t_val   = t0 - (nu - 1)*dt 
+        nsteps  = round((T - t_val)/dt)
+        t       = Constant(t_val)
         self.nu = nu
 
         # Data

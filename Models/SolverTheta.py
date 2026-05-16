@@ -4,12 +4,14 @@ from dolfin import *
 from pathlib import Path
 
 from Utilities.FEniCSUtilities import Normalize
+from Utilities.EnumUtilities import TimeMethod
 from Utilities.IOUtilities import OutputManager
 from Utilities.MathUtilities import get_decimals
 
 class SolverTheta(SolverBase):
     def __init__(self, mesh, D, alpha, c_0, transform):
         super().__init__(mesh, D, alpha, c_0, transform)
+        self.TM        = TimeMethod.THETA
         self.W         = None
         self.R         = None
         self.Force     = None
@@ -31,7 +33,7 @@ class SolverTheta(SolverBase):
         self.Force_old = Function(self.W)
         self.gN_old    = Function(self.R)
     
-    def _UpdateOldState(self): # <---- OVERRIDE INSIDE PPG, WHICH DOES NOT HAVE AN R SPACE
+    def _UpdateOldState(self):
         self.U_old.assign(self.U)
         self.Force_old.assign(project(self.Force, self.W))
         self.gN_old.assign(project(self.gN, self.R))
@@ -43,7 +45,6 @@ class SolverTheta(SolverBase):
 
 
     def Solve(self, t0, dt, T, tht, l, tol, maxIt, extForce=None, NeumannBC=None):
-  
         self._ValidateInput(t0, dt, tht, T, l)
         
         # Mesh data
@@ -105,7 +106,6 @@ class SolverTheta(SolverBase):
 
 
     def ConvergenceTest(self, t0, dt, T, tht, l, tol, maxIt):
-
         self._ValidateInput(t0, dt, tht, T, l)
 
         # Mesh data

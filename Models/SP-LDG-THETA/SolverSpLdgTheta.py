@@ -3,7 +3,7 @@ from Models.SolverTheta import SolverTheta
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities import SpaceMethod, TimeMethod
+from Utilities.EnumUtilities import SpaceMethod
 from Utilities.TransformUtilities import Sigmoid
 from Utilities.SpLdgUtilities import div_LDG, grad_LDG, inner_LDG
 
@@ -14,7 +14,6 @@ class SolverSpLdgTheta(SolverTheta):
         self.eta_0   = eta_0   if isinstance(eta_0,   ufl.core.expr.Expr) else Constant(eta_0)
         self.theta   = theta   if isinstance(theta,   ufl.core.expr.Expr) else Constant(theta)
         self.SM      = SpaceMethod.SPLDG
-        self.TM      = TimeMethod.THETA
 
     def _BuildFunctionSpaces(self, l=1):
         super()._BuildFunctionSpaces(l)
