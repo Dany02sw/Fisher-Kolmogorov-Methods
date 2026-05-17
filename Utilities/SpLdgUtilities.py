@@ -21,10 +21,7 @@ def inner_LDG(w, psi, n, gamma, h_avg, D, dx, dS, alpha, sym=True):
 
     else:
         # Non symmetric
-        gradgrad_term = inner(D*grad(w), grad(psi))*dx \
-                     - inner(jump(psi,n), wavg(1-gamma,D*grad(w)))*dS \
-                     + inner(jump(w,n), wavg(1-gamma, dot(D, grad(psi))))*dS \
-                     - wavg(1-gamma, psi)*wavg(1-gamma, w)*dS
+        gradgrad_term = grad_LDG(w, dot(D, grad(psi)), n, gamma, dx, dS)
 
     # Third term
     j_h = inner((1.0/h_avg)*jump(w,n), jump(psi,n))*dS 

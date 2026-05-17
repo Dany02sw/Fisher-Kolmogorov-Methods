@@ -76,6 +76,12 @@ class SolverBase:
     
     def _PrintSolverInfo(self):
         raise NotImplementedError
+
+    def _PrintTimeInfo(self):
+        raise NotImplementedError
+
+    def _PrintSpaceInfo(self):
+        raise NotImplementedError
     
     def _SolvePostprocessing(self, t_val):
         raise NotImplementedError

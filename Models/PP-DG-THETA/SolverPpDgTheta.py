@@ -108,7 +108,7 @@ class SolverPpDgTheta(SolverTheta):
 
         # Print the bounds and the errors for both the variables
         print(f"\n{'─'*80}")
-        print(f"  t = {round(t_val, self.decimals):.{self.decimals}f}")
+        print(f"  t = {t_val:.{self.decimals}f}")
         print(f"{'-'*80}")
         print(f"  c_h  ∈ [{c_min: 7.6f}, {c_max: 7.6f}]   ‖c_ex  − c_h‖_L²   = {E_L2:.4e}")
         print(f"  {'':30}  ‖c_ex  − c_h‖_DG   = {E_DG:.4e}")

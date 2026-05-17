@@ -2,9 +2,9 @@ from SolverSpLdgBDF import SolverSpLdgBDF
 
 from dolfin import *
 
-from Meshes.Meshes import create_unite_square_mesh
+from Meshes.Meshes import mesh_factory
 from Utilities.ProfilingUtilities import timer
-from Utilities.EnumUtilities import ConvType
+from Utilities.EnumUtilities import ConvType, MeshType, MeshStructure
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
 from Utilities.MathUtilities import get_decimals
@@ -32,7 +32,8 @@ if __name__ == "__main__":
     # Exact solution
     c_space = lambda x: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)
     if convType == ConvType.TEMPORAL:
-        c_ex = lambda x, t: c_space(x)*(1.0/(1.0 + exp(t)))
+        from ufl import tanh
+        c_ex = lambda x, t: c_space(x)*(0.5*(1.0 + tanh(1.0 - t)))
     else:
         c_ex = lambda x, t: c_space(x)*(1.0 - t)
 
@@ -58,7 +59,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh = create_unite_square_mesh(N, unstructured=False, plotMesh=False)
+                mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N, structure=MeshStructure.STRUCTURED)
                 N_el_list.append(mesh.num_cells())
                 Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
@@ -90,7 +91,7 @@ if __name__ == "__main__":
         errors_polynomial_sigma = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_poly, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_poly, structure=MeshStructure.STRUCTURED)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):
@@ -116,10 +117,10 @@ if __name__ == "__main__":
 
         # Time convergence parameters 
         N_time  = 32
-        l_time  = 2
+        l_time  = 1
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 3
+        nu_time = 2
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -127,7 +128,7 @@ if __name__ == "__main__":
         errors_time_sigma = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_time, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_time, structure=MeshStructure.STRUCTURED)
 
         # Loop over dt_list + benchmark
         with timer(f"Time convergence ν={nu_time}"):
@@ -142,7 +143,7 @@ if __name__ == "__main__":
                 errors_time_sigma.append(E_sigma)
 
         # Print the time convergence rates
-        print_time_rates(errors_time_c, errors_time_sigma, dt_list, nu_time, time_method=Solver.TM)
+        print_time_rates(errors_time_c, errors_time_sigma, dt_list, nu_time, time_method=Solver.TM, space_method=Solver.SM)
 
         # Plot the rates
         plot_time_convergence(dt_list, errors_time_c, errors_time_sigma, nu_time, method=Solver.TM, space_method=Solver.SM, save=False)

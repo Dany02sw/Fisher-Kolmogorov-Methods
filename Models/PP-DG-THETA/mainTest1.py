@@ -2,9 +2,9 @@ from SolverPpDgTheta import SolverPpDgTheta
 
 from dolfin import *
 
-from Meshes.Meshes import create_unite_square_mesh
+from Meshes.Meshes import mesh_factory
 from Utilities.ProfilingUtilities import timer
-from Utilities.EnumUtilities import ConvType
+from Utilities.EnumUtilities import ConvType, MeshType, MeshStructure
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
 from Utilities.MathUtilities import get_decimals
@@ -12,7 +12,7 @@ from Utilities.MathUtilities import get_decimals
 if __name__ == "__main__":
     print_title("PP-DG + θ-METHOD")
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.TEMPORAL
 
     # Data
     alpha = Constant(1.0)
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # Model parameters
     eps   = 0.0
-    eta_0 = 1.0
+    eta_0 = 5.0
 
     # Solver parameters
     tol   = 1e-12
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref     = [2, 3, 4]
         N_list    = [2**n for n in N_ref]
-        l_space   = 3 
+        l_space   = 1 
         T_space   = 3e-2
         dt_space  = 1e-3
         tht_space = 0.5
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh = create_unite_square_mesh(N, unstructured=False, plotMesh=False)
+                mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N, structure=MeshStructure.STRUCTURED)
                 N_el_list.append(mesh.num_cells())
                 Solver = SolverPpDgTheta(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0)
                 E_L2, E_DG, h = Solver.ConvergenceTest(
@@ -89,7 +89,7 @@ if __name__ == "__main__":
         errors_polynomial_DG = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_poly, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_poly, structure=MeshStructure.STRUCTURED)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         errors_time_DG = []
 
         # Mesh
-        mesh = create_unite_square_mesh(N_time, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_time, structure=MeshStructure.STRUCTURED)
 
         # Loop over dt_list + benchmark
         with timer(f"Time convergence θ={tht_time}"):
@@ -141,7 +141,7 @@ if __name__ == "__main__":
                 errors_time_DG.append(E_DG)
 
         # Print the time convergence rates
-        print_time_rates(errors_time_L2, errors_time_DG, dt_list, tht_time, time_method=Solver.TM)
+        print_time_rates(errors_time_L2, errors_time_DG, dt_list, tht_time, time_method=Solver.TM, space_method=Solver.SM)
 
         # Plot the rates
         plot_time_convergence(dt_list, errors_time_L2, errors_time_DG, tht_time, method=Solver.TM, space_method=Solver.SM, save=False)

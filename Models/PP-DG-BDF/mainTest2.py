@@ -3,9 +3,9 @@ from SolverPpDgBDF import SolverPpDgBDF
 from dolfin import *
 from ufl import tanh
 
-from Meshes.Meshes import create_rectangle_mesh
+from Meshes.Meshes import mesh_factory
 from Utilities.ProfilingUtilities import timer
-from Utilities.EnumUtilities import ConvType
+from Utilities.EnumUtilities import ConvType, MeshType, MeshStructure
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
 from Utilities.MathUtilities import get_decimals
@@ -13,7 +13,7 @@ from Utilities.MathUtilities import get_decimals
 if __name__ == "__main__":
     print_title("PP-DG + BDFν")
 
-    convType = ConvType.POLYNOMIAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         l_space  = 2 
         T_space  = 3e-1
         dt_space = 1e-2
-        nu_space = 3
+        nu_space = 4
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh = create_rectangle_mesh(N, P1, P2, unstructured=False, plotMesh=False)
+                mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
                 N_el_list.append(mesh.num_cells())
                 Solver  = SolverPpDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, smoothing=smoothing)
                 E_L2, E_DG, h = Solver.ConvergenceTest(
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         errors_polynomial_DG = []
 
         # Mesh
-        mesh = create_rectangle_mesh(N_poly, P1, P2, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_poly, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):
@@ -131,7 +131,7 @@ if __name__ == "__main__":
         errors_time_DG = []
 
         # Mesh
-        mesh = create_rectangle_mesh(N_time, P1, P2, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_time, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
 
         # Loop over dt_list + benchmark
         with timer(f"Time convergence ν={nu_time}"):
@@ -146,7 +146,7 @@ if __name__ == "__main__":
                 errors_time_DG.append(E_DG)
 
         # Print the time convergence rates
-        print_time_rates(errors_time_L2, errors_time_DG, dt_list, nu_time, time_method=Solver.TM)
+        print_time_rates(errors_time_L2, errors_time_DG, dt_list, nu_time, time_method=Solver.TM, space_method=Solver.SM)
 
         # Plot the rates
         plot_time_convergence(dt_list, errors_time_L2, errors_time_DG, nu_time, method=Solver.TM, space_method=Solver.SM, save=False)

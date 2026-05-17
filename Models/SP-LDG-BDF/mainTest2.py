@@ -3,9 +3,9 @@ from SolverSpLdgBDF import SolverSpLdgBDF
 from dolfin import *
 from ufl import tanh
 
-from Meshes.Meshes import create_rectangle_mesh
+from Meshes.Meshes import mesh_factory
 from Utilities.ProfilingUtilities import timer
-from Utilities.EnumUtilities import ConvType
+from Utilities.EnumUtilities import ConvType, MeshType, MeshStructure
 from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
 from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
 from Utilities.MathUtilities import get_decimals
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh = create_rectangle_mesh(N, P1, P2, unstructured=False, plotMesh=False)
+                mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
                 N_el_list.append(mesh.num_cells())
                 Solver  = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         errors_polynomial_sigma = []
 
         # Mesh
-        mesh = create_rectangle_mesh(N_poly, P1, P2, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_poly, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         errors_time_sigma = []
 
         # Mesh
-        mesh = create_rectangle_mesh(N_time, P1, P2, unstructured=False, plotMesh=False)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_time, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
 
         # Loop over dt_list + benchmark
         with timer(f"Time convergence ν={nu_time}"):
@@ -145,7 +145,7 @@ if __name__ == "__main__":
                 errors_time_sigma.append(E_sigma)
 
         # Print the time convergence rates
-        print_time_rates(errors_time_c, errors_time_sigma, dt_list, nu_time, time_method=Solver.TM)
+        print_time_rates(errors_time_c, errors_time_sigma, dt_list, nu_time, time_method=Solver.TM, space_method=Solver.SM)
 
         # Plot the rates
         plot_time_convergence(dt_list, errors_time_c, errors_time_sigma, nu_time, method=Solver.TM, space_method=Solver.SM, save=False)
