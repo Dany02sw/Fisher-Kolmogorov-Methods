@@ -1,5 +1,4 @@
 import numpy as np
-from math import floor, log10
 
 # Function to compute rates
 def compute_rate(errors, refinements, i):

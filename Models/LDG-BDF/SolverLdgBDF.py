@@ -3,7 +3,7 @@ from Models.SolverBDF import SolverBDF
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities import SpaceMethod
+from Utilities.EnumUtilities      import SpaceMethod
 from Utilities.TransformUtilities import Identity
 
 class SolverLdgBDF(SolverBDF):

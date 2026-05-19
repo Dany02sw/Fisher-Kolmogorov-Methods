@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from time import perf_counter
+from time       import perf_counter
 
 @contextmanager
 def timer(label=""):

@@ -1,5 +1,5 @@
-from Utilities.EnumUtilities import SpaceMethod, TimeMethod
-from Utilities.MathUtilities import compute_rate, compute_exponential_fit
+from Utilities.EnumUtilities       import SpaceMethod, TimeMethod
+from Utilities.MathUtilities       import compute_rate, compute_exponential_fit
 from Utilities.DictionaryUtilities import ERROR_LABELS_PRINT
 
 # Function to print space convergence rates ____________________________________________________________________________________________________________

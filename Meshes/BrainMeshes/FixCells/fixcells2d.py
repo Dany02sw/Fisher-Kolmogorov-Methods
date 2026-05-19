@@ -1,6 +1,8 @@
 import meshio
-from pathlib import Path
 import sys
+
+from pathlib import Path
+
 
 # ===== Converter =====
 def msh_to_xdmf(input_file, output_directory):

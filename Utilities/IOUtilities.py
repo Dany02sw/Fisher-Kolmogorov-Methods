@@ -1,4 +1,4 @@
-from dolfin import XDMFFile
+from dolfin  import XDMFFile
 from pathlib import Path
 
 # Class to handle the writing of the solution on XDMF file

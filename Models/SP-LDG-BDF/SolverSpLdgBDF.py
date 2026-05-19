@@ -3,9 +3,9 @@ from Models.SolverBDF import SolverBDF
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities import SpaceMethod
+from Utilities.EnumUtilities      import SpaceMethod
 from Utilities.TransformUtilities import Sigmoid
-from Utilities.SpLdgUtilities import div_LDG, grad_LDG, inner_LDG
+from Utilities.SpLdgUtilities     import div_LDG, grad_LDG, inner_LDG
 
 class SolverSpLdgBDF(SolverBDF):
     def __init__(self, mesh, D, alpha, c_0, eps, eta_0, theta, smoothing=0.0):

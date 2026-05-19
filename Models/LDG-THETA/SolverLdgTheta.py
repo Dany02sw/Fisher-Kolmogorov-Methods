@@ -3,7 +3,7 @@ from Models.SolverTheta import SolverTheta
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities import SpaceMethod
+from Utilities.EnumUtilities      import SpaceMethod
 from Utilities.TransformUtilities import Identity
 
 class SolverLdgTheta(SolverTheta):

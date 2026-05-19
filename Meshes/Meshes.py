@@ -1,8 +1,9 @@
-from dolfin import *
-from mshr import *
+from dolfin  import *
+from mshr    import *
 from pathlib import Path
+from dolfin  import plot as dolfin_plot
+
 import matplotlib.pyplot as plt
-from dolfin import plot as dolfin_plot
 
 from Utilities.EnumUtilities import BrainSection, MeshStructure, MeshType
 

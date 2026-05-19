@@ -3,9 +3,9 @@ from Models.SolverTheta import SolverTheta
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities import SpaceMethod
+from Utilities.EnumUtilities      import SpaceMethod
 from Utilities.TransformUtilities import Exponential
-from Utilities.FEniCSUtilities import havg
+from Utilities.FEniCSUtilities    import havg
 
 class SolverPpDgTheta(SolverTheta):
     def __init__(self, mesh, D, alpha, c_0, eps, eta_0, smoothing=0.0):

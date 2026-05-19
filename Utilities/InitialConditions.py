@@ -1,5 +1,5 @@
 from dolfin import *
-from ufl import tanh
+from ufl    import tanh
 
 from Utilities.EnumUtilities import BrainSection
 

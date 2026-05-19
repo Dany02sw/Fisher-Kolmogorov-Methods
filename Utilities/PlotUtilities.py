@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
-import numpy as np
-from pathlib import Path
+import numpy             as np
+
+from pathlib  import Path
 from datetime import datetime
 
-from Utilities.EnumUtilities import SpaceMethod, TimeMethod
+from Utilities.EnumUtilities       import SpaceMethod, TimeMethod
 from Utilities.DictionaryUtilities import ERROR_LABELS_PLOT, NORM_LABELS
 
 

@@ -2,12 +2,12 @@ from SolverSpLdgBDF import SolverSpLdgBDF
 
 from dolfin import *
 
-from Meshes.Meshes import mesh_factory
+from Meshes.Meshes                import mesh_factory
 from Utilities.ProfilingUtilities import timer
-from Utilities.EnumUtilities import ConvType, MeshType, MeshStructure
-from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
-from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
-from Utilities.MathUtilities import get_decimals
+from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
+from Utilities.PlotUtilities      import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
+from Utilities.PrintUtilities     import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
+from Utilities.MathUtilities      import get_decimals
 
 if __name__ == "__main__":
     print_title("SP-LDG + BDFν")
@@ -32,8 +32,7 @@ if __name__ == "__main__":
     # Exact solution
     c_space = lambda x: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)
     if convType == ConvType.TEMPORAL:
-        from ufl import tanh
-        c_ex = lambda x, t: c_space(x)*(0.5*(1.0 + tanh(1.0 - t)))
+        c_ex = lambda x, t: c_space(x)*(1.0/(1.0 + exp(t)))
     else:
         c_ex = lambda x, t: c_space(x)*(1.0 - t)
 
@@ -117,10 +116,10 @@ if __name__ == "__main__":
 
         # Time convergence parameters 
         N_time  = 32
-        l_time  = 1
+        l_time  = 2
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 2
+        nu_time = 3
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 

@@ -2,12 +2,12 @@ from SolverPpDgTheta import SolverPpDgTheta
 
 from dolfin import *
 
-from Meshes.Meshes import mesh_factory
+from Meshes.Meshes                import mesh_factory
 from Utilities.ProfilingUtilities import timer
-from Utilities.EnumUtilities import ConvType, MeshType, MeshStructure
-from Utilities.PlotUtilities import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
-from Utilities.PrintUtilities import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
-from Utilities.MathUtilities import get_decimals
+from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
+from Utilities.PlotUtilities      import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
+from Utilities.PrintUtilities     import print_space_rates, print_polynomial_rates, print_time_rates, print_title, print_subtitle
+from Utilities.MathUtilities      import get_decimals
 
 if __name__ == "__main__":
     print_title("PP-DG + θ-METHOD")

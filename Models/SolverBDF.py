@@ -1,12 +1,12 @@
 from Models.SolverBase import SolverBase
 
-from dolfin import *
+from dolfin  import *
 from pathlib import Path
 
 from Utilities.FEniCSUtilities import Normalize
-from Utilities.EnumUtilities import TimeMethod
-from Utilities.IOUtilities import OutputManager
-from Utilities.MathUtilities import get_decimals
+from Utilities.EnumUtilities   import TimeMethod
+from Utilities.IOUtilities     import OutputManager
+from Utilities.MathUtilities   import get_decimals
 
 BDF_COEFFS = {
     1: {"beta": 1.0,          "a": [1.0]                                                                          },

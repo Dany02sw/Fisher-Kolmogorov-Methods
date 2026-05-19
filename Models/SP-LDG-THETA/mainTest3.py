@@ -2,11 +2,11 @@ from SolverSpLdgTheta import SolverSpLdgTheta
 
 from dolfin import *
 
-from Meshes.Meshes import mesh_factory
-from Utilities.EnumUtilities import BrainSection, MeshType
-from Utilities.InitialConditions import get_initial_condition
+from Meshes.Meshes                import mesh_factory
+from Utilities.EnumUtilities      import BrainSection, MeshType
+from Utilities.InitialConditions  import get_initial_condition
 from Utilities.ProfilingUtilities import timer
-from Utilities.PrintUtilities import print_title, print_subtitle
+from Utilities.PrintUtilities     import print_title, print_subtitle
 
 if __name__ == "__main__":
     print_title("SP-LDG + θ-METHOD")
