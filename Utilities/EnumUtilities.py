@@ -16,6 +16,7 @@ class TimeMethod(Enum):
     THETA = auto()
 
 class SpaceMethod(Enum):
+    DG    = auto()
     LDG   = auto()
     PPDG  = auto()
     SPLDG = auto()

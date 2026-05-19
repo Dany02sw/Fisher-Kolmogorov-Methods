@@ -27,7 +27,7 @@ def _print_mesh_info(mesh):
     area         = assemble(Constant(1.0) * dx(mesh))
 
     h_min, h_max = mesh.hmin(), mesh.hmax()
-    h_avg        = area / num_cells
+    h_avg        = (h_min + h_max) / 2.0
     h_ratio      = h_max / h_min if h_min > 0 else float('inf')
 
     cell_type    = mesh.ufl_cell()

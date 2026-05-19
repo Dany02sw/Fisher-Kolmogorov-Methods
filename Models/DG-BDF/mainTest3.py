@@ -1,4 +1,4 @@
-from SolverPpDgBDF import SolverPpDgBDF
+from SolverDgBDF import SolverDgBDF
 
 from dolfin import *
 
@@ -9,7 +9,7 @@ from Utilities.ProfilingUtilities import timer
 from Utilities.PrintUtilities     import print_title, print_subtitle
 
 if __name__ == "__main__":
-    print_title("PP-DG + BDFν")
+    print_title("DG + BDFν")
 
     # Mesh import
     plane            = BrainSection.SAGITTAL  # Plane section to simulate on
@@ -46,9 +46,7 @@ if __name__ == "__main__":
     nu  = 6
 
     # Model parameters
-    eps       = 0.0
-    eta_0     = 5.0 
-    smoothing = 1e-9
+    eta_0     = 2.0 
 
     # Solver parameters
     tol = 1e-6
@@ -59,6 +57,6 @@ if __name__ == "__main__":
 
     # Solve the problem 
     print_subtitle(f"Spreading of α-synuclein on {mesh.name()} section")
-    Solver = SolverPpDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_0, eps=eps, eta_0=eta_0, smoothing=smoothing)
+    Solver = SolverDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_0, eta_0=eta_0)
     with timer(f"Spreading of α-synuclein on {mesh.name()} section"):
         Solver.Solve(t0=t0, dt=dt, T=T, nu=nu, l=l, tol=tol, maxIt=maxIt)

@@ -1,6 +1,7 @@
-from SolverPpDgBDF import SolverPpDgBDF
+from SolverDgBDF import SolverDgBDF
 
 from dolfin import *
+from ufl import tanh
 
 from Meshes.Meshes                import mesh_factory
 from Utilities.ProfilingUtilities import timer
@@ -10,40 +11,40 @@ from Utilities.PrintUtilities     import print_space_rates, print_polynomial_rat
 from Utilities.MathUtilities      import get_decimals
 
 if __name__ == "__main__":
-    print_title("PP-DG + BDFν")
+    print_title("DG + BDFν")
 
     convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
-    d_ext = Constant(1e-3) if convType==ConvType.TEMPORAL else Constant(1.0) 
+    d_ext = Constant(1e-3) 
     D     = d_ext*Identity(2)
+    v     = Constant(5.0*sqrt(alpha*d_ext/6.0))
     t0    = 0.0
 
     # Model parameters
-    eps   = 0.0
-    eta_0 = 5.0
+    eta_0     = 1.0
 
     # Solver parameters
-    tol   = 1e-12
-    maxIt = 200
+    tol   = 1e-10
+    maxIt = 300
 
     # Exact solution
-    c_space = lambda x: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)
-    if convType == ConvType.TEMPORAL:
-        c_ex = lambda x, t: c_space(x)*exp(-t)
-    else:
-        c_ex = lambda x, t: c_space(x)*(1.0 - t)
+    c_ex = lambda x, t: 0.25*(1.0 + tanh(8.0 - sqrt(alpha/(24.0*d_ext))*(x[0] - v*t)))**2
+
+    # Mesh verteces
+    P1 = Point((0.0, 0.0))
+    P2 = Point((3.0, 1.0))
 
     if convType == ConvType.SPATIAL:
-        print_subtitle("Space convergence test — linear time profile")
+        print_subtitle("Space convergence test - waves")
 
         # Space convergence parameters 
-        N_ref    = [2, 3, 4]
+        N_ref    = [3, 4, 5]
         N_list   = [2**n for n in N_ref]
-        l_space  = 1 
-        T_space  = 3e-2
-        dt_space = 1e-3
+        l_space  = 3 
+        T_space  = 3e-1
+        dt_space = 1e-2
         nu_space = 4
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
@@ -57,9 +58,9 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N, structure=MeshStructure.STRUCTURED)
+                mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
                 N_el_list.append(mesh.num_cells())
-                Solver = SolverPpDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0)
+                Solver  = SolverDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eta_0=eta_0)
                 E_L2, E_DG, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt_space, T=T_space, nu=nu_space, l=l_space, 
                     tol=tol, maxIt=maxIt
@@ -68,6 +69,7 @@ if __name__ == "__main__":
                 errors_space_DG.append(E_DG)
                 hs.append(h)
 
+
         # Print the rates
         print_space_rates(errors_space_L2, errors_space_DG, hs, N_el_list, l_space, method=Solver.SM)
 
@@ -75,13 +77,13 @@ if __name__ == "__main__":
         plot_spatial_convergence(hs, errors_space_L2, errors_space_DG, l_space, method=Solver.SM, save=False)
 
     elif convType == ConvType.POLYNOMIAL:
-        print_subtitle("Polynomial degree convergence test — linear time profile")
+        print_subtitle("Polynomial degree convergence test — waves")
 
         # Polynomial degree convergence parameters 
         N_poly  = 8
-        l_list  = [1, 2, 3]
-        T_poly  = 2.5e-4
-        dt_poly = 1e-5
+        l_list  = [1, 2]
+        T_poly  = 10.0
+        dt_poly = 2.5e-2
         nu_poly = 4
 
         # Storage variable 
@@ -89,14 +91,14 @@ if __name__ == "__main__":
         errors_polynomial_DG = []
 
         # Mesh
-        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_poly, structure=MeshStructure.STRUCTURED)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_poly, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):
             for l in l_list:
                 print(f"\n --- l = {l} ---")
                 parameters["form_compiler"]["quadrature_degree"] = l**2 + 4
-                Solver = SolverPpDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0)
+                Solver = SolverDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eta_0=eta_0)
                 E_L2, E_DG, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt_poly, T=T_poly, nu=nu_poly, l=l, 
                     tol=tol, maxIt=maxIt
@@ -110,15 +112,16 @@ if __name__ == "__main__":
         # Plot the rates for correct visualization 
         plot_polynomial_convergence(errors_polynomial_L2, errors_polynomial_DG, l_list, h, method=Solver.SM, save=False)
 
+
     elif convType == ConvType.TEMPORAL:
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 50
+        N_time  = 32
         l_time  = 2
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 2
+        nu_time = 6
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
@@ -126,13 +129,13 @@ if __name__ == "__main__":
         errors_time_DG = []
 
         # Mesh
-        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_time, structure=MeshStructure.STRUCTURED)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_time, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
 
         # Loop over dt_list + benchmark
         with timer(f"Time convergence ν={nu_time}"):
             for dt in dt_list:
                 print(f"\n --- τ = {dt:.{get_decimals(dt)}f} ---")
-                Solver = SolverPpDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0)
+                Solver = SolverDgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eta_0=eta_0)
                 E_L2, E_DG, h = Solver.ConvergenceTest(
                     t0=t0, dt=dt, T=T_time, nu=nu_time, l=l_time, 
                     tol=tol, maxIt=maxIt
