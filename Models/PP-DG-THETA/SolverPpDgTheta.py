@@ -39,8 +39,8 @@ class SolverPpDgTheta(SolverTheta):
         # Force term and Neumann BC
         Force     = self.Force
         Force_old = self.Force_old
-        gN        = self.gN      # Here this is actually inner(gN, n)
-        gN_old    = self.gN_old  # Same
+        gN        = self.gN
+        gN_old    = self.gN_old
 
         # Measures
         dx = self.dx

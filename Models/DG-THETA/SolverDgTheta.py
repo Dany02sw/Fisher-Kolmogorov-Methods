@@ -1,4 +1,4 @@
-from Models.SolverBDF import SolverBDF
+from Models.SolverTheta import SolverTheta
 
 from dolfin import *
 import ufl
@@ -7,7 +7,7 @@ from Utilities.EnumUtilities      import SpaceMethod
 from Utilities.TransformUtilities import Identity
 from Utilities.FEniCSUtilities    import havg
 
-class SolverDgBDF(SolverBDF):
+class SolverDgTheta(SolverTheta):
     def __init__(self, mesh, D, alpha, c_0, eta_0):
         super().__init__(mesh, D, alpha, c_0, transform=Identity())
         self.eta_0   = eta_0   if isinstance(eta_0,   ufl.core.expr.Expr) else Constant(eta_0)
@@ -15,7 +15,7 @@ class SolverDgBDF(SolverBDF):
 
     def _BuildFunctionSpaces(self, l=1):
         super()._BuildFunctionSpaces(l)
-        self.R        = VectorFunctionSpace(self.mesh, "DG", l)
+        self.R  = VectorFunctionSpace(self.mesh, "DG", l)
         self.WR = self.W
         self.l  = l
 
@@ -23,18 +23,22 @@ class SolverDgBDF(SolverBDF):
         # Data
         D     = self.D
         alpha = self.alpha
+        tht   = self.tht
 
         # Geometry
         self.n    = FacetNormal(self.mesh)
         h         = CellDiameter(self.mesh)
 
         # Extract functions
-        c = self.U
-        w = TestFunction(self.WR)
+        c     = self.U
+        w     = TestFunction(self.WR)
+        c_old = self.U_old
 
         # Force term and Neumann BC
-        Force = self.Force
-        gN    = self.gN
+        Force     = self.Force
+        Force_old = self.Force_old
+        gN        = self.gN      
+        gN_old    = self.gN_old 
 
         # Measures
         dx = self.dx
@@ -51,10 +55,10 @@ class SolverDgBDF(SolverBDF):
             - inner( jump(u, self.n), avg(dot(D, grad(v))) )*dS
 
         # Form
-        F = A(c, w) \
-            - alpha*c*(1.0 - c)*w*dx \
-            - Force*w*dx \
-            + inner(gN, self.n)*w*ds
+        F = A(tht*c + (1.0 - tht)*c_old, w) \
+            - alpha*(tht*c + (1.0 - tht)*c_old)*(1.0 - (tht*c + (1.0 - tht)*c_old))*w*dx \
+            - tht*Force*w*dx - (1.0 - tht)*Force_old*w*dx \
+            + tht*inner(gN, self.n)*w*ds + (1.0 - tht)*inner(gN_old, self.n)*w*ds
         
         return F, c, w
     
@@ -66,8 +70,8 @@ class SolverDgBDF(SolverBDF):
         c_h = self.U
 
         # Compute min and max values
-        c_min = c_h.vector().min()
-        c_max = c_h.vector().max()
+        c_min     = c_h.vector().min()
+        c_max     = c_h.vector().max()
 
         # Print the bounds for both the variables
         print(f"  t = {t_val:.{self.decimals}f}")
@@ -75,7 +79,7 @@ class SolverDgBDF(SolverBDF):
         print(f"  c_h      ∈ [{c_min: 7.6f}, {c_max: 7.6f}]")
         print(f"{'─'*80}\n")
 
-        return c_h, c_h
+        return c_h
     
     def _ConvergenceTestPostprocessing(self, t_val):
         # Extract solution
@@ -100,4 +104,4 @@ class SolverDgBDF(SolverBDF):
         print(f"  {'':30}  ‖c_ex  − c_h‖_DG   = {E_DG:.4e}")
         print(f"{'─'*80}\n")
 
-        return E_L2, E_DG, c_h
+        return E_L2, E_DG
