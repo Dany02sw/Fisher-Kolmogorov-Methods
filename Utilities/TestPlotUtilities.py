@@ -60,3 +60,15 @@ if __name__ == "__main__":
     }
 
     plot_time_convergence_all(dt_test, errs_c_theta, errs_grad_theta, method=TimeMethod.THETA)
+
+    # ── Test slope triangle with WRONG data ──────────────────────────────────
+    errs_wrong = {
+        l: _make_errors(hs_test, order=1, C=2.0 / l)
+        for l in [1, 2, 3]
+    }
+    errs_grad_wrong = {
+        l: _make_errors(hs_test, order=1, C=1.5 / l)
+        for l in [1, 2, 3]
+    }
+
+    plot_spatial_convergence_all(hs_test, errs_wrong, errs_grad_wrong)

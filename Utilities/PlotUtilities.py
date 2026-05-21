@@ -188,48 +188,26 @@ def plot_time_convergence(dt_list, err_c, err_grad, order, method=TimeMethod.BDF
 # =========================================================================================================================================
 
 # Helper method to add the slope triangle in the all-in-one plots _________________________________________________________________________
-def _add_slope_triangle(ax, xs, errs, slope, color):
-    """
-    Draws a right-angle slope triangle anchored at the last two data points.
+def _add_slope_triangle(ax, xs, errs, slope, color, tri_size=0.15):
 
-        C
-        │
-        A ── B
+    Cx = np.log10(xs[-2])
+    Cy = np.log10(errs[-2])
 
-    A = reflected point (same y as B, same x as C)
-    B = last data point
-    C = top-left corner, height determined by slope
+    Bx, By = Cx, Cy - slope * tri_size
+    Ax, Ay = Bx - tri_size, By
 
-    Parameters
-    ----------
-    ax    : matplotlib Axes in log–log mode
-    xs    : x-axis array (h or dt)
-    errs  : error array
-    slope : convergence order to annotate
-    color : color for all three sides and label
-    """
-    x1, x2 = np.log10(xs[-2]),   np.log10(xs[-1])
-    y1, y2 = np.log10(errs[-2]), np.log10(errs[-1])
-
-    dx = x2 - x1       # negative (xs decreases left to right)
-    dy = slope * dx    # negative → drop matches expected slope
-
-    Ax, Ay = x1, y2    # bot-left  
-    Bx, By = x2, y2    # bot-right 
-    Cx, Cy = x1, y1    # top-left 
 
     def p(lx, ly):
         return 10**lx, 10**ly
 
-    ax.plot([p(Ax,Ay)[0], p(Bx,By)[0]], [p(Ax,Ay)[1], p(By,By)[1]],
-            "-",  color=color, lw=1.2, alpha=0.8)   # horizontal leg A→B
+    ax.plot([p(Ax,Ay)[0], p(Bx,By)[0]], [p(Ax,Ay)[1], p(Bx,By)[1]],
+            "-", color=color, lw=1.2, alpha=0.8)   # horizontal leg A→B
     ax.plot([p(Cx,Cy)[0], p(Ax,Ay)[0]], [p(Cx,Cy)[1], p(Ax,Ay)[1]],
-            "-",  color=color, lw=1.2, alpha=0.8)   # vertical leg   C→A
-    ax.plot([p(Bx,By)[0], p(Cx,Cy)[0]], [p(By,By)[1], p(Cx,Cy)[1]],
-            "-",  color=color, lw=1.2, alpha=0.8)   # hypotenuse     B→C
+            "-", color=color, lw=1.2, alpha=0.8)   # vertical leg   C→A
+    ax.plot([p(Bx,By)[0], p(Cx,Cy)[0]], [p(Bx,By)[1], p(Cx,Cy)[1]],
+            "-", color=color, lw=1.2, alpha=0.8)   # hypotenuse     B→C
 
-    # label at midpoint of vertical leg, slightly to the left
-    mx = 10 ** (Ax - 0.05 * abs(dx))
+    mx = 10 ** (Ax - 0.05 * tri_size)
     my = 10 ** ((Ay + Cy) / 2)
     ax.text(mx, my, str(slope), color=color, fontsize=9,
             va="center", ha="right", alpha=0.9)
