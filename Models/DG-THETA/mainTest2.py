@@ -13,7 +13,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("DG + θ-METHOD")
 
-    convType = ConvType.POLYNOMIAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)

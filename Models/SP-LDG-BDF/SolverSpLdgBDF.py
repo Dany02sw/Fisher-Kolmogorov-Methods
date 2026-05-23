@@ -24,10 +24,56 @@ class SolverSpLdgBDF(SolverBDF):
         mixed_element = MixedElement([element_c, element_sigma, element_sigma, element_sigma])
         self.WR       = FunctionSpace(self.mesh, mixed_element)
 
+    # def _BuildSpatialForm(self):
+    #     # Data
+    #     D     = self.D
+    #     alpha = self.alpha
+
+    #     # Geometry
+    #     n         = FacetNormal(self.mesh)
+    #     h         = CellDiameter(self.mesh)
+    #     f         = FacetArea(self.mesh)
+    #     mK        = Constant(self.mesh.geometry().dim() + 1) # fine since fenics only works with simplicial elements
+    #     param_den = ( dot(n('+'), D('+')*n('+')) + dot(n('-'), D('-')*n('-')) )
+    #     eta_F     = self.eta_0*(self.l**2)*2.0*( ( dot(n('+'), D('+')*n('+')) )*( dot(n('-'), D('-')*n('-')) ) ) / param_den
+    #     h_avg     = (1.0/eta_F)*( 0.5*( ( h('+')/(mK*f('+')) )**self.theta + ( h('-')/(mK*f('-')) )**self.theta ) )**(1.0/self.theta)
+    #     gamma     = (dot(n('+'), D('+')*n('+'))) / param_den
+
+    #     # Extract functions
+    #     (w, sigma, z, r)     = split(self.U)
+    #     Phi                  = TestFunction(self.WR)
+    #     (psi, phi, eta, chi) = split(Phi)
+
+    #     # Force term and Neumann BC
+    #     Force = self.Force
+    #     gN    = self.gN
+
+    #     # Measures
+    #     dx = self.dx
+    #     dS = self.dS
+    #     ds = self.ds
+
+    #     # Forms
+    #     F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
+    #     F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx  - inner(D*z, phi)*dx
+    #     F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
+    #     F4 = self.eps*inner_LDG(w, psi, n, gamma, h_avg, D, dx, dS, alpha) \
+    #         + div_LDG(r, psi, n, gamma, dx, dS) + inner(gN, n)*psi*ds \
+    #         + inner((1.0/h_avg)*jump(w, n), jump(psi, n))*dS \
+    #         - inner(alpha*self.T(w)*(1.0 - self.T(w)), psi)*dx \
+    #         - inner(Force, psi)*dx 
+        
+    #     return F1 + F2 + F3 + F4, w, psi
+    
     def _BuildSpatialForm(self):
-        # Data
+        """
+        Returns a callable F_space(U, Force, gN) representing the weak form
+        of the stationary spatial operator.
+        """
+        # Capture mesh-level quantities that don't depend on the time argument
         D     = self.D
         alpha = self.alpha
+        n     = FacetNormal(self.mesh)
 
         # Geometry
         n         = FacetNormal(self.mesh)
@@ -39,31 +85,26 @@ class SolverSpLdgBDF(SolverBDF):
         h_avg     = (1.0/eta_F)*( 0.5*( ( h('+')/(mK*f('+')) )**self.theta + ( h('-')/(mK*f('-')) )**self.theta ) )**(1.0/self.theta)
         gamma     = (dot(n('+'), D('+')*n('+'))) / param_den
 
-        # Extract functions
-        (w, sigma, z, r)     = split(self.U)
-        Phi                  = TestFunction(self.WR)
-        (psi, phi, eta, chi) = split(Phi)
 
-        # Force term and Neumann BC
-        Force = self.Force
-        gN    = self.gN
+        dx, dS, ds = self.dx, self.dS, self.ds
 
-        # Measures
-        dx = self.dx
-        dS = self.dS
-        ds = self.ds
+        def F_space(components, Force, gN):
+            (w, sigma, z, r)     = components
+            Phi                  = TestFunction(self.WR)
+            (psi, phi, eta, chi) = split(Phi)
 
-        # Forms
-        F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
-        F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx  - inner(D*z, phi)*dx
-        F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
-        F4 = self.eps*inner_LDG(w, psi, n, gamma, h_avg, D, dx, dS, alpha) \
-            + div_LDG(r, psi, n, gamma, dx, dS) + inner(gN, n)*psi*ds \
-            + inner((1.0/h_avg)*jump(w, n), jump(psi, n))*dS \
-            - inner(alpha*self.T(w)*(1.0 - self.T(w)), psi)*dx \
-            - inner(Force, psi)*dx 
-        
-        return F1 + F2 + F3 + F4, w, psi
+            # Forms
+            F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
+            F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx  - inner(D*z, phi)*dx
+            F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
+            F4 = self.eps*inner_LDG(w, psi, n, gamma, h_avg, D, dx, dS, alpha) \
+                + div_LDG(r, psi, n, gamma, dx, dS) + inner(gN, n)*psi*ds \
+                + inner((1.0/h_avg)*jump(w, n), jump(psi, n))*dS \
+                - inner(alpha*self.T(w)*(1.0 - self.T(w)), psi)*dx \
+                - inner(Force, psi)*dx 
+            return F1 + F2 + F3 + F4, w, psi   # restituisce anche u e v per la parte temporale
+
+        return F_space
     
     def _SetInitialCondition(self, c_0):
         assign(self.U.sub(0), project(self.T.s1(c_0),           self.W))

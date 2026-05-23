@@ -24,50 +24,92 @@ class SolverSpLdgTheta(SolverTheta):
         mixed_element = MixedElement([element_c, element_sigma, element_sigma, element_sigma])
         self.WR       = FunctionSpace(self.mesh, mixed_element)
 
+    # def _BuildSpatialForm(self):
+    #     # Data
+    #     D     = self.D
+    #     alpha = self.alpha
+    #     tht   = self.tht
+
+    #     # Geometry
+    #     n         = FacetNormal(self.mesh)
+    #     h         = CellDiameter(self.mesh)
+    #     f         = FacetArea(self.mesh)
+    #     mK        = Constant(self.mesh.geometry().dim() + 1) # fine since fenics only works with simplicial elements
+    #     param_den = ( dot(n('+'), D('+')*n('+')) + dot(n('-'), D('-')*n('-')) )
+    #     eta_F     = self.eta_0*(self.l**2)*2.0*( ( dot(n('+'), D('+')*n('+')) )*( dot(n('-'), D('-')*n('-')) ) ) / param_den
+    #     h_avg     = (1.0/eta_F)*( 0.5*( ( h('+')/(mK*f('+')) )**self.theta + ( h('-')/(mK*f('-')) )**self.theta ) )**(1.0/self.theta)
+    #     gamma     = (dot(n('+'), D('+')*n('+'))) / param_den
+
+    #     # Extract functions
+    #     (w, sigma, z, r)                 = split(self.U)
+    #     Phi                              = TestFunction(self.WR)
+    #     (psi, phi, eta, chi)             = split(Phi)
+    #     (w_old, sigma_old, z_old, r_old) = split(self.U_old)
+
+    #     # Force term and Neumann BC
+    #     Force     = self.Force
+    #     Force_old = self.Force_old
+    #     gN        = self.gN
+    #     gN_old    = self.gN_old
+
+    #     # Measures
+    #     dx = self.dx
+    #     dS = self.dS
+    #     ds = self.ds
+
+    #     # Forms
+    #     F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
+    #     F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx  - inner(D*z, phi)*dx
+    #     F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
+    #     F4 = self.eps*inner_LDG(tht*w + (1.0 - tht)*w_old, psi, n, gamma, h_avg, D, dx, dS, alpha) \
+    #         + div_LDG(tht*r + (1.0 - tht)*r_old, psi, n, gamma, dx, dS) + tht*inner(gN, n)*psi*ds + (1.0 - tht)*inner(gN_old, n)*psi*ds\
+    #         + tht*inner((1.0/h_avg)*jump(w, n), jump(psi, n))*dS + (1.0 - tht)*inner((1.0/h_avg)*jump(w_old, n), jump(psi, n))*dS \
+    #         - inner( alpha*( tht*self.T(w) + (1.0 - tht)*self.T(w_old) )*(1.0 - (tht*self.T(w) + (1.0 - tht)*self.T(w_old))), psi )*dx \
+    #         - tht*inner(Force, psi)*dx - (1.0 - tht)*inner(Force_old, psi)*dx 
+        
+    #     return F1 + F2 + F3 + F4, w, psi
+
     def _BuildSpatialForm(self):
-        # Data
+        """
+        Returns a callable F_space(components_now, components_time, Force, gN) -> (Form, u, v)
+        
+        - components_now:  split(U) at current time — used for algebraic constraints (F1, F2, F3)
+        - components_time: time-discretized components — used for the differential equation (F4)
+        """
         D     = self.D
         alpha = self.alpha
-        tht   = self.tht
-
-        # Geometry
         n         = FacetNormal(self.mesh)
         h         = CellDiameter(self.mesh)
         f         = FacetArea(self.mesh)
-        mK        = Constant(self.mesh.geometry().dim() + 1) # fine since fenics only works with simplicial elements
+        mK        = Constant(self.mesh.geometry().dim() + 1)
         param_den = ( dot(n('+'), D('+')*n('+')) + dot(n('-'), D('-')*n('-')) )
         eta_F     = self.eta_0*(self.l**2)*2.0*( ( dot(n('+'), D('+')*n('+')) )*( dot(n('-'), D('-')*n('-')) ) ) / param_den
         h_avg     = (1.0/eta_F)*( 0.5*( ( h('+')/(mK*f('+')) )**self.theta + ( h('-')/(mK*f('-')) )**self.theta ) )**(1.0/self.theta)
         gamma     = (dot(n('+'), D('+')*n('+'))) / param_den
+        dx, dS, ds = self.dx, self.dS, self.ds
 
-        # Extract functions
-        (w, sigma, z, r)                 = split(self.U)
-        Phi                              = TestFunction(self.WR)
-        (psi, phi, eta, chi)             = split(Phi)
-        (w_old, sigma_old, z_old, r_old) = split(self.U_old)
+        def F_space(components_now, components_time, Force, gN):
+            (w, sigma, z, r)          = components_now
+            (w_t, sigma_t, z_t, r_t) = components_time
+            Phi                       = TestFunction(self.WR)
+            (psi, phi, eta, chi)      = split(Phi)
 
-        # Force term and Neumann BC
-        Force     = self.Force
-        Force_old = self.Force_old
-        gN        = self.gN
-        gN_old    = self.gN_old
+            # Algebraic constraints: always evaluated at current time
+            F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
+            F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx - inner(D*z, phi)*dx
+            F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
 
-        # Measures
-        dx = self.dx
-        dS = self.dS
-        ds = self.ds
+            # Differential equation: evaluated at time-discretized quantities
+            F4 = self.eps*inner_LDG(w_t, psi, n, gamma, h_avg, D, dx, dS, alpha) \
+                + div_LDG(r_t, psi, n, gamma, dx, dS) \
+                + inner(gN, n)*psi*ds \
+                + inner((1.0/h_avg)*jump(w_t, n), jump(psi, n))*dS \
+                - inner(alpha*self.T(w_t)*(1.0 - self.T(w_t)), psi)*dx \
+                - inner(Force, psi)*dx
 
-        # Forms
-        F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
-        F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx  - inner(D*z, phi)*dx
-        F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
-        F4 = self.eps*inner_LDG(tht*w + (1.0 - tht)*w_old, psi, n, gamma, h_avg, D, dx, dS, alpha) \
-            + div_LDG(tht*r + (1.0 - tht)*r_old, psi, n, gamma, dx, dS) + tht*inner(gN, n)*psi*ds + (1.0 - tht)*inner(gN_old, n)*psi*ds\
-            + tht*inner((1.0/h_avg)*jump(w, n), jump(psi, n))*dS + (1.0 - tht)*inner((1.0/h_avg)*jump(w_old, n), jump(psi, n))*dS \
-            - inner( alpha*( tht*self.T(w) + (1.0 - tht)*self.T(w_old) )*(1.0 - (tht*self.T(w) + (1.0 - tht)*self.T(w_old))), psi )*dx \
-            - tht*inner(Force, psi)*dx - (1.0 - tht)*inner(Force_old, psi)*dx 
-        
-        return F1 + F2 + F3 + F4, w, psi
+            return F1 + F2 + F3 + F4, w, psi
+
+        return F_space
     
     def _SetInitialCondition(self, c_0):
         assign(self.U.sub(0), project(self.T.s1(c_0),            self.W))

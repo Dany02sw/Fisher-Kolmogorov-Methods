@@ -23,7 +23,7 @@ if __name__ == "__main__":
     t0    = 0.0
 
     # Model parameters
-    eta_0     = 1.0
+    eta_0 = 5.0
 
     # Solver parameters
     tol   = 1e-10

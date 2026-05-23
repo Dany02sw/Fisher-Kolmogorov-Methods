@@ -41,7 +41,7 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref    = [2, 3, 4]
         N_list   = [2**n for n in N_ref]
-        l_space  = 1 
+        l_space  = 3 
         T_space  = 3e-2
         dt_space = 1e-3
         nu_space = 4
@@ -115,10 +115,10 @@ if __name__ == "__main__":
 
         # Time convergence parameters 
         N_time  = 32
-        l_time  = 2
+        l_time  = 4
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 2
+        nu_time = 6
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 

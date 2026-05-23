@@ -45,8 +45,8 @@ if __name__ == "__main__":
         N_ref     = [3, 4, 5]
         N_list    = [2**n for n in N_ref]
         l_space   = 2 
-        T_space   = 3e-1
-        dt_space  = 1e-2
+        T_space   = 3e-3
+        dt_space  = 1e-4
         tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 

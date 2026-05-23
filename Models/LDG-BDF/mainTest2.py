@@ -44,9 +44,9 @@ if __name__ == "__main__":
         N_ref    = [3, 4, 5]
         N_list   = [2**n for n in N_ref]
         l_space  = 2 
-        T_space  = 3e-3
-        dt_space = 1e-4
-        nu_space = 0.5
+        T_space  = 3e-1
+        dt_space = 1e-2
+        nu_space = 4
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         l_list  = [1, 2]
         T_poly  = 10.0
         dt_poly = 2.5e-2
-        nu_poly = 0.5
+        nu_poly = 5
 
         # Storage variable 
         errors_polynomial_c = []

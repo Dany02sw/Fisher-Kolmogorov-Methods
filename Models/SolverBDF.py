@@ -182,3 +182,11 @@ class SolverBDF(SolverBase):
             self._UpdateOldState(u_h)
 
         return E_c, E_grad, h_avg
+    
+    def _BuildVariationalForms(self, tau):
+        self.tau    = Constant(tau)
+        F_space     = self._BuildSpatialForm()
+        comps       = split(self.U) if self.WR != self.W else (self.U,)
+        F, u, v     = F_space(comps, comps, self.Force, self.gN)
+        F_time      = self._BuildTimeForm(tau, u, v)
+        self.Form   = F + F_time

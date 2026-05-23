@@ -31,11 +31,14 @@ class SolverBase:
     def _BuildTimeForm(self):
         raise NotImplementedError
     
+    # def _BuildVariationalForms(self, tau):
+    #     self.tau      = Constant(tau)
+    #     F_space, u, v = self._BuildSpatialForm()
+    #     F_time        = self._BuildTimeForm(tau, u, v)
+    #     self.Form     = F_space + F_time
+
     def _BuildVariationalForms(self, tau):
-        self.tau      = Constant(tau)
-        F_space, u, v = self._BuildSpatialForm()
-        F_time        = self._BuildTimeForm(tau, u, v)
-        self.Form     = F_space + F_time
+        raise NotImplementedError
 
     def _SetSourceTerm(self, x, t, extForce, NeumannBC):
         self.Force = extForce(x, t)  if extForce  else Constant(0.0)
