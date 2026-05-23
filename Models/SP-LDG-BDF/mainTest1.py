@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("SP-LDG + BDFν")
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.TEMPORAL
 
     # Data
     alpha = Constant(1.0)
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     t0    = 0.0
 
     # Model parameters
-    eps   = 0.0
+    eps   = 1e-6
     eta_0 = 1.0
     theta = -1.0
 

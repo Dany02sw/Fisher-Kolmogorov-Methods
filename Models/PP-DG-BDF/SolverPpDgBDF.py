@@ -19,8 +19,9 @@ class SolverPpDgBDF(SolverBDF):
         self.R        = VectorFunctionSpace(self.mesh, "DG", l)
         self.WR = self.W
         self.l  = l
-
+    
     def _BuildSpatialForm(self):
+        
         # Data
         D     = self.D
         alpha = self.alpha
@@ -28,41 +29,41 @@ class SolverPpDgBDF(SolverBDF):
         # Geometry
         self.n    = FacetNormal(self.mesh)
         h         = CellDiameter(self.mesh)
+
+        # Penalty
         self.zeta = self.eta_0*avg(tr(D))*avg(self.l*self.l)/havg(h)
-
-        # Extract functions
-        lamb     = self.U
-        phi      = TestFunction(self.WR)
-
-        # Force term and Neumann BC
-        Force     = self.Force
-        gN        = self.gN
+        eps  = self.eps
+        tau  = self.tau
 
         # Measures
-        dx = self.dx
-        dS = self.dS
-        ds = self.ds
+        dx, dS, ds = self.dx, self.dS, self.ds
 
-        # Penalty coefficient
-        max2      = ufl.Max(self.T(lamb)('+'), self.T(lamb)('-'))**2
-        eta       = self.zeta*max2*ufl.Max(self.T(abs(lamb)('+')), self.T(abs(lamb)('-')))
+        def A(u, v, w, eta_u):
+            return self.T(u)*inner(dot(D, grad(v)), grad(w))*dx \
+                + eta_u*inner(jump(v, self.n), jump(w, self.n))*dS \
+                - inner(avg(self.T(u)*dot(D, grad(v))), jump(w, self.n))*dS \
+                - inner(jump(v, self.n), avg(self.T(u)*dot(D, grad(w))))*dS
 
-        # A form (only on internal facets)
-        A = lambda u, v, w, eta_u: self.T(u)*inner(dot(D, grad(v)), grad(w))*dx \
-            + eta_u*inner(jump(v, self.n), jump(w, self.n))*dS \
-            - inner( avg(self.T(u)*dot(D, grad(v))), jump(w, self.n) )*dS \
-            - inner( jump(v, self.n), avg(self.T(u)*dot(D, grad(w))) )*dS
+        def F_space(components_now, components_time, Force, gN):
+            (lamb,)     = components_now
+            (lamb_t,)   = components_time
+            phi         = TestFunction(self.WR)
 
-        # Form
-        F = - alpha*self.T(lamb)*(1.0 - self.T(lamb))*phi*dx \
-            + (self.eps/self.tau)*lamb*phi*dx \
-            + (self.eps/self.tau)*inner(dot(D, grad(lamb)), grad(phi))*dx \
-            + (self.eps/self.tau)*inner(self.zeta*jump(lamb, self.n), jump(phi, self.n))*dS \
-            + A(lamb, lamb, phi, eta) \
-            - Force*phi*dx \
-            + inner(gN, self.n)*phi*ds
+            max2 = ufl.Max(self.T(lamb)('+'), self.T(lamb)('-'))**2
+            eta  = self.zeta*max2*ufl.Max(self.T(abs(lamb)('+')), self.T(abs(lamb)('-')))
+
+            F = - alpha*self.T(lamb_t)*(1.0 - self.T(lamb_t))*phi*dx \
+                + (eps/tau)*lamb*phi*dx \
+                + (eps/tau)*inner(dot(D, grad(lamb)), grad(phi))*dx \
+                + (eps/tau)*inner(self.zeta*jump(lamb, self.n), jump(phi, self.n))*dS \
+                + A(lamb_t, lamb_t, phi, eta) \
+                - inner(Force, phi)*dx \
+                + inner(gN, self.n)*phi*ds
+
+            return F, lamb, phi
+
+        return F_space
         
-        return F, lamb, phi
     
     def _SetInitialCondition(self, c_0):
         assign(self.U, project(self.T.inv(c_0), self.W))

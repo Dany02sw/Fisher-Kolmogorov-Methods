@@ -57,3 +57,7 @@ class PenaltyType(float, Enum):
     SIP =   1.0
     NIP = - 1.0
     IIP =   0.0
+
+class StudyType(Enum):
+    CONVERGENCE = auto()
+    SATURATION  = auto()

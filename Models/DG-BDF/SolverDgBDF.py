@@ -19,51 +19,18 @@ class SolverDgBDF(SolverBDF):
         self.WR = self.W
         self.l  = l
 
-    # def _BuildSpatialForm(self):
-    #     # Data
-    #     D     = self.D
-    #     alpha = self.alpha
-
-    #     # Geometry
-    #     self.n    = FacetNormal(self.mesh)
-    #     h         = CellDiameter(self.mesh)
-
-    #     # Extract functions
-    #     c = self.U
-    #     w = TestFunction(self.WR)
-
-    #     # Force term and Neumann BC
-    #     Force = self.Force
-    #     gN    = self.gN
-
-    #     # Measures
-    #     dx = self.dx
-    #     dS = self.dS
-    #     ds = self.ds
-
-    #     # Penalty coefficient
-    #     self.eta = self.eta_0 * self.l*self.l / havg(h)
-
-    #     # A form (only on internal facets)
-    #     A = lambda u, v: inner(D*grad(u), grad(v))*dx \
-    #         + self.eta*inner(jump(u, self.n), jump(v, self.n))*dS \
-    #         - inner( avg(dot(D, grad(u))), jump(v, self.n) )*dS \
-    #         - inner( jump(u, self.n), avg(dot(D, grad(v))) )*dS
-
-    #     # Form
-    #     F = A(c, w) \
-    #         - alpha*c*(1.0 - c)*w*dx \
-    #         - Force*w*dx \
-    #         + inner(gN, self.n)*w*ds
-        
-    #     return F, c, w
-
     def _BuildSpatialForm(self):
+
+        # Data
         D     = self.D
         alpha = self.alpha
+
+        # Geometry
         self.n   = FacetNormal(self.mesh)
         h        = CellDiameter(self.mesh)
         self.eta = self.eta_0 * self.l*self.l / havg(h)
+
+        # Measures
         dx, dS, ds = self.dx, self.dS, self.ds
 
         def A(u, v):
@@ -73,13 +40,15 @@ class SolverDgBDF(SolverBDF):
                 - inner(jump(u, self.n), avg(dot(D, grad(v))))*dS
 
         def F_space(components_now, components_time, Force, gN):
-            (c,)  = components_now
+            (c,)   = components_now
             (c_t,) = components_time
-            w     = TestFunction(self.WR)
+            w      = TestFunction(self.WR)
+
             F = A(c_t, w) \
                 - alpha*c_t*(1.0 - c_t)*w*dx \
                 - inner(Force, w)*dx \
                 + inner(gN, self.n)*w*ds
+            
             return F, c, w
 
         return F_space

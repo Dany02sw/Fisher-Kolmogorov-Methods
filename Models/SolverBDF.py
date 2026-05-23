@@ -40,6 +40,24 @@ class SolverBDF(SolverBase):
 
         return (1.0/(tau*beta))*(self.T(u) - transformed_old_steps)*v*dx
     
+    def _BuildVariationalForms(self, tau):
+        self.tau    = Constant(tau)
+
+        # Obtain the callable
+        F_space     = self._BuildSpatialForm()
+
+        # Construct the components tuple correctly
+        comps       = split(self.U) if self.WR != self.W else (self.U,)
+
+        # Evaluate the callable in the right place
+        F, u, v     = F_space(comps, comps, self.Force, self.gN)
+
+        # Build the time part
+        F_time      = self._BuildTimeForm(tau, u, v)
+
+        # Put space and time part together
+        self.Form   = F + F_time
+    
     def _UpdateOldState(self, u):
         for j in range(self.nu-1, 0, -1):
             self.u_old[j].assign(self.u_old[j-1])
@@ -183,10 +201,4 @@ class SolverBDF(SolverBase):
 
         return E_c, E_grad, h_avg
     
-    def _BuildVariationalForms(self, tau):
-        self.tau    = Constant(tau)
-        F_space     = self._BuildSpatialForm()
-        comps       = split(self.U) if self.WR != self.W else (self.U,)
-        F, u, v     = F_space(comps, comps, self.Force, self.gN)
-        F_time      = self._BuildTimeForm(tau, u, v)
-        self.Form   = F + F_time
+    

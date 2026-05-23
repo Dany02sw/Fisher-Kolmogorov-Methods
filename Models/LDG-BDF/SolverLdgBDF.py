@@ -20,67 +20,34 @@ class SolverLdgBDF(SolverBDF):
         element_q     = self.R.ufl_element()
         mixed_element = MixedElement([element_c, element_q])
         self.WR       = FunctionSpace(self.mesh, mixed_element)
-
-    # def _BuildSpatialForm(self):
-    #     # Geometry
-    #     h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
-    #     n     = FacetNormal(self.mesh)
-
-    #     # Data
-    #     D     = self.D
-    #     alpha = self.alpha
-    #     C11   = self.C11
-    #     C12   = self.C12*n('+')
-
-    #     # Extract functions
-    #     (c, q)  = split(self.U)
-    #     Phi     = TestFunction(self.WR)
-    #     (v, r)  = split(Phi)
-
-    #     # Force term and Neumann BC
-    #     Force = self.Force
-    #     gN    = self.gN
-
-    #     # Measures
-    #     dx = self.dx
-    #     dS = self.dS
-    #     ds = self.ds
-
-    #     # Forms
-    #     Fq = inner(q, r)*dx \
-    #         + inner(c, div(dot(D.T, r)))*dx \
-    #         - ( avg(c) + inner(C12, jump(c, n)) )*jump(dot(D.T, r), n)*dS \
-    #         - c*inner(dot(D.T, r), n)*ds
-    #     Fc = inner(q, grad(v))*dx \
-    #         - inner(avg(q) - (C11/h_avg)*jump(c, n) - C12*jump(q, n), jump(v, n))*dS \
-    #         - alpha*c*(1.0 - c)*v*dx \
-    #         - Force*v*dx \
-    #         - inner(gN, n)*v*ds
-        
-    #     return Fq + Fc, c, v
     
     def _BuildSpatialForm(self):
-        h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
-        n     = FacetNormal(self.mesh)
+        # Data
         D     = self.D
         alpha = self.alpha
+
+        # Geometry
+        h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
+        n     = FacetNormal(self.mesh)  
         C11   = self.C11
         C12   = self.C12*n('+')
+
+        # Measures
         dx, dS, ds = self.dx, self.dS, self.ds
 
         def F_space(components_now, components_time, Force, gN):
-            (c, q)   = components_now
+            (c, q)     = components_now
             (c_t, q_t) = components_time
-            Phi      = TestFunction(self.WR)
-            (v, r)   = split(Phi)
+            Phi        = TestFunction(self.WR)
+            (v, r)     = split(Phi)
 
-            # Fq: algebraic constraint, always at current time
+            # Fq at current time
             Fq = inner(q, r)*dx \
                 + inner(c, div(dot(D.T, r)))*dx \
                 - (avg(c) + inner(C12, jump(c, n)))*jump(dot(D.T, r), n)*dS \
                 - c*inner(dot(D.T, r), n)*ds
 
-            # Fc: differential equation, at time-discretized quantities
+            # Fc dependent on the time discretization
             Fc = inner(q_t, grad(v))*dx \
                 - inner(avg(q_t) - (C11/h_avg)*jump(c_t, n) - C12*jump(q_t, n), jump(v, n))*dS \
                 - alpha*c_t*(1.0 - c_t)*v*dx \

@@ -28,6 +28,23 @@ class SolverTheta(SolverBase):
         u_old = split(self.U_old)[0]
         return (1.0/tau)*(self.T(u) - self.T(u_old))*v*dx
     
+    def _BuildVariationalForms(self, tau):
+        self.tau  = Constant(tau)
+        F_space   = self._BuildSpatialForm()
+
+        # Build the time discretization dependent part
+        tht        = self.tht
+        comps_now  = split(self.U) if self.WR != self.W else (self.U,)
+        comps_old  = split(self.U_old) if self.WR != self.W else (self.U_old,)
+        comps_time = tuple(tht*un + (1.0 - tht)*uo for un, uo in zip(comps_now, comps_old))
+        F_tht      = tht*self.Force + (1.0 - tht)*self.Force_old
+        gN_tht     = tht*self.gN   + (1.0 - tht)*self.gN_old
+
+        # Build the final form
+        F, u, v   = F_space(comps_now, comps_time, F_tht, gN_tht)
+        F_time    = self._BuildTimeForm(tau, u, v)
+        self.Form = F + F_time
+    
     def _SetSourceTerm(self, x, t, extForce, NeumannBC):
         super()._SetSourceTerm(x, t, extForce, NeumannBC)
         self.Force_old = Function(self.W)
@@ -167,16 +184,3 @@ class SolverTheta(SolverBase):
             self._UpdateOldState()
 
         return E_c, E_grad, h_avg
-    
-    def _BuildVariationalForms(self, tau):
-        self.tau  = Constant(tau)
-        F_space   = self._BuildSpatialForm()
-        tht       = self.tht
-        comps_now = split(self.U) if self.WR != self.W else (self.U,)
-        comps_old = split(self.U_old) if self.WR != self.W else (self.U_old,)
-        comps_time = tuple(tht*un + (1.0 - tht)*uo for un, uo in zip(comps_now, comps_old))
-        F_th      = tht*self.Force + (1.0 - tht)*self.Force_old
-        gN_th     = tht*self.gN   + (1.0 - tht)*self.gN_old
-        F, u, v   = F_space(comps_now, comps_time, F_th, gN_th)
-        F_time    = self._BuildTimeForm(tau, u, v)
-        self.Form = F + F_time

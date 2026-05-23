@@ -20,71 +20,23 @@ class SolverPpDgTheta(SolverTheta):
         self.WR = self.W
         self.l  = l
 
-    # def _BuildSpatialForm(self):
-    #     # Data
-    #     D     = self.D
-    #     alpha = self.alpha
-    #     tht   = self.tht
-
-    #     # Geometry
-    #     self.n    = FacetNormal(self.mesh)
-    #     h         = CellDiameter(self.mesh)
-    #     self.zeta = self.eta_0*avg(tr(D))*avg(self.l*self.l)/havg(h)
-
-    #     # Extract functions
-    #     lamb     = self.U
-    #     phi      = TestFunction(self.WR)
-    #     lamb_old = self.U_old
-
-    #     # Force term and Neumann BC
-    #     Force     = self.Force
-    #     Force_old = self.Force_old
-    #     gN        = self.gN
-    #     gN_old    = self.gN_old
-
-    #     # Measures
-    #     dx = self.dx
-    #     dS = self.dS
-    #     ds = self.ds
-
-    #     # Penalty coefficient
-    #     max2      = ufl.Max(self.T(lamb)('+'), self.T(lamb)('-'))**2
-    #     eta       = self.zeta*max2*ufl.Max(self.T(abs(lamb)('+')), self.T(abs(lamb)('-')))
-    #     max2_old  = ufl.Max(self.T(lamb_old)('+'), self.T(lamb_old)('-'))**2
-    #     eta_old   = self.zeta*max2_old*ufl.Max(self.T(abs(lamb_old)('+')), self.T(abs(lamb_old)('-')))
-
-    #     # A form (only on internal facets)
-    #     A = lambda u, v, w, eta_u: self.T(u)*inner(dot(D, grad(v)), grad(w))*dx \
-    #         + eta_u*inner(jump(v, self.n), jump(w, self.n))*dS \
-    #         - inner( avg(self.T(u)*dot(D, grad(v))), jump(w, self.n) )*dS \
-    #         - inner( jump(v, self.n), avg(self.T(u)*dot(D, grad(w))) )*dS
-
-    #     # Form
-    #     F = - alpha*(tht*self.T(lamb) + (1.0 - tht)*self.T(lamb_old))*(1.0 - (tht*self.T(lamb) + (1.0 - tht)*self.T(lamb_old)))*phi*dx \
-    #         + (self.eps/self.tau)*lamb*phi*dx \
-    #         + (self.eps/self.tau)*inner(dot(D, grad(lamb)), grad(phi))*dx \
-    #         + (self.eps/self.tau)*inner(self.zeta*jump(lamb, self.n), jump(phi, self.n))*dS \
-    #         + tht*A(lamb, lamb, phi, eta) + (1.0 - tht)*A(lamb_old, lamb_old, phi, eta_old) \
-    #         - tht*Force*phi*dx - (1.0 - tht)*Force_old*phi*dx \
-    #         + tht*inner(gN, self.n)*phi*ds + (1.0 - tht)*inner(gN_old, self.n)*phi*ds
-        
-    #     return F, lamb, phi
-
     def _BuildSpatialForm(self):
-        """
-        Returns a callable F_space(components_now, components_time, Force, gN) -> (Form, u, v).
-        For the scalar DG case, each 'components' is a 1-tuple (lamb,).
-        components_now  is used for eta (nonlinear, always at current time).
-        components_time is used for the variational form (time-discretized).
-        """
+        
+        # Data
         D     = self.D
         alpha = self.alpha
+
+        # Geometry
         self.n    = FacetNormal(self.mesh)
         h         = CellDiameter(self.mesh)
+
+        # Penalty
         self.zeta = self.eta_0*avg(tr(D))*avg(self.l*self.l)/havg(h)
-        dx, dS, ds = self.dx, self.dS, self.ds
         eps  = self.eps
         tau  = self.tau
+
+        # Measures
+        dx, dS, ds = self.dx, self.dS, self.ds
 
         def A(u, v, w, eta_u):
             return self.T(u)*inner(dot(D, grad(v)), grad(w))*dx \
