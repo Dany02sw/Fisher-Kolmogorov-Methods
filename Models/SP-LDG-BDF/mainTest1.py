@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("SP-LDG + BDFν")
 
-    convType = ConvType.TEMPORAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     t0    = 0.0
 
     # Model parameters
-    eps   = 1e-6
+    eps   = 0.0
     eta_0 = 1.0
     theta = -1.0
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # Exact solution
     c_space = lambda x: 0.25*(cos(2*pi*x[0])*cos(2*pi*x[1]) + 2.0)
     if convType == ConvType.TEMPORAL:
-        c_ex = lambda x, t: c_space(x)*exp(-t)
+        c_ex = lambda x, t: c_space(x)*exp(-0.75*t)
     else:
         c_ex = lambda x, t: c_space(x)*(1.0 - t)
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         l_space  = 1 
         T_space  = 1e-2
         dt_space = 1e-3
-        nu_space = 4
+        nu_space = 6
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N, structure=MeshStructure.STRUCTURED)
+                mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N, structure=MeshStructure.UNSTRUCTURED)
                 N_el_list.append(mesh.num_cells())
                 Solver = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         print_subtitle("Polynomial degree convergence test — linear time profile")
 
         # Polynomial degree convergence parameters 
-        N_poly  = 8
+        N_poly  = 5
         l_list  = [1, 2, 3]
         T_poly  = 2.5e-4
         dt_poly = 1e-5
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         errors_polynomial_sigma = []
 
         # Mesh
-        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_poly, structure=MeshStructure.STRUCTURED)
+        mesh, _ = mesh_factory(mesh_type=MeshType.UNIT_SQUARE, N=N_poly, structure=MeshStructure.UNSTRUCTURED)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):
@@ -116,10 +116,10 @@ if __name__ == "__main__":
 
         # Time convergence parameters 
         N_time  = 32
-        l_time  = 2
+        l_time  = 4
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 2
+        nu_time = 5
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
