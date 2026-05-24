@@ -48,9 +48,10 @@ class SolverBDF(SolverBase):
 
         # Construct the components tuple correctly
         comps       = split(self.U) if self.WR != self.W else (self.U,)
+        transf_time = self.T(comps[0])
 
         # Evaluate the callable in the right place
-        F, u, v     = F_space(comps, comps, self.Force, self.gN)
+        F, u, v     = F_space(comps, comps, transf_time, self.Force, self.gN)
 
         # Build the time part
         F_time      = self._BuildTimeForm(tau, u, v)

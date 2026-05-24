@@ -332,7 +332,7 @@ def plot_spatial_convergence_all(hs, errs_c, errs_grad, method=SpaceMethod.LDG, 
         ax.set_xlim(hs.min(),        hs.max())
         ax.set_ylim(min(all_e)*0.5,  max(all_e)*2.0)
         ax.grid(True, which="both", linestyle=":", alpha=0.7)
-        ax.legend(fontsize=12)
+        ax.legend(fontsize=12, loc="lower right")
 
     plt.tight_layout()
 
@@ -397,7 +397,7 @@ def plot_time_convergence_all(dt_list, errs_c, errs_grad, method=TimeMethod.BDF,
         ax.set_xlim(dt_arr.min(),   dt_arr.max())
         ax.set_ylim(min(all_e)*0.5, max(all_e)*2.0)
         ax.grid(True, which="both", linestyle=":", alpha=0.7)
-        ax.legend(fontsize=12, loc="upper left")
+        ax.legend(fontsize=12, loc="lower right")
 
     plt.tight_layout()
 
@@ -406,6 +406,97 @@ def plot_time_convergence_all(dt_list, errs_c, errs_grad, method=TimeMethod.BDF,
         _save_plot(
             Path(__file__).parent / "Plots" / f"time_convergence_{method_tag}_all_{timestamp}.png",
             f"Time convergence plot (all {method_tag})",
+        )
+
+    plt.show()
+
+def plot_combined_poly_and_time(
+    # Polynomial convergence inputs
+    errors_c_poly, errors_grad_poly, l_list, h,
+    # Time convergence inputs (primal variable only)
+    dt_list, errs_c_time,
+    # Common options
+    method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False,
+):
+    """
+    Renders a side-by-side figure with:
+      - Left  : polynomial convergence of both the primal variable and the gradient.
+      - Right : temporal convergence of the primal variable for every BDF order
+                or Theta value supplied.
+
+    Parameters
+    ----------
+    errors_c_poly    : array-like — primal errors, one per degree in l_list
+    errors_grad_poly : array-like — gradient errors, one per degree in l_list
+    l_list           : list of PolyDegree — polynomial degrees tested
+    h                : float — fixed mesh size used for the polynomial study
+    dt_list          : array-like — time-step sizes (shared across all orders/thetas)
+    errs_c_time      : dict {BdfOrder | ThetaMethod: [e0, e1, ...]} — primal errors
+    method           : TimeMethod.BDF or TimeMethod.THETA
+    space_method     : SpaceMethod used to pick axis / legend labels
+    save             : if True, saves the figure to Plots/
+    """
+    label_c, label_grad           = ERROR_LABELS_PLOT[space_method]
+    norm_label_c, norm_label_grad = NORM_LABELS[space_method]
+
+    l_ints  = [int(l) for l in l_list]
+    L_num   = np.array(l_ints)
+    L_ext   = np.arange(l_ints[0], l_ints[-1] + 1)
+    Ec_poly = np.array(errors_c_poly,    dtype=float)
+    Eg_poly = np.array(errors_grad_poly, dtype=float)
+
+    dt_arr    = np.array(dt_list, dtype=float)
+    color_map = TIME_COLORS[method]
+    is_bdf    = (method == TimeMethod.BDF)
+    keys      = sorted(errs_c_time.keys(), key=lambda x: float(x))
+
+    fig, (ax_poly, ax_time) = plt.subplots(1, 2, figsize=(15, 6))
+
+    # ── Left: polynomial convergence ─────────────────────────────────────────
+    ax_poly.semilogy(L_num, Ec_poly, "-o",  color="yellowgreen", linewidth=2,
+                     markersize=8, label=fr"${label_c}$")
+    ax_poly.semilogy(L_num, Eg_poly, "--s", color="lime",        linewidth=2,
+                     markersize=8, label=fr"${label_grad}$")
+
+    ref = Ec_poly[0] * (h ** (L_ext - l_ints[0]))
+    ax_poly.semilogy(L_ext, ref, "k--", linewidth=1.5, alpha=0.6, label=r"$h^{\ell}$")
+
+    ax_poly.set_xlim(l_ints[0], l_ints[-1])
+    ax_poly.set_xticks(np.arange(l_ints[0], l_ints[-1] + 1))
+    ax_poly.set_xlabel(r"$\ell$",                                  fontsize=16)
+    ax_poly.set_ylabel(f"{norm_label_c}  /  {norm_label_grad}",   fontsize=14)
+    ax_poly.set_title(fr"Errors ${label_c}$ and ${label_grad}$",  fontsize=16)
+    ax_poly.grid(True, which="both", linestyle=":", alpha=0.7)
+    ax_poly.legend(fontsize=12, loc="upper right")
+
+    # ── Right: time convergence (primal variable only) ────────────────────────
+    for key in keys:
+        col   = color_map.get(key, "black")
+        label = fr"BDF{int(key)}" if is_bdf else fr"$\theta = {float(key)}$"
+        expected_order = int(key) if is_bdf else (2 if key == ThetaMethod.CN else 1)
+
+        Ec = np.array(errs_c_time[key], dtype=float)
+        ax_time.loglog(dt_arr, Ec, "o-", color=col, linewidth=2, markersize=7, label=label)
+        _add_slope_triangle(ax_time, dt_arr, Ec, slope=expected_order, color=col)
+
+    all_ec_time = [v for vals in errs_c_time.values() for v in vals]
+    method_tag  = "BDF" if is_bdf else "Theta"
+
+    ax_time.set_title(fr"Errors ${label_c}$ — {method_tag}", fontsize=16)
+    ax_time.set_xlabel(r"$\tau\;[-]$",                       fontsize=14)
+    ax_time.set_ylabel(norm_label_c,                         fontsize=14)
+    ax_time.set_xlim(dt_arr.min(),       dt_arr.max())
+    ax_time.set_ylim(min(all_ec_time) * 0.5, max(all_ec_time) * 2.0)
+    ax_time.grid(True, which="both", linestyle=":", alpha=0.7)
+    ax_time.legend(fontsize=12, loc="lower right")
+
+    plt.tight_layout()
+
+    if save:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        _save_plot(
+            Path(__file__).parent / "Plots" / f"combined_poly_time_{method_tag}_{timestamp}.png",
+            f"Combined polynomial + time convergence plot ({method_tag})",
         )
 
     plt.show()

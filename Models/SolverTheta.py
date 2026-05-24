@@ -33,17 +33,18 @@ class SolverTheta(SolverBase):
         F_space   = self._BuildSpatialForm()
 
         # Build the time discretization dependent part
-        tht        = self.tht
-        comps_now  = split(self.U) if self.WR != self.W else (self.U,)
-        comps_old  = split(self.U_old) if self.WR != self.W else (self.U_old,)
-        comps_time = tuple(tht*un + (1.0 - tht)*uo for un, uo in zip(comps_now, comps_old))
-        F_tht      = tht*self.Force + (1.0 - tht)*self.Force_old
-        gN_tht     = tht*self.gN   + (1.0 - tht)*self.gN_old
+        tht         = self.tht
+        comps_now   = split(self.U)     if self.WR != self.W else (self.U,)
+        comps_old   = split(self.U_old) if self.WR != self.W else (self.U_old,)
+        comps_time  = tuple(tht*un + (1.0 - tht)*uo for un, uo in zip(comps_now, comps_old))
+        transf_time = tht*self.T(comps_now[0]) + (1.0 - tht)*self.T(comps_old[0])
+        F_tht       = tht*self.Force + (1.0 - tht)*self.Force_old
+        gN_tht      = tht*self.gN   + (1.0 - tht)*self.gN_old
 
         # Build the final form
-        F, u, v   = F_space(comps_now, comps_time, F_tht, gN_tht)
-        F_time    = self._BuildTimeForm(tau, u, v)
-        self.Form = F + F_time
+        F, u, v     = F_space(comps_now, comps_time, transf_time, F_tht, gN_tht)
+        F_time      = self._BuildTimeForm(tau, u, v)
+        self.Form   = F + F_time
     
     def _SetSourceTerm(self, x, t, extForce, NeumannBC):
         super()._SetSourceTerm(x, t, extForce, NeumannBC)

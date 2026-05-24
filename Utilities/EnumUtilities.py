@@ -54,9 +54,9 @@ class ThetaMethod(float, Enum):
     IE = 1.0
 
 class PenaltyType(float, Enum):
-    SIP =   1.0
-    NIP = - 1.0
-    IIP =   0.0
+    SIP =  1.0
+    NIP = -1.0
+    IIP =  0.0
 
 class StudyType(Enum):
     CONVERGENCE = auto()

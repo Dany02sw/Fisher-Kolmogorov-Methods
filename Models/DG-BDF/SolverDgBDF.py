@@ -3,14 +3,15 @@ from Models.SolverBDF import SolverBDF
 from dolfin import *
 import ufl
 
-from Utilities.EnumUtilities      import SpaceMethod
+from Utilities.EnumUtilities      import SpaceMethod, PenaltyType
 from Utilities.TransformUtilities import Identity
 from Utilities.FEniCSUtilities    import havg
 
 class SolverDgBDF(SolverBDF):
-    def __init__(self, mesh, D, alpha, c_0, eta_0):
+    def __init__(self, mesh, D, alpha, c_0, eta_0, theta=PenaltyType.SIP):
         super().__init__(mesh, D, alpha, c_0, transform=Identity())
         self.eta_0   = eta_0   if isinstance(eta_0,   ufl.core.expr.Expr) else Constant(eta_0)
+        self.theta   = theta   if isinstance(theta,   ufl.core.expr.Expr) else Constant(theta)
         self.SM      = SpaceMethod.DG
 
     def _BuildFunctionSpaces(self, l=1):
@@ -37,9 +38,9 @@ class SolverDgBDF(SolverBDF):
             return inner(D*grad(u), grad(v))*dx \
                 + self.eta*inner(jump(u, self.n), jump(v, self.n))*dS \
                 - inner(avg(dot(D, grad(u))), jump(v, self.n))*dS \
-                - inner(jump(u, self.n), avg(dot(D, grad(v))))*dS
+                - self.theta*inner(jump(u, self.n), avg(dot(D, grad(v))))*dS
 
-        def F_space(components_now, components_time, Force, gN):
+        def F_space(components_now, components_time, transf_time, Force, gN):
             (c,)   = components_now
             (c_t,) = components_time
             w      = TestFunction(self.WR)

@@ -43,7 +43,7 @@ class SolverSpLdgTheta(SolverTheta):
         # Measures
         dx, dS, ds = self.dx, self.dS, self.ds
 
-        def F_space(components_now, components_time, Force, gN):
+        def F_space(components_now, components_time, transf_time, Force, gN):
             (w, sigma, z, r)         = components_now
             (w_t, sigma_t, z_t, r_t) = components_time
             Phi                      = TestFunction(self.WR)
@@ -59,7 +59,7 @@ class SolverSpLdgTheta(SolverTheta):
                 + div_LDG(r_t, psi, n, gamma, dx, dS) \
                 + inner(gN, n)*psi*ds \
                 + inner((1.0/h_avg)*jump(w_t, n), jump(psi, n))*dS \
-                - inner(alpha*self.T(w_t)*(1.0 - self.T(w_t)), psi)*dx \
+                - inner(alpha*transf_time*(1.0 - transf_time), psi)*dx \
                 - inner(Force, psi)*dx
             
             return F1 + F2 + F3 + F4, w, psi 

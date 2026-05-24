@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("SP-LDG + BDFν")
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.TEMPORAL
 
     # Data
     alpha = Constant(1.0)
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         l_list  = [1, 2, 3]
         T_poly  = 2.5e-4
         dt_poly = 1e-5
-        nu_poly = 4
+        nu_poly = 6
 
         # Storage variable 
         errors_polynomial_c     = []
@@ -115,11 +115,11 @@ if __name__ == "__main__":
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 32
+        N_time  = 16
         l_time  = 4
         T_time  = 2
         dt_list = [0.5, 0.25, 0.125]
-        nu_time = 5
+        nu_time = 3
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 

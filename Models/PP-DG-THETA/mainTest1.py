@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("PP-DG + θ-METHOD")
 
-    convType = ConvType.TEMPORAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
@@ -41,8 +41,8 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref     = [2, 3, 4]
         N_list    = [2**n for n in N_ref]
-        l_space   = 3 
-        T_space   = 3e-4
+        l_space   = 2 
+        T_space   = 2e-4
         dt_space  = 1e-5
         tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
@@ -115,10 +115,10 @@ if __name__ == "__main__":
 
         # Time convergence parameters 
         N_time   = 32
-        l_time   = 3
+        l_time   = 2
         T_time   = 2
         dt_list  = [0.5, 0.25, 0.125]
-        tht_time = 1.0
+        tht_time = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 

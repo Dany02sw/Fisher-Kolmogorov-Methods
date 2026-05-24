@@ -35,7 +35,7 @@ class SolverLdgTheta(SolverTheta):
         # Measures
         dx, dS, ds = self.dx, self.dS, self.ds
 
-        def F_space(components_now, components_time, Force, gN):
+        def F_space(components_now, components_time, transf_time, Force, gN):
             (c, q)     = components_now
             (c_t, q_t) = components_time
             Phi        = TestFunction(self.WR)
@@ -57,6 +57,7 @@ class SolverLdgTheta(SolverTheta):
             return Fq + Fc, c, v
 
         return F_space
+    
     
     def _SetInitialCondition(self, c_0):
         assign(self.U.sub(0), project(c_0, self.W))

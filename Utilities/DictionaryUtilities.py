@@ -11,7 +11,7 @@ ERROR_LABELS_PRINT = {
 ERROR_LABELS_PLOT = {
     SpaceMethod.DG:  ("E_{L²}", "E_{DG}"),
     SpaceMethod.LDG:   ("E_c",  "E_q"),
-    SpaceMethod.SPLDG: ("E_c",  "E_{sigma}"),
+    SpaceMethod.SPLDG: ("E_c",  "E_σ"),
     SpaceMethod.PPDG:  ("E_{L²}", "E_{DG}"),
 }
 

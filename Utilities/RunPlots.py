@@ -4,6 +4,7 @@ from Utilities.PlotUtilities import (
     plot_polynomial_convergence,
     plot_spatial_saturation,
     plot_polynomial_saturation,
+    plot_combined_poly_and_time
 )
 from Utilities.EnumUtilities import ConvType, TimeMethod, SpaceMethod, StudyType, PolyDegree, BdfOrder, ThetaMethod
 import numpy as np
@@ -12,7 +13,7 @@ import numpy as np
 hs = np.array([0.242339, 0.120878, 0.061524, 0.030154])
 dt = np.array([0.5, 0.25, 0.125])
 
-# Spatial convergence: keys are polynomial degrees
+# Spatial convergence: keys are polynomial degrees ----------------------------------------------------------------------------------------
 errs_c_space = {
     PolyDegree.P1: [1.3719e-02, 3.5956e-03, 8.9795e-04, 2.2890e-04],
     PolyDegree.P2: [2.8470e-03, 3.6232e-04, 4.0171e-05, 4.9172e-06],
@@ -26,48 +27,48 @@ errs_grad_space = {
     PolyDegree.P4: [3.1264e-03, 3.4274e-04, 1.6988e-05, 9.2847e-07],
 }
 
-# Polynomial convergence: one error per degree, fixed h and dt
-PolyConvH      = 1/8
-PolyConvDt     = 1e-3
+# Polynomial convergence: one error per degree, fixed h and dt ----------------------------------------------------------------------------
+PolyConvH      = 0.196019
 PolyConvLList  = [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3,
-                  PolyDegree.P4, PolyDegree.P5, PolyDegree.P6]
-errs_c_poly    = []   # one value per degree in PolyConvLList
-errs_grad_poly = []
+                  PolyDegree.P4, PolyDegree.P5, PolyDegree.P6,
+                  PolyDegree.P7, PolyDegree.P8]
+errs_c_poly    = [7.0142e-03, 1.3494e-03, 1.2236e-04, 2.7339e-05, 7.4957e-06, 8.6946e-07, 2.6554e-07, 6.5268e-08]   # one value per degree in PolyConvLList
+errs_grad_poly = [2.6228e-01, 6.5734e-02, 8.3562e-03, 2.0082e-03, 6.0901e-04, 7.6389e-05, 2.7612e-05, 7.3085e-06]
 
-# BDF convergence: keys are BDF orders
+# BDF convergence: keys are BDF orders -----------------------------------------------------------------------------------------------------
 errs_c_bdf = {
-    BdfOrder.BDF1: [2.6821e-01, 1.3710e-01, 6.7986e-02],
-    BdfOrder.BDF2: [1.0375e-02, 2.5226e-03, 6.3198e-04],
-    BdfOrder.BDF3: [2.0679e-02, 2.3372e-03, 2.8002e-04],
-    BdfOrder.BDF4: [6.7201e-03, 3.4099e-04, 1.9436e-05],
-    BdfOrder.BDF5: [2.2266e-03, 5.0772e-05, 1.3678e-06],
-    BdfOrder.BDF6: [7.6250e-04, 7.6999e-06, 9.6438e-08],
+    BdfOrder.BDF1: [1.6856e-01, 8.0923e-02, 3.9280e-02],
+    BdfOrder.BDF2: [3.4818e-02, 7.9948e-03, 1.9668e-03],
+    BdfOrder.BDF3: [7.8376e-03, 9.2873e-04, 1.2118e-04],
+    BdfOrder.BDF4: [2.0493e-03, 1.1260e-04, 6.6457e-06],
+    BdfOrder.BDF5: [5.5420e-04, 1.4070e-05, 3.9876e-07],
+    BdfOrder.BDF6: [1.5325e-04, 1.7856e-06, 2.3991e-08],
 }
 errs_grad_bdf = {
-    BdfOrder.BDF1: [1.2762e-01, 1.0343e-01, 6.1796e-02],
-    BdfOrder.BDF2: [9.6063e-03, 2.4729e-03, 6.1440e-04],
-    BdfOrder.BDF3: [3.3741e-02, 3.8215e-03, 4.5170e-04],
-    BdfOrder.BDF4: [1.2087e-02, 5.9996e-04, 3.3755e-05],
-    BdfOrder.BDF5: [4.1492e-03, 9.2967e-05, 2.4787e-06],
-    BdfOrder.BDF6: [1.4546e-03, 1.4443e-05, 1.7953e-07],
+    BdfOrder.BDF1: [5.6138e-02, 4.9987e-02, 2.9934e-02],
+    BdfOrder.BDF2: [4.2022e-02, 9.9057e-03, 2.4406e-03],
+    BdfOrder.BDF3: [1.1651e-02, 1.3410e-03, 1.4755e-04],
+    BdfOrder.BDF4: [3.4223e-03, 1.8280e-04, 1.0593e-05],
+    BdfOrder.BDF5: [9.8140e-04, 2.4256e-05, 6.7742e-07],
+    BdfOrder.BDF6: [2.8145e-04, 3.2049e-06, 4.3734e-08],
 }
 
-# Theta convergence: keys are ThetaMethod values
+# Theta convergence: keys are ThetaMethod values ------------------------------------------------------------------------------------------
 errs_c_theta = {
-    ThetaMethod.CN: [],
-    ThetaMethod.IE: [],
+    ThetaMethod.CN: [3.8805e-03, 9.7175e-04, 2.4348e-04],
+    ThetaMethod.IE: [2.6821e-01, 1.3710e-01, 6.7986e-02],
 }
 errs_grad_theta = {
-    ThetaMethod.CN: [],
-    ThetaMethod.IE: [],
+    ThetaMethod.CN: [3.2627e-02, 8.4431e-03, 2.1295e-03],
+    ThetaMethod.IE: [1.2761e-01, 1.0343e-01, 6.1795e-02],
 }
 
-# Space saturation: fixed poly degree, varying time order
-SpaceSatOrder      = PolyDegree.P2
+# Space saturation: fixed poly degree, varying time order ----------------------------------------------------------------------------------
 SpaceSatTimeMethod = TimeMethod.BDF
 SpaceSatHs = np.array([0.107795, 0.071439, 0.047590, 0.030652, 0.021536])
 
 # l = 2
+SpaceSatOrder    = PolyDegree.P2
 errs_c_space_sat = {
     BdfOrder.BDF1: [4.608814e-04, 1.775473e-04, 9.038723e-05, 7.162949e-05, 6.999359e-05],
     BdfOrder.BDF2: [4.536665e-04, 1.635479e-04, 5.766381e-05, 1.651438e-05, 5.757205e-06],
@@ -86,6 +87,7 @@ errs_grad_space_sat = {
 }
 
 # # l = 3
+# SpaceSatOrder    = PolyDegree.P3
 # errs_c_space_sat = {
 #     BdfOrder.BDF1: [8.672828e-05, 7.072806e-05, 6.982922e-05, 6.976555e-05, 6.975881e-05],
 #     BdfOrder.BDF2: [5.042130e-05, 1.044042e-05, 2.527967e-06, 6.051525e-07, 3.936901e-07],
@@ -103,7 +105,7 @@ errs_grad_space_sat = {
 #     BdfOrder.BDF6: [1.018886e-03, 2.280204e-04, 5.780452e-05, 1.151793e-05, 3.156305e-06],
 # }
 
-# Polynomial saturation: fixed h, varying time order, degree on x-axis
+# Polynomial saturation: fixed h, varying time order, degree on x-axis -----------------------------------------------------------------------
 PolySatH           = 0.107795
 PolySatLList       = [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3,
                       PolyDegree.P4, PolyDegree.P5, PolyDegree.P6]
@@ -128,10 +130,11 @@ errs_grad_poly_sat = {
 
 
 # Plot selector ___________________________________________________________________________________________________________________________
-PLOT  = ConvType.POLYNOMIAL
-TIME  = TimeMethod.BDF
-SPACE = SpaceMethod.SPLDG
-STUDY = StudyType.SATURATION
+PLOT     = ConvType.SPATIAL
+TIME     = TimeMethod.BDF
+SPACE    = SpaceMethod.SPLDG
+STUDY    = StudyType.SATURATION
+COMBINED = True
 
 # Runtime dispatch ________________________________________________________________________________________________________________________
 if __name__ == "__main__":
@@ -142,7 +145,21 @@ if __name__ == "__main__":
             plot_spatial_convergence_all(hs, errs_c_space, errs_grad_space, method=SPACE)
 
         elif PLOT == ConvType.POLYNOMIAL:
-            plot_polynomial_convergence(errs_c_poly, errs_grad_poly, PolyConvLList, PolyConvH, method=SPACE)
+            
+            if COMBINED:
+                plot_combined_poly_and_time(
+                    errors_c_poly    = errs_c_poly,
+                    errors_grad_poly = errs_grad_poly,
+                    l_list           = PolyConvLList,
+                    h                = PolyConvH,
+                    dt_list          = dt,
+                    errs_c_time      = errs_c_bdf,
+                    method           = TIME,
+                    space_method     = SPACE,
+                    save             = False,
+                )
+            else:
+                plot_polynomial_convergence(errs_c_poly, errs_grad_poly, PolyConvLList, PolyConvH, method=SPACE)
 
         elif PLOT == ConvType.TEMPORAL:
 
@@ -171,9 +188,5 @@ if __name__ == "__main__":
                 PolySatLList, errs_c_poly_sat, errs_grad_poly_sat,
                 h=PolySatH, method=PolySatTimeMethod, space_method=SPACE,
             )
-
-        else:
-            raise ValueError(f"Unknown plot type '{PLOT}'. Choose from: {list(ConvType)}.")
-
-    else:
-        raise ValueError(f"Unknown study type '{STUDY}'. Choose from: {list(StudyType)}.")
+        elif PLOT == ConvType.TEMPORAL:
+            raise ValueError(f"Saturation study not supported for '{PLOT}'. Choose from: {list([ConvType.SPATIAL, ConvType.POLYNOMIAL])}.")

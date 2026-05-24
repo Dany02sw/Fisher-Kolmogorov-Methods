@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("DG + θ-METHOD")
 
-    convType = ConvType.POLYNOMIAL
+    convType = ConvType.TEMPORAL
 
     # Data
     alpha = Constant(1.0)
@@ -40,9 +40,9 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref     = [2, 3, 4]
         N_list    = [2**n for n in N_ref]
-        l_space   = 2 
-        T_space   = 3e-2
-        dt_space  = 1e-3
+        l_space   = 6 
+        T_space   = 1e-4
+        dt_space  = 1e-5
         tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 

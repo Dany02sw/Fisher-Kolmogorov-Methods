@@ -38,13 +38,13 @@ class SolverPpDgBDF(SolverBDF):
         # Measures
         dx, dS, ds = self.dx, self.dS, self.ds
 
-        def A(u, v, w, eta_u):
-            return self.T(u)*inner(dot(D, grad(v)), grad(w))*dx \
+        def A(u_transf, v, w, eta_u):
+            return u_transf*inner(dot(D, grad(v)), grad(w))*dx \
                 + eta_u*inner(jump(v, self.n), jump(w, self.n))*dS \
-                - inner(avg(self.T(u)*dot(D, grad(v))), jump(w, self.n))*dS \
-                - inner(jump(v, self.n), avg(self.T(u)*dot(D, grad(w))))*dS
+                - inner(avg(u_transf*dot(D, grad(v))), jump(w, self.n))*dS \
+                - inner(jump(v, self.n), avg(u_transf*dot(D, grad(w))))*dS
 
-        def F_space(components_now, components_time, Force, gN):
+        def F_space(components_now, components_time, transf_time, Force, gN):
             (lamb,)     = components_now
             (lamb_t,)   = components_time
             phi         = TestFunction(self.WR)
@@ -52,11 +52,16 @@ class SolverPpDgBDF(SolverBDF):
             max2 = ufl.Max(self.T(lamb)('+'), self.T(lamb)('-'))**2
             eta  = self.zeta*max2*ufl.Max(self.T(abs(lamb)('+')), self.T(abs(lamb)('-')))
 
-            F = - alpha*self.T(lamb_t)*(1.0 - self.T(lamb_t))*phi*dx \
+            lamb_o   = self.U_old if hasattr(self, 'U_old') else lamb
+            tht      = self.tht   if hasattr(self, 'tht')   else Constant(1.0)
+            max2_old = ufl.Max(self.T(lamb_o)('+'), self.T(lamb_o)('-'))**2
+            eta_old  = self.zeta*max2_old*ufl.Max(self.T(abs(lamb_o)('+')), self.T(abs(lamb_o)('-')))
+
+            F = - alpha*transf_time*(1.0 - transf_time)*phi*dx \
                 + (eps/tau)*lamb*phi*dx \
                 + (eps/tau)*inner(dot(D, grad(lamb)), grad(phi))*dx \
                 + (eps/tau)*inner(self.zeta*jump(lamb, self.n), jump(phi, self.n))*dS \
-                + A(lamb_t, lamb_t, phi, eta) \
+                + tht*A(self.T(lamb), lamb, phi, eta) + (1.0 - tht)*A(self.T(lamb_o), lamb_o, phi, eta_old) \
                 - inner(Force, phi)*dx \
                 + inner(gN, self.n)*phi*ds
 
