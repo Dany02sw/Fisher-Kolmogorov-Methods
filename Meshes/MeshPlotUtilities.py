@@ -1,16 +1,16 @@
 import matplotlib.pyplot as plt
 
 from datetime import datetime
-from pathlib  import Path
 from dolfin   import plot as dolfin_plot
 
-from Meshes                  import mesh_factory
-from Utilities.PlotUtilities import _save_plot
+from config              import MESHES_DIR
+from Meshes              import mesh_factory
+from Plots.PlotUtilities import _save_plot
 
 # =========================================================================================================================================
 # Mesh grid plot ==========================================================================================================================
 # =========================================================================================================================================
-def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), save=False):
+def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), name="mesh_grid", save=False):
     """
     Plots multiple meshes in a single row of subplots, annotating each with
     h_min, h_max, and h_avg.
@@ -53,6 +53,7 @@ def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), save=False):
         h_min = mesh.hmin()
         h_max = mesh.hmax()
         h_avg = (h_min + h_max) / 2.0
+        N_ele = mesh.num_cells()
 
         plt.sca(ax)
         dolfin_plot(mesh, title="")
@@ -62,9 +63,10 @@ def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), save=False):
         ax.set_ylabel("Y", fontsize=10)
 
         info_text = (
-            fr"$h_{{\min}}={h_min:.4f}$"   "\n"
-            fr"$h_{{\max}}={h_max:.4f}$"   "\n"
-            fr"$h_{{\mathrm{{avg}}}}={h_avg:.4f}$"
+            fr"$h_{{\min}}={h_min:.6f}$"   "\n"
+            fr"$h_{{\max}}={h_max:.6f}$"   "\n"
+            fr"$h_{{\mathrm{{avg}}}}={h_avg:.6f}$"   "\n"
+            fr"$N^\circ_{{\mathrm{{ele}}}}={N_ele}$"
         )
         ax.text(
             0.02, 0.98, info_text,
@@ -79,7 +81,7 @@ def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), save=False):
     if save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         _save_plot(
-            Path(__file__).parent / "Plots" / f"mesh_grid_{timestamp}.png",
+            MESHES_DIR / f"{name}_{timestamp}.png",
             "Mesh grid plot",
         )
 

@@ -4,6 +4,7 @@ import numpy             as np
 from pathlib  import Path
 from datetime import datetime
 
+from config                        import get_convergence_dir
 from Utilities.EnumUtilities       import SpaceMethod, TimeMethod, BdfOrder, PolyDegree, ThetaMethod
 from Utilities.DictionaryUtilities import ERROR_LABELS_PLOT, NORM_LABELS
 
@@ -16,7 +17,7 @@ POLY_COLORS = {
     PolyDegree.P1: "red",
     PolyDegree.P2: "darkmagenta",
     PolyDegree.P3: "darkcyan",
-    PolyDegree.P4: "yellowgreen",
+    PolyDegree.P4: "springgreen",
     PolyDegree.P5: "blue",
     PolyDegree.P6: "crimson",
     PolyDegree.P7: "gold",
@@ -286,7 +287,7 @@ def plot_time_convergence(dt_list, err_c, err_grad, order, method=TimeMethod.BDF
 # All-in-one plots ========================================================================================================================
 # =========================================================================================================================================
 
-def plot_spatial_convergence_all(hs, errs_c, errs_grad, method=SpaceMethod.LDG, save=False):
+def plot_spatial_convergence_all(hs, errs_c, errs_grad, space_method=SpaceMethod.LDG, time_method=TimeMethod.BDF, save=False):
     """
     Plots spatial convergence for all polynomial degrees together.
 
@@ -298,8 +299,8 @@ def plot_spatial_convergence_all(hs, errs_c, errs_grad, method=SpaceMethod.LDG, 
     method    : SpaceMethod used to pick axis / legend labels
     save      : if True, save the figure to Plots/
     """
-    label_c,      label_grad      = ERROR_LABELS_PLOT[method]
-    norm_label_c, norm_label_grad = NORM_LABELS[method]
+    label_c,      label_grad      = ERROR_LABELS_PLOT[space_method]
+    norm_label_c, norm_label_grad = NORM_LABELS[space_method]
 
     hs      = np.array(hs)
     degrees = sorted(set(errs_c) | set(errs_grad))
@@ -339,13 +340,13 @@ def plot_spatial_convergence_all(hs, errs_c, errs_grad, method=SpaceMethod.LDG, 
     if save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         _save_plot(
-            Path(__file__).parent / "Plots" / f"space_convergence_all_{timestamp}.png",
+            get_convergence_dir(space_method, time_method) / f"{space_method.name}{time_method.name}_space_all_{timestamp}.png",
             "Space convergence plot (all degrees)",
         )
 
     plt.show()
 
-def plot_time_convergence_all(dt_list, errs_c, errs_grad, method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False):
+def plot_time_convergence_all(dt_list, errs_c, errs_grad, time_method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False):
     """
     Plots time convergence for all BDF orders or all Theta values together.
 
@@ -362,8 +363,8 @@ def plot_time_convergence_all(dt_list, errs_c, errs_grad, method=TimeMethod.BDF,
     norm_label_c, norm_label_grad = NORM_LABELS[space_method]
 
     dt_arr    = np.array(dt_list, dtype=float)
-    color_map = TIME_COLORS[method]
-    is_bdf    = (method == TimeMethod.BDF)
+    color_map = TIME_COLORS[time_method]
+    is_bdf    = (time_method == TimeMethod.BDF)
     keys      = sorted(set(errs_c) | set(errs_grad), key=lambda x: float(x))
 
     fig, (ax_c, ax_grad) = plt.subplots(1, 2, figsize=(15, 6))
@@ -404,7 +405,7 @@ def plot_time_convergence_all(dt_list, errs_c, errs_grad, method=TimeMethod.BDF,
     if save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         _save_plot(
-            Path(__file__).parent / "Plots" / f"time_convergence_{method_tag}_all_{timestamp}.png",
+            get_convergence_dir(space_method, time_method) / f"{space_method.name}{time_method.name}_time_all_{timestamp}.png",
             f"Time convergence plot (all {method_tag})",
         )
 
@@ -416,7 +417,7 @@ def plot_combined_poly_and_time(
     # Time convergence inputs (primal variable only)
     dt_list, errs_c_time,
     # Common options
-    method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False,
+    time_method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False,
 ):
     """
     Renders a side-by-side figure with:
@@ -446,8 +447,8 @@ def plot_combined_poly_and_time(
     Eg_poly = np.array(errors_grad_poly, dtype=float)
 
     dt_arr    = np.array(dt_list, dtype=float)
-    color_map = TIME_COLORS[method]
-    is_bdf    = (method == TimeMethod.BDF)
+    color_map = TIME_COLORS[time_method]
+    is_bdf    = (time_method == TimeMethod.BDF)
     keys      = sorted(errs_c_time.keys(), key=lambda x: float(x))
 
     fig, (ax_poly, ax_time) = plt.subplots(1, 2, figsize=(15, 6))
@@ -495,7 +496,7 @@ def plot_combined_poly_and_time(
     if save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         _save_plot(
-            Path(__file__).parent / "Plots" / f"combined_poly_time_{method_tag}_{timestamp}.png",
+            get_convergence_dir(space_method, time_method) / f"{space_method.name}{time_method.name}_combined_{timestamp}.png",
             f"Combined polynomial + time convergence plot ({method_tag})",
         )
 
@@ -507,7 +508,7 @@ def plot_combined_poly_and_time(
 # =========================================================================================================================================
 
 def plot_spatial_saturation(hs, errs_c, errs_grad, l: PolyDegree,
-                            method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False):
+                            time_method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False):
     """
     Plots a spatial saturation study: fixed polynomial degree, varying time
     integration order (BDF order or Theta value).
@@ -531,8 +532,8 @@ def plot_spatial_saturation(hs, errs_c, errs_grad, l: PolyDegree,
     norm_label_c, norm_label_grad = NORM_LABELS[space_method]
 
     hs        = np.array(hs, dtype=float)
-    color_map = TIME_COLORS[method]
-    is_bdf    = (method == TimeMethod.BDF)
+    color_map = TIME_COLORS[time_method]
+    is_bdf    = (time_method == TimeMethod.BDF)
     keys      = sorted(set(errs_c) | set(errs_grad), key=lambda x: float(x))
 
     # For BDF: highest order saturates last; for Theta: implicit (1.0) saturates last
@@ -583,14 +584,14 @@ def plot_spatial_saturation(hs, errs_c, errs_grad, l: PolyDegree,
     if save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         _save_plot(
-            Path(__file__).parent / "Plots" / f"space_saturation_l{int(l)}_{method_tag}_{timestamp}.png",
+            get_convergence_dir(space_method, time_method) / f"{space_method.name}{time_method.name}_sat_space_l{int(l)}_{timestamp}.png",
             f"Space saturation plot (l={int(l)}, {method_tag})",
         )
 
     plt.show()
 
 def plot_polynomial_saturation(l_list, errs_c, errs_grad, h: float,
-                               method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False):
+                               time_method=TimeMethod.BDF, space_method=SpaceMethod.LDG, save=False):
     """
     Plots a polynomial saturation study: fixed mesh size h, varying time
     integration order (BDF order or Theta value), polynomial degree on x-axis.
@@ -613,8 +614,8 @@ def plot_polynomial_saturation(l_list, errs_c, errs_grad, h: float,
 
     l_ints    = [int(l) for l in l_list]
     L_num     = np.array(l_ints)
-    color_map = TIME_COLORS[method]
-    is_bdf    = (method == TimeMethod.BDF)
+    color_map = TIME_COLORS[time_method]
+    is_bdf    = (time_method == TimeMethod.BDF)
     keys      = sorted(set(errs_c) | set(errs_grad), key=lambda x: float(x))
     key_ref   = max(keys, key=lambda x: float(x))
 
@@ -668,7 +669,7 @@ def plot_polynomial_saturation(l_list, errs_c, errs_grad, h: float,
     if save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         _save_plot(
-            Path(__file__).parent / "Plots" / f"poly_saturation_{method_tag}_h{h}_{timestamp}.png",
+            get_convergence_dir(space_method, time_method) / f"{space_method.name}{time_method.name}_sat_poly_h{h}_{timestamp}.png",
             f"Polynomial saturation plot ({method_tag}, h={h})",
         )
 

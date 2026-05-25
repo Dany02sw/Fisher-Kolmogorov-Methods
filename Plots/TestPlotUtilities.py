@@ -1,4 +1,4 @@
-from Utilities.PlotUtilities import *
+from Plots.PlotUtilities      import *
 from Utilities.EnumUtilities  import PolyDegree, BdfOrder, ThetaMethod, TimeMethod
 
 import numpy as np

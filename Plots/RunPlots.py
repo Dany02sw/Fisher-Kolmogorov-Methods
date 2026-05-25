@@ -1,4 +1,4 @@
-from Utilities.PlotUtilities import (
+from Plots.PlotUtilities import (
     plot_spatial_convergence_all,
     plot_time_convergence_all,
     plot_polynomial_convergence,
@@ -86,24 +86,24 @@ errs_grad_space_sat = {
     BdfOrder.BDF6: [1.316300e-02, 3.526121e-03, 1.107194e-03, 3.021296e-04, 1.459843e-04],
 }
 
-# # l = 3
-# SpaceSatOrder    = PolyDegree.P3
-# errs_c_space_sat = {
-#     BdfOrder.BDF1: [8.672828e-05, 7.072806e-05, 6.982922e-05, 6.976555e-05, 6.975881e-05],
-#     BdfOrder.BDF2: [5.042130e-05, 1.044042e-05, 2.527967e-06, 6.051525e-07, 3.936901e-07],
-#     BdfOrder.BDF3: [5.022734e-05, 1.036740e-05, 2.443428e-06, 4.297334e-07, 1.101742e-07],
-#     BdfOrder.BDF4: [5.006667e-05, 1.034842e-05, 2.439869e-06, 4.292007e-07, 1.100969e-07],
-#     BdfOrder.BDF5: [4.989803e-05, 1.032854e-05, 2.436201e-06, 4.286456e-07, 1.099550e-07],
-#     BdfOrder.BDF6: [4.971504e-05, 1.029468e-05, 2.436129e-06, 4.270183e-07, 1.095066e-07],
-# }
-# errs_grad_space_sat = {
-#     BdfOrder.BDF1: [1.299393e-03, 9.199373e-04, 8.905279e-04, 8.882805e-04, 8.875738e-04],
-#     BdfOrder.BDF2: [1.002005e-03, 2.243346e-04, 5.613158e-05, 1.376259e-05, 7.318533e-06],
-#     BdfOrder.BDF3: [1.005321e-03, 2.238106e-04, 5.491158e-05, 1.142520e-05, 3.053523e-06],
-#     BdfOrder.BDF4: [1.009510e-03, 2.243566e-04, 5.497476e-05, 1.143001e-05, 3.055361e-06],
-#     BdfOrder.BDF5: [1.014097e-03, 2.249262e-04, 5.505524e-05, 1.143418e-05, 3.054173e-06],
-#     BdfOrder.BDF6: [1.018886e-03, 2.280204e-04, 5.780452e-05, 1.151793e-05, 3.156305e-06],
-# }
+# l = 3
+SpaceSatOrder    = PolyDegree.P3
+errs_c_space_sat = {
+    BdfOrder.BDF1: [8.672828e-05, 7.072806e-05, 6.982922e-05, 6.976555e-05, 6.975881e-05],
+    BdfOrder.BDF2: [5.042130e-05, 1.044042e-05, 2.527967e-06, 6.051525e-07, 3.936901e-07],
+    BdfOrder.BDF3: [5.022734e-05, 1.036740e-05, 2.443428e-06, 4.297334e-07, 1.101742e-07],
+    BdfOrder.BDF4: [5.006667e-05, 1.034842e-05, 2.439869e-06, 4.292007e-07, 1.100969e-07],
+    BdfOrder.BDF5: [4.989803e-05, 1.032854e-05, 2.436201e-06, 4.286456e-07, 1.099550e-07],
+    BdfOrder.BDF6: [4.971504e-05, 1.029468e-05, 2.436129e-06, 4.270183e-07, 1.095066e-07],
+}
+errs_grad_space_sat = {
+    BdfOrder.BDF1: [1.299393e-03, 9.199373e-04, 8.905279e-04, 8.882805e-04, 8.875738e-04],
+    BdfOrder.BDF2: [1.002005e-03, 2.243346e-04, 5.613158e-05, 1.376259e-05, 7.318533e-06],
+    BdfOrder.BDF3: [1.005321e-03, 2.238106e-04, 5.491158e-05, 1.142520e-05, 3.053523e-06],
+    BdfOrder.BDF4: [1.009510e-03, 2.243566e-04, 5.497476e-05, 1.143001e-05, 3.055361e-06],
+    BdfOrder.BDF5: [1.014097e-03, 2.249262e-04, 5.505524e-05, 1.143418e-05, 3.054173e-06],
+    BdfOrder.BDF6: [1.018886e-03, 2.280204e-04, 5.780452e-05, 1.151793e-05, 3.156305e-06],
+}
 
 # Polynomial saturation: fixed h, varying time order, degree on x-axis -----------------------------------------------------------------------
 PolySatH           = 0.107795
@@ -135,6 +135,7 @@ TIME     = TimeMethod.BDF
 SPACE    = SpaceMethod.SPLDG
 STUDY    = StudyType.SATURATION
 COMBINED = True
+SAVE     = True
 
 # Runtime dispatch ________________________________________________________________________________________________________________________
 if __name__ == "__main__":
@@ -142,7 +143,7 @@ if __name__ == "__main__":
     if STUDY == StudyType.CONVERGENCE:
 
         if PLOT == ConvType.SPATIAL:
-            plot_spatial_convergence_all(hs, errs_c_space, errs_grad_space, method=SPACE)
+            plot_spatial_convergence_all(hs, errs_c_space, errs_grad_space, space_method=SPACE, time_method=TIME, save=SAVE)
 
         elif PLOT == ConvType.POLYNOMIAL:
             
@@ -154,9 +155,9 @@ if __name__ == "__main__":
                     h                = PolyConvH,
                     dt_list          = dt,
                     errs_c_time      = errs_c_bdf,
-                    method           = TIME,
+                    time_method      = TIME,
                     space_method     = SPACE,
-                    save             = False,
+                    save             = SAVE,
                 )
             else:
                 plot_polynomial_convergence(errs_c_poly, errs_grad_poly, PolyConvLList, PolyConvH, method=SPACE)
@@ -164,10 +165,10 @@ if __name__ == "__main__":
         elif PLOT == ConvType.TEMPORAL:
 
             if TIME == TimeMethod.BDF:
-                plot_time_convergence_all(dt, errs_c_bdf, errs_grad_bdf, method=TimeMethod.BDF, space_method=SPACE)
+                plot_time_convergence_all(dt, errs_c_bdf, errs_grad_bdf, time_method=TimeMethod.BDF, space_method=SPACE, save=SAVE)
 
             elif TIME == TimeMethod.THETA:
-                plot_time_convergence_all(dt, errs_c_theta, errs_grad_theta, method=TimeMethod.THETA, space_method=SPACE)
+                plot_time_convergence_all(dt, errs_c_theta, errs_grad_theta, time_method=TimeMethod.THETA, space_method=SPACE, save=SAVE)
 
             else:
                 raise ValueError(f"Unknown time method '{TIME}'.")
@@ -180,13 +181,15 @@ if __name__ == "__main__":
         if PLOT == ConvType.SPATIAL:
             plot_spatial_saturation(
                 SpaceSatHs, errs_c_space_sat, errs_grad_space_sat,
-                l=SpaceSatOrder, method=SpaceSatTimeMethod, space_method=SPACE,
+                l=SpaceSatOrder, time_method=SpaceSatTimeMethod, space_method=SPACE,
+                save=SAVE
             )
 
         elif PLOT == ConvType.POLYNOMIAL:
             plot_polynomial_saturation(
                 PolySatLList, errs_c_poly_sat, errs_grad_poly_sat,
-                h=PolySatH, method=PolySatTimeMethod, space_method=SPACE,
+                h=PolySatH, time_method=PolySatTimeMethod, space_method=SPACE,
+                save=SAVE
             )
         elif PLOT == ConvType.TEMPORAL:
             raise ValueError(f"Saturation study not supported for '{PLOT}'. Choose from: {list([ConvType.SPATIAL, ConvType.POLYNOMIAL])}.")
