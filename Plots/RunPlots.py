@@ -4,7 +4,8 @@ from Plots.PlotUtilities import (
     plot_polynomial_convergence,
     plot_spatial_saturation,
     plot_polynomial_saturation,
-    plot_combined_poly_and_time
+    plot_combined_poly_and_time,
+    plot_spatial_saturation_combined
 )
 from Utilities.EnumUtilities import ConvType, TimeMethod, SpaceMethod, StudyType, PolyDegree, BdfOrder, ThetaMethod
 import numpy as np
@@ -65,44 +66,44 @@ errs_grad_theta = {
 
 # Space saturation: fixed poly degree, varying time order ----------------------------------------------------------------------------------
 SpaceSatTimeMethod = TimeMethod.BDF
-SpaceSatHs = np.array([0.107795, 0.071439, 0.047590, 0.030652, 0.021536])
+SpaceSatHs         = np.array([0.107795, 0.071439, 0.047590, 0.030652, 0.021536])
+SpaceSatDegrees    = [PolyDegree.P2, PolyDegree.P3]
 
-# l = 2
-SpaceSatOrder    = PolyDegree.P2
-errs_c_space_sat = {
-    BdfOrder.BDF1: [4.608814e-04, 1.775473e-04, 9.038723e-05, 7.162949e-05, 6.999359e-05],
-    BdfOrder.BDF2: [4.536665e-04, 1.635479e-04, 5.766381e-05, 1.651438e-05, 5.757205e-06],
-    BdfOrder.BDF3: [4.509979e-04, 1.630636e-04, 5.761942e-05, 1.651403e-05, 5.752545e-06],
-    BdfOrder.BDF4: [4.481829e-04, 1.625309e-04, 5.755877e-05, 1.650767e-05, 5.751708e-06],
-    BdfOrder.BDF5: [4.452452e-04, 1.619626e-04, 5.749407e-05, 1.650110e-05, 5.750582e-06],
-    BdfOrder.BDF6: [4.425511e-04, 1.615723e-04, 5.751075e-05, 1.639373e-05, 5.769531e-06],
+errs_c_space_sat_by_degree = {
+    PolyDegree.P2: {
+        BdfOrder.BDF1: [4.608814e-04, 1.775473e-04, 9.038723e-05, 7.162949e-05, 6.999359e-05],
+        BdfOrder.BDF2: [4.536665e-04, 1.635479e-04, 5.766381e-05, 1.651438e-05, 5.757205e-06],
+        BdfOrder.BDF3: [4.509979e-04, 1.630636e-04, 5.761942e-05, 1.651403e-05, 5.752545e-06],
+        BdfOrder.BDF4: [4.481829e-04, 1.625309e-04, 5.755877e-05, 1.650767e-05, 5.751708e-06],
+        BdfOrder.BDF5: [4.452452e-04, 1.619626e-04, 5.749407e-05, 1.650110e-05, 5.750582e-06],
+        BdfOrder.BDF6: [4.425511e-04, 1.615723e-04, 5.751075e-05, 1.639373e-05, 5.769531e-06],
+    },
+    PolyDegree.P3: {
+        BdfOrder.BDF1: [8.672828e-05, 7.072806e-05, 6.982922e-05, 6.976555e-05, 6.975881e-05],
+        BdfOrder.BDF2: [5.042130e-05, 1.044042e-05, 2.527967e-06, 6.051525e-07, 3.936901e-07],
+        BdfOrder.BDF3: [5.022734e-05, 1.036740e-05, 2.443428e-06, 4.297334e-07, 1.101742e-07],
+        BdfOrder.BDF4: [5.006667e-05, 1.034842e-05, 2.439869e-06, 4.292007e-07, 1.100969e-07],
+        BdfOrder.BDF5: [4.989803e-05, 1.032854e-05, 2.436201e-06, 4.286456e-07, 1.099550e-07],
+        BdfOrder.BDF6: [4.971504e-05, 1.029468e-05, 2.436129e-06, 4.270183e-07, 1.095066e-07],
+    },
 }
-errs_grad_space_sat = {
-    BdfOrder.BDF1: [1.229680e-02, 3.367459e-03, 1.391055e-03, 9.397654e-04, 8.955685e-04],
-    BdfOrder.BDF2: [1.245412e-02, 3.295150e-03, 1.078848e-03, 3.028853e-04, 1.248636e-04],
-    BdfOrder.BDF3: [1.260931e-02, 3.338545e-03, 1.083578e-03, 3.033418e-04, 1.248998e-04],
-    BdfOrder.BDF4: [1.277644e-02, 3.386035e-03, 1.088181e-03, 3.037396e-04, 1.249322e-04],
-    BdfOrder.BDF5: [1.295257e-02, 3.437880e-03, 1.093648e-03, 3.040395e-04, 1.249884e-04],
-    BdfOrder.BDF6: [1.316300e-02, 3.526121e-03, 1.107194e-03, 3.021296e-04, 1.459843e-04],
-}
-
-# l = 3
-SpaceSatOrder    = PolyDegree.P3
-errs_c_space_sat = {
-    BdfOrder.BDF1: [8.672828e-05, 7.072806e-05, 6.982922e-05, 6.976555e-05, 6.975881e-05],
-    BdfOrder.BDF2: [5.042130e-05, 1.044042e-05, 2.527967e-06, 6.051525e-07, 3.936901e-07],
-    BdfOrder.BDF3: [5.022734e-05, 1.036740e-05, 2.443428e-06, 4.297334e-07, 1.101742e-07],
-    BdfOrder.BDF4: [5.006667e-05, 1.034842e-05, 2.439869e-06, 4.292007e-07, 1.100969e-07],
-    BdfOrder.BDF5: [4.989803e-05, 1.032854e-05, 2.436201e-06, 4.286456e-07, 1.099550e-07],
-    BdfOrder.BDF6: [4.971504e-05, 1.029468e-05, 2.436129e-06, 4.270183e-07, 1.095066e-07],
-}
-errs_grad_space_sat = {
-    BdfOrder.BDF1: [1.299393e-03, 9.199373e-04, 8.905279e-04, 8.882805e-04, 8.875738e-04],
-    BdfOrder.BDF2: [1.002005e-03, 2.243346e-04, 5.613158e-05, 1.376259e-05, 7.318533e-06],
-    BdfOrder.BDF3: [1.005321e-03, 2.238106e-04, 5.491158e-05, 1.142520e-05, 3.053523e-06],
-    BdfOrder.BDF4: [1.009510e-03, 2.243566e-04, 5.497476e-05, 1.143001e-05, 3.055361e-06],
-    BdfOrder.BDF5: [1.014097e-03, 2.249262e-04, 5.505524e-05, 1.143418e-05, 3.054173e-06],
-    BdfOrder.BDF6: [1.018886e-03, 2.280204e-04, 5.780452e-05, 1.151793e-05, 3.156305e-06],
+errs_grad_space_sat_by_degree = {
+    PolyDegree.P2: {
+        BdfOrder.BDF1: [1.229680e-02, 3.367459e-03, 1.391055e-03, 9.397654e-04, 8.955685e-04],
+        BdfOrder.BDF2: [1.245412e-02, 3.295150e-03, 1.078848e-03, 3.028853e-04, 1.248636e-04],
+        BdfOrder.BDF3: [1.260931e-02, 3.338545e-03, 1.083578e-03, 3.033418e-04, 1.248998e-04],
+        BdfOrder.BDF4: [1.277644e-02, 3.386035e-03, 1.088181e-03, 3.037396e-04, 1.249322e-04],
+        BdfOrder.BDF5: [1.295257e-02, 3.437880e-03, 1.093648e-03, 3.040395e-04, 1.249884e-04],
+        BdfOrder.BDF6: [1.316300e-02, 3.526121e-03, 1.107194e-03, 3.021296e-04, 1.459843e-04],
+    },
+    PolyDegree.P3: {
+        BdfOrder.BDF1: [1.299393e-03, 9.199373e-04, 8.905279e-04, 8.882805e-04, 8.875738e-04],
+        BdfOrder.BDF2: [1.002005e-03, 2.243346e-04, 5.613158e-05, 1.376259e-05, 7.318533e-06],
+        BdfOrder.BDF3: [1.005321e-03, 2.238106e-04, 5.491158e-05, 1.142520e-05, 3.053523e-06],
+        BdfOrder.BDF4: [1.009510e-03, 2.243566e-04, 5.497476e-05, 1.143001e-05, 3.055361e-06],
+        BdfOrder.BDF5: [1.014097e-03, 2.249262e-04, 5.505524e-05, 1.143418e-05, 3.054173e-06],
+        BdfOrder.BDF6: [1.018886e-03, 2.280204e-04, 5.780452e-05, 1.151793e-05, 3.156305e-06],
+    },
 }
 
 # Polynomial saturation: fixed h, varying time order, degree on x-axis -----------------------------------------------------------------------
@@ -130,12 +131,13 @@ errs_grad_poly_sat = {
 
 
 # Plot selector ___________________________________________________________________________________________________________________________
-PLOT     = ConvType.SPATIAL
-TIME     = TimeMethod.BDF
-SPACE    = SpaceMethod.SPLDG
-STUDY    = StudyType.SATURATION
-COMBINED = True
-SAVE     = True
+PLOT          = ConvType.POLYNOMIAL
+TIME          = TimeMethod.BDF
+SPACE         = SpaceMethod.SPLDG
+STUDY         = StudyType.SATURATION
+SpaceSatOrder = PolyDegree.P3
+COMBINED      = True
+SAVE          = True
 
 # Runtime dispatch ________________________________________________________________________________________________________________________
 if __name__ == "__main__":
@@ -179,11 +181,24 @@ if __name__ == "__main__":
     elif STUDY == StudyType.SATURATION:
 
         if PLOT == ConvType.SPATIAL:
-            plot_spatial_saturation(
-                SpaceSatHs, errs_c_space_sat, errs_grad_space_sat,
-                l=SpaceSatOrder, time_method=SpaceSatTimeMethod, space_method=SPACE,
-                save=SAVE
-            )
+            if COMBINED:
+                plot_spatial_saturation_combined(
+                    SpaceSatHs,
+                    errs_c_space_sat_by_degree,
+                    errs_grad_space_sat_by_degree,
+                    degrees      = SpaceSatDegrees,
+                    time_method  = SpaceSatTimeMethod,
+                    space_method = SPACE,
+                    save         = SAVE,
+                )
+            else:
+                errs_c_space_sat    = errs_c_space_sat_by_degree[SpaceSatOrder]
+                errs_grad_space_sat = errs_grad_space_sat_by_degree[SpaceSatOrder]
+                plot_spatial_saturation(
+                    SpaceSatHs, errs_c_space_sat, errs_grad_space_sat,
+                    l=SpaceSatOrder, time_method=SpaceSatTimeMethod,
+                    space_method=SPACE, save=SAVE,
+                )
 
         elif PLOT == ConvType.POLYNOMIAL:
             plot_polynomial_saturation(

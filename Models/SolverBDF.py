@@ -1,7 +1,7 @@
 from Models.SolverBase import SolverBase
 
-from dolfin  import *
-from pathlib import Path
+from dolfin import *
+from config import DEFAULT_RESULTS_DIR
 
 from Utilities.FEniCSUtilities import Normalize
 from Utilities.EnumUtilities   import TimeMethod
@@ -69,7 +69,7 @@ class SolverBDF(SolverBase):
         if not isinstance(nu, int) or nu < 1 or nu > 6:
             raise ValueError(f"Values of nu must be an integer from 1 to 6, got {nu}")
         
-    def Solve(self, t0, dt, T, nu, l, tol, maxIt, extForce=None, NeumannBC=None):
+    def Solve(self, t0, dt, T, nu, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
   
         self._ValidateInput(t0, dt, nu ,T, l)
         
@@ -106,8 +106,9 @@ class SolverBDF(SolverBase):
         self._BuildNonlinearSolver(tol, maxIt)
 
         # Initialize output manager
-        base_results_path = Path(__file__).parent / "results"
-        exporter = OutputManager(self.mesh, base_results_path)
+        if output_dir is None:
+            output_dir = DEFAULT_RESULTS_DIR
+        exporter = OutputManager(self.mesh, output_dir)
         exporter.open()
 
         # Save initial condition

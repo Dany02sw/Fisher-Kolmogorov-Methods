@@ -1,10 +1,11 @@
 from pathlib import Path
 
-ROOT_DIR        = Path(__file__).parent.resolve()
-CONVERGENCE_DIR = ROOT_DIR / "Results" / "Convergence"
-MESHES_DIR      = ROOT_DIR / "Results" / "Meshes"
-WAVES_DIR       = ROOT_DIR / "Results" / "Simulations" / "Waves"
-BRAIN_DIR       = ROOT_DIR / "Results" / "Simulations" / "Brain"
+ROOT_DIR            = Path(__file__).parent.resolve()
+DEFAULT_RESULTS_DIR = ROOT_DIR / "Results" / "Default"
+CONVERGENCE_DIR     = ROOT_DIR / "Results" / "Convergence"
+MESHES_DIR          = ROOT_DIR / "Results" / "Meshes"
+WAVES_DIR           = ROOT_DIR / "Results" / "Simulations" / "Waves"
+BRAIN_DIR           = ROOT_DIR / "Results" / "Simulations" / "Brain"
 
 SAGITTAL_DIR   = BRAIN_DIR / "Sagittal"
 CORONAL_DIR    = BRAIN_DIR / "Coronal"
@@ -18,7 +19,7 @@ def get_convergence_dir(space_method, time_method):
 
 def ensure_dirs(space_method=None, time_method=None):
     """Creates all output directories. If space+time methods are provided, also creates their convergence subdirectory."""
-    dirs = [MESHES_DIR, SAGITTAL_DIR, CORONAL_DIR, HORIZONTAL_DIR]
+    dirs = [MESHES_DIR, SAGITTAL_DIR, CORONAL_DIR, HORIZONTAL_DIR, DEFAULT_RESULTS_DIR]
     if space_method is not None and time_method is not None:
         dirs.append(get_convergence_dir(space_method, time_method))
     for d in dirs:

@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # Model parameters
     eps       = 0.0
-    eta_0     = 5.0 
+    eta_0     = 10.0 
     smoothing = 1e-9
 
     # Solver parameters

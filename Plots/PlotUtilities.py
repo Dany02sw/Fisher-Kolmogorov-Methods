@@ -674,3 +674,103 @@ def plot_polynomial_saturation(l_list, errs_c, errs_grad, h: float,
         )
 
     plt.show()
+
+def plot_spatial_saturation_combined(
+    hs,
+    errs_c_by_degree: dict,
+    errs_grad_by_degree: dict,
+    degrees: list,
+    time_method=TimeMethod.BDF,
+    space_method=SpaceMethod.LDG,
+    save=False,
+):
+    """
+    Plots a 2×2 spatial saturation study for two polynomial degrees side by side.
+
+    Each row corresponds to one polynomial degree (e.g. P2, P3); the left
+    column shows primal errors and the right column gradient errors.
+    Reference slope lines are anchored at the first point of the highest-order
+    time integrator and use slopes l+1 (primal) and l (gradient).
+
+    Parameters
+    ----------
+    hs                 : array-like of mesh sizes (shared across all runs)
+    errs_c_by_degree   : dict {PolyDegree: {BdfOrder | ThetaMethod: [e0, ...]}}
+    errs_grad_by_degree: dict {PolyDegree: {BdfOrder | ThetaMethod: [e0, ...]}}
+    degrees            : list of PolyDegree — exactly two entries, top row first
+    time_method        : TimeMethod.BDF or TimeMethod.THETA
+    space_method       : SpaceMethod used to pick axis / legend labels
+    save               : if True, save the figure to Plots/
+    """
+    if len(degrees) != 2:
+        raise ValueError("degrees must contain exactly two PolyDegree entries.")
+
+    label_c,      label_grad      = ERROR_LABELS_PLOT[space_method]
+    norm_label_c, norm_label_grad = NORM_LABELS[space_method]
+
+    hs        = np.array(hs, dtype=float)
+    color_map = TIME_COLORS[time_method]
+    is_bdf    = (time_method == TimeMethod.BDF)
+    method_tag = "BDF" if is_bdf else "Theta"
+
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+
+    for row, l in enumerate(degrees):
+        errs_c    = errs_c_by_degree[l]
+        errs_grad = errs_grad_by_degree[l]
+
+        keys    = sorted(set(errs_c) | set(errs_grad), key=lambda x: float(x))
+        key_ref = max(keys, key=lambda x: float(x))
+
+        ax_c, ax_grad = axes[row, 0], axes[row, 1]
+
+        for key in keys:
+            col   = color_map.get(key, "gray")
+            label = fr"BDF{int(key)}" if is_bdf else fr"$\theta = {float(key)}$"
+
+            if key in errs_c:
+                Ec = np.array(errs_c[key], dtype=float)
+                ax_c.loglog(hs, Ec, "o-", color=col, linewidth=2, markersize=7, label=label)
+
+            if key in errs_grad:
+                Eg = np.array(errs_grad[key], dtype=float)
+                ax_grad.loglog(hs, Eg, "s--", color=col, linewidth=2, markersize=7, label=label)
+
+        if key_ref in errs_c:
+            _add_ref_line(ax_c, hs, np.array(errs_c[key_ref], dtype=float)[0],
+                          slope=int(l) + 1, x_label="h")
+
+        if key_ref in errs_grad:
+            _add_ref_line(ax_grad, hs, np.array(errs_grad[key_ref], dtype=float)[0],
+                          slope=int(l), x_label="h")
+
+        all_ec    = [v for vals in errs_c.values()    for v in vals]
+        all_egrad = [v for vals in errs_grad.values() for v in vals]
+
+        for ax, all_e, norm_label, title_label in [
+            (ax_c,    all_ec,    norm_label_c,    label_c),
+            (ax_grad, all_egrad, norm_label_grad, label_grad),
+        ]:
+            ax.set_title(
+                fr"Errors ${title_label}$  —  $\ell = {int(l)}$  —  {method_tag} saturation",
+                fontsize=15,
+            )
+            ax.set_xlabel(r"$h\;[-]$",  fontsize=13)
+            ax.set_ylabel(norm_label,   fontsize=13)
+            ax.set_xlim(hs.min(),       hs.max())
+            ax.set_ylim(min(all_e)*0.5, max(all_e)*2.0)
+            ax.grid(True, which="both", linestyle=":", alpha=0.7)
+            ax.legend(fontsize=11)
+
+    plt.tight_layout()
+
+    if save:
+        timestamp  = datetime.now().strftime("%Y%m%d_%H%M")
+        deg_tag    = "_".join(f"l{int(d)}" for d in degrees)
+        _save_plot(
+            get_convergence_dir(space_method, time_method)
+            / f"{space_method.name}{time_method.name}_sat_space_{deg_tag}_{timestamp}.png",
+            f"Space saturation combined plot ({deg_tag}, {method_tag})",
+        )
+
+    plt.show()

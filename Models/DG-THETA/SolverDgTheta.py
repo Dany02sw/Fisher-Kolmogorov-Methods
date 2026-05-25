@@ -66,6 +66,7 @@ class SolverDgTheta(SolverTheta):
         c_max     = c_h.vector().max()
 
         # Print the bounds for both the variables
+        print(f"{'─'*80}\n")
         print(f"  t = {t_val:.{self.decimals}f}")
         print(f"{'-'*80}")
         print(f"  c_h      ∈ [{c_min: 7.6f}, {c_max: 7.6f}]")

@@ -1,4 +1,5 @@
-from Utilities.EnumUtilities import SpaceMethod
+from Utilities.EnumUtilities import SpaceMethod, BrainSection
+from config import SAGITTAL_DIR, CORONAL_DIR, HORIZONTAL_DIR
 
 # Dictionary for error labels 
 ERROR_LABELS_PRINT = {
@@ -19,6 +20,13 @@ ERROR_LABELS_PLOT = {
 NORM_LABELS = {
     SpaceMethod.DG:  (r"$||c_{ex} - c_h||_{L^2(\Omega)}$",            r"$||c_{ex} - c_h||_{DG}$"),
     SpaceMethod.LDG:   (r"$||c_{ex} - c_h||_{L^2(\Omega)}$",            r"$||D\nabla c_{ex} - q_h||_{L^2(\Omega)}$"),
-    SpaceMethod.SPLDG: (r"$||c_{ex} - u(w_h)||_{L^2(\Omega)}$",         r"$||\nabla c_{ex} + \sigma_h||_{L^2(\Omega)}$"),
-    SpaceMethod.PPDG:  (r"$||c_{ex} - e^{\lambda_h}||_{L^2(\Omega)}$",  r"$||c_{ex} - e^{\lambda_h}||_{DG}$"),
+    SpaceMethod.SPLDG: (r"$||c_{\rm ex}(\cdot,T) - u(w_h^{(N)})||_{L^2(\Omega)}$",         r"$||\nabla c_{\rm ex}(\cdot,T) + \mathbf{\sigma}_h^{(N)}||_{L^2(\Omega)}$"),
+    SpaceMethod.PPDG:  (r"$||c_{\rm ex}(\cdot,T) - e^{\lambda_h^{(N)}}||_{L^2(\Omega)}$",  r"$||c_{\rm ex}(\cdot,T) - e^{\lambda_h^{(N)}}||_{DG}$"),
+}
+
+# Dictionary to match directories for brain
+BRAIN_SECTION_DIRS = {
+    BrainSection.SAGITTAL:   SAGITTAL_DIR,
+    BrainSection.CORONAL:    CORONAL_DIR,
+    BrainSection.HORIZONTAL: HORIZONTAL_DIR,
 }

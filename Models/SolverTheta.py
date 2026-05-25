@@ -1,7 +1,7 @@
 from Models.SolverBase import SolverBase
 
-from dolfin  import *
-from pathlib import Path
+from dolfin import *
+from config import DEFAULT_RESULTS_DIR
 
 from Utilities.FEniCSUtilities import Normalize
 from Utilities.EnumUtilities   import TimeMethod
@@ -62,7 +62,7 @@ class SolverTheta(SolverBase):
             raise ValueError("tht must be between in [0, 1]")
 
 
-    def Solve(self, t0, dt, T, tht, l, tol, maxIt, extForce=None, NeumannBC=None):
+    def Solve(self, t0, dt, T, tht, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
         self._ValidateInput(t0, dt, tht, T, l)
         
         # Mesh data
@@ -93,8 +93,9 @@ class SolverTheta(SolverBase):
         self._BuildNonlinearSolver(tol, maxIt)
 
         # Initialize output manager
-        base_results_path = Path(__file__).parent / "results"
-        exporter = OutputManager(self.mesh, base_results_path)
+        if output_dir is None:
+            output_dir = DEFAULT_RESULTS_DIR
+        exporter = OutputManager(self.mesh, output_dir)
         exporter.open()
 
         # Save initial condition
