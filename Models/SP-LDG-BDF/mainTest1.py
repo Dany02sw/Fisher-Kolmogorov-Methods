@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("SP-LDG + BDFν")
 
-    convType = ConvType.TEMPORAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
@@ -40,12 +40,12 @@ if __name__ == "__main__":
         print_subtitle("Space convergence test — linear time profile")
 
         # Space convergence parameters 
-        N_ref    = [2, 3, 4]
+        N_ref    = [2, 3, 4, 5]
         N_list   = [2**n for n in N_ref]
-        l_space  = 1 
-        T_space  = 1e-2
-        dt_space = 1e-3
-        nu_space = 6
+        l_space  = 4 
+        T_space  = 1e-1
+        dt_space = 1e-2
+        nu_space = 1
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables

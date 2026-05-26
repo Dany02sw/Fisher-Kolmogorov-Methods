@@ -202,5 +202,3 @@ class SolverBDF(SolverBase):
             self._UpdateOldState(u_h)
 
         return E_c, E_grad, h_avg
-    
-    

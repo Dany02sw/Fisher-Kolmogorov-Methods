@@ -46,9 +46,9 @@ if __name__ == "__main__":
         N_ref    = [3, 4, 5]
         N_list   = [2**n for n in N_ref]
         l_space  = 2 
-        T_space  = 3e-3
-        dt_space = 1e-4
-        nu_space = 3
+        T_space  = 1
+        dt_space = 1e-1
+        nu_space = 2
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
+                mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N, structure=MeshStructure.UNSTRUCTURED, P1=P1, P2=P2)
                 N_el_list.append(mesh.num_cells())
                 Solver  = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
                 E_c, E_sigma, h = Solver.ConvergenceTest(

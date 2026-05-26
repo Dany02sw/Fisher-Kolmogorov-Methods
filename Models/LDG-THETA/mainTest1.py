@@ -118,7 +118,7 @@ if __name__ == "__main__":
         l_time   = 2
         T_time   = 2
         dt_list  = [0.5, 0.25, 0.125]
-        tht_time = 0.5
+        tht_time = 1.0
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 
         # Storage variable 
