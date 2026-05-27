@@ -21,10 +21,10 @@ if __name__ == "__main__":
     t0    = 0.0
 
     # Model parameters
-    eta_0 = 5.0
+    eta_0 = 10.0
 
     # Solver parameters
-    tol   = 1e-12
+    tol   = 1e-11
     maxIt = 200
 
     # Exact solution
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref    = [2, 3, 4]
         N_list   = [2**n for n in N_ref]
-        l_space  = 4 
+        l_space  = 8 
         T_space  = 1e-1
         dt_space = 1e-2
         nu_space = 1

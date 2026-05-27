@@ -1,11 +1,13 @@
-from Utilities.EnumUtilities import ConvType, TimeMethod, SpaceMethod, StudyType, PolyDegree, BdfOrder, ThetaMethod
+from Utilities.EnumUtilities import ConvType, TimeMethod, SpaceMethod, StudyType, PolyDegree
+
+# Model selector __________________________________________________________________________________________________________________________
+TIME  = TimeMethod.BDF
+SPACE = SpaceMethod.SPLDG
 
 # Plot selector ___________________________________________________________________________________________________________________________
-PLOT          = ConvType.POLYNOMIAL
-TIME          = TimeMethod.BDF
-SPACE         = SpaceMethod.SPLDG
-STUDY         = StudyType.SATURATION
-SpaceSatOrder = PolyDegree.P3
+PLOT          = ConvType.SPATIAL
+STUDY         = StudyType.CONVERGENCE
+SpaceSatOrder = PolyDegree.P2
 COMBINED      = True
 SAVE          = True
 

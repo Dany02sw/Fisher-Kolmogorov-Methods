@@ -13,7 +13,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("DG + BDFν")
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.POLYNOMIAL
 
     # Data
     alpha = Constant(1.0)
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         print_subtitle("Polynomial degree convergence test — waves")
 
         # Polynomial degree convergence parameters 
-        N_poly  = 8
+        N_poly  = 20
         l_list  = [1, 2]
         T_poly  = 10.0
         dt_poly = 2.5e-2
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         errors_polynomial_DG = []
 
         # Mesh
-        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_poly, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_poly, structure=MeshStructure.UNSTRUCTURED, P1=P1, P2=P2)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):

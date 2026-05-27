@@ -77,7 +77,7 @@ class SolverBDF(SolverBase):
         x = SpatialCoordinate(self.mesh)
 
         # Time loop parameters
-        t_val   = t0 
+        t_val   = t0
         nsteps  = round((T - t0)/dt)
         t       = Constant(t0)
         self.nu = nu
@@ -90,16 +90,16 @@ class SolverBDF(SolverBase):
         self._SetSourceTerm(x, t, extForce, NeumannBC)
 
         # Initial guess for solver and old terms
-        c_0 = self.c_0(x, t)
-        c_0 = project(c_0, self.W)
+        c_0 = project(self.c_0(x, t), self.W)
         c_0 = Normalize(c_0)
-        u_0 = project(self.T.inv(c_0), self.W)
-        self.u_old[-1].assign(u_0)
-        for i in range(1, nu):
-            t_val += dt
-            t.assign(t_val)
-            self.u_old[-1-i].assign(u_0)
         self._SetInitialCondition(c_0)
+        self.u_old[0].assign(project(self.T.inv(c_0), self.W))
+        for j in range(1, nu):
+            t_back = t0 - j*dt
+            t.assign(t_back)
+            c_back = project(self.c_0(x, t), self.W)
+            c_back = Normalize(c_back)
+            self.u_old[j].assign(project(self.T.inv(c_back), self.W))
 
         # Variational form and solver
         self._BuildVariationalForms(dt)
@@ -116,7 +116,7 @@ class SolverBDF(SolverBase):
 
         # Time loop
         self.decimals = get_decimals(dt)
-        for i in range(nsteps-nu+1):
+        for i in range(nsteps):
             # Update time step
             t_val += dt
             t.assign(t_val)
