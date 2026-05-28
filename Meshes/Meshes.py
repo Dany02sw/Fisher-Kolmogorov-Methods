@@ -156,20 +156,39 @@ def create_brain_mesh_2d(
         Cell subdomains read from the XDMF file.
     """
     script_dir = Path(__file__).parent.resolve()
-    mesh_dict  = {
-        BrainSection.SAGITTAL  : ("sagittal",    "test-sagittal.xdmf"),
-        BrainSection.CORONAL   : ("coronal",     "test-coronal.xdmf"),
-        BrainSection.HORIZONTAL: ("horizontal",  "test-horizontal.xdmf"),
+    mesh_dict = {
+        BrainSection.SAGITTAL  : ("sagittal",   "test-sagittal.xdmf",   "sagittal.msh"),
+        BrainSection.CORONAL   : ("coronal",    "test-coronal.xdmf",    "coronal.msh"),
+        BrainSection.HORIZONTAL: ("horizontal", "test-horizontal.xdmf", "horizontal.msh"),
     }
     if plane not in mesh_dict:
         raise ValueError(f"Unknown brain plane: {plane}")
+    
+    mesh_name, xdmf_filename, msh_filename = mesh_dict[plane]
 
-    mesh_name, filename = mesh_dict[plane]
-    mesh_path = script_dir / "BrainMeshes" / "MeshSrc" / filename
+    mesh_src_dir = script_dir / "BrainMeshes" / "MeshSrc"
+    msh_dir      = script_dir / "BrainMeshes" / "MshFiles"
+    xdmf_path    = mesh_src_dir / xdmf_filename
+    msh_path     = msh_dir / msh_filename
+
+    # Fallback: if xdmf is missing, try to convert from msh
+    if not xdmf_path.exists():
+        if not msh_path.exists():
+            generator_path = script_dir / "BrainMeshes" / "MeshGenerator2D.py"
+            raise FileNotFoundError(
+                f"No mesh found for '{mesh_name}'.\n"
+                f"  Expected XDMF : {xdmf_path}\n"
+                f"  Expected MSH  : {msh_path}\n"
+                f"Run the mesh generator first:\n"
+                f"  python {generator_path}"
+            )
+        print(f"[INFO] XDMF not found, converting from MSH: {msh_path.name}...")
+        from Meshes.BrainMeshes.Converter import msh_to_xdmf  # local import to avoid circular deps
+        msh_to_xdmf(msh_path, mesh_src_dir)
+
     mesh      = Mesh()
-
     try:
-        with XDMFFile(str(mesh_path)) as infile:
+        with XDMFFile(str(xdmf_path)) as infile:
             infile.read(mesh)
             subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
             infile.read(subdomains, "subdomains")

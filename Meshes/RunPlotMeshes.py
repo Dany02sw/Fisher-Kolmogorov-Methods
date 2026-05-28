@@ -4,7 +4,7 @@ from MeshPlotUtilities        import plot_mesh_grid
 
 # ── Mesh grid parameters ──────────────────────────────────────────────────────
 PANEL_SIZE = (5, 5)   # (width_inches, height_inches) per panel
-SAVE       = True    # set True to export the figure to Plots/
+SAVE       = False    # set True to export the figure to Plots/
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

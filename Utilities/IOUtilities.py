@@ -14,6 +14,14 @@ class OutputManager:
         self.file_name = file_name
         self.file = None
 
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
     def open(self):
         full_path = self.output_path / f"{self.file_name}.xdmf"
         self.file = XDMFFile(self.mesh.mpi_comm(), str(full_path))
@@ -34,3 +42,23 @@ class OutputManager:
     def close(self):
         if self.file:
             self.file.close()
+
+
+class NullOutputManager:
+    """Drop-in no-op replacement for OutputManager. Used when output is not needed."""
+    def __enter__(self):  return self
+    def __exit__(self, *args): pass
+    def open(self):  pass
+    def save(self, function, t, label="concentration"): pass
+    def close(self): pass
+
+
+def make_output_manager(mesh, output_dir, file_name="concentration"):
+    """
+    Factory for output managers.
+
+    Returns a NullOutputManager if output_dir is None, otherwise a real OutputManager.
+    """
+    if output_dir is None:
+        return NullOutputManager()
+    return OutputManager(mesh, output_dir, file_name)
