@@ -13,8 +13,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("SP-LDG + BDFν")
 
-    convType = ConvType.SPATIAL
-
+    convType = ConvType.POLYNOMIAL
     # Data
     alpha = Constant(1.0)
     d_ext = Constant(1e-3) 
@@ -43,12 +42,12 @@ if __name__ == "__main__":
         print_subtitle("Space convergence test - waves")
 
         # Space convergence parameters 
-        N_ref    = [3, 4, 5]
+        N_ref    = [3, 4, 5, 6]
         N_list   = [2**n for n in N_ref]
         l_space  = 2 
-        T_space  = 1
-        dt_space = 1e-1
-        nu_space = 2
+        T_space  = 2e-1
+        dt_space = 1e-2
+        nu_space = 5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
@@ -61,7 +60,7 @@ if __name__ == "__main__":
         with timer(f"Space convergence l={l_space}"):
             for N in N_list:
                 print(f"\n --- N = {N} ---")
-                mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N, structure=MeshStructure.UNSTRUCTURED, P1=P1, P2=P2)
+                mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
                 N_el_list.append(mesh.num_cells())
                 Solver  = SolverSpLdgBDF(mesh=mesh, D=D, alpha=alpha, c_0=c_ex, eps=eps, eta_0=eta_0, theta=theta, smoothing=smoothing)
                 E_c, E_sigma, h = Solver.ConvergenceTest(
@@ -86,7 +85,7 @@ if __name__ == "__main__":
         l_list  = [1, 2]
         T_poly  = 10.0
         dt_poly = 2.5e-2
-        nu_poly = 4
+        nu_poly = 2
 
         # Storage variable 
         errors_polynomial_c     = []

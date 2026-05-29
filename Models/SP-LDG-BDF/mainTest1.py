@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("SP-LDG + BDFν")
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.POLYNOMIAL
 
     # Data
     alpha = Constant(1.0)
@@ -80,10 +80,10 @@ if __name__ == "__main__":
 
         # Polynomial degree convergence parameters 
         N_poly  = 5
-        l_list  = [1, 2, 3]
+        l_list  = [1, 2, 3, 4, 5, 6, 7, 8]
         T_poly  = 2.5e-4
         dt_poly = 1e-5
-        nu_poly = 6
+        nu_poly = 1
 
         # Storage variable 
         errors_polynomial_c     = []

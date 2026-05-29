@@ -23,7 +23,7 @@ if __name__ == "__main__":
     t0    = 0.0
 
     # Model parameters
-    eta_0 = 5.0
+    eta_0 = 10.0
 
     # Solver parameters
     tol   = 1e-10
@@ -80,18 +80,18 @@ if __name__ == "__main__":
         print_subtitle("Polynomial degree convergence test — waves")
 
         # Polynomial degree convergence parameters 
-        N_poly  = 20
+        N_poly  = 8
         l_list  = [1, 2]
         T_poly  = 10.0
         dt_poly = 2.5e-2
-        nu_poly = 4
+        nu_poly = 2
 
         # Storage variable 
         errors_polynomial_L2 = []
         errors_polynomial_DG = []
 
         # Mesh
-        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_poly, structure=MeshStructure.UNSTRUCTURED, P1=P1, P2=P2)
+        mesh, _ = mesh_factory(mesh_type=MeshType.RECTANGLE, N=N_poly, structure=MeshStructure.STRUCTURED, P1=P1, P2=P2)
 
         # Loop over l_list + benchmark
         with timer(f"Polynomial convergence"):

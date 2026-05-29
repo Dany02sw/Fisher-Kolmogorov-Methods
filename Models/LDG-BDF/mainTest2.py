@@ -84,7 +84,7 @@ if __name__ == "__main__":
         l_list  = [1, 2]
         T_poly  = 10.0
         dt_poly = 2.5e-2
-        nu_poly = 5
+        nu_poly = 2
 
         # Storage variable 
         errors_polynomial_c = []

@@ -5,7 +5,7 @@ from config import DEFAULT_RESULTS_DIR
 
 from Utilities.FEniCSUtilities import Normalize
 from Utilities.EnumUtilities   import TimeMethod
-from Utilities.IOUtilities     import OutputManager
+from Utilities.IOUtilities     import make_output_manager
 from Utilities.MathUtilities   import get_decimals
 
 BDF_COEFFS = {
@@ -108,7 +108,7 @@ class SolverBDF(SolverBase):
         # Initialize output manager
         if output_dir is None:
             output_dir = DEFAULT_RESULTS_DIR
-        exporter = OutputManager(self.mesh, output_dir)
+        exporter = make_output_manager(self.mesh, output_dir)
         exporter.open()
 
         # Save initial condition
@@ -136,7 +136,7 @@ class SolverBDF(SolverBase):
         # Close output file
         exporter.close()
 
-    def ConvergenceTest(self, t0, dt, T, nu, l, tol, maxIt):
+    def ConvergenceTest(self, t0, dt, T, nu, l, tol, maxIt, output_dir=None):
 
         self._ValidateInput(t0, dt, nu ,T, l)
 
@@ -183,6 +183,9 @@ class SolverBDF(SolverBase):
         # Initialize error lists
         E_c    = None
         E_grad = None
+
+        # Initialize output manager (we don't want here to save always)
+        exporter = make_output_manager(self.mesh, output_dir)
 
         # Time loop
         self.decimals = get_decimals(dt)

@@ -5,7 +5,7 @@ TIME  = TimeMethod.BDF
 SPACE = SpaceMethod.SPLDG
 
 # Plot selector ___________________________________________________________________________________________________________________________
-PLOT          = ConvType.SPATIAL
+PLOT          = ConvType.POLYNOMIAL
 STUDY         = StudyType.CONVERGENCE
 SpaceSatOrder = PolyDegree.P2
 COMBINED      = True

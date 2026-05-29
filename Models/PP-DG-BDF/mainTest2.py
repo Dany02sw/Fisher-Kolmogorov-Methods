@@ -13,7 +13,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("PP-DG + BDFν")
 
-    convType = ConvType.SPATIAL
+    convType = ConvType.POLYNOMIAL
 
     # Data
     alpha = Constant(1.0)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         l_list  = [1, 2]
         T_poly  = 10.0
         dt_poly = 2.5e-2
-        nu_poly = 4
+        nu_poly = 2
 
         # Storage variable 
         errors_polynomial_L2 = []

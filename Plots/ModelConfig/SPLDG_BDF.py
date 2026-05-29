@@ -31,8 +31,8 @@ PolyConvH      = 0.196019
 PolyConvLList  = [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3,
                   PolyDegree.P4, PolyDegree.P5, PolyDegree.P6,
                   PolyDegree.P7, PolyDegree.P8]
-errs_c_poly    = [7.0142e-03, 1.3494e-03, 1.2236e-04, 2.7339e-05, 7.4957e-06, 8.6946e-07, 2.6554e-07, 6.5268e-08]   # one value per degree in PolyConvLList
-errs_grad_poly = [2.6228e-01, 6.5734e-02, 8.3562e-03, 2.0082e-03, 6.0901e-04, 7.6389e-05, 2.7612e-05, 7.3085e-06]
+errs_c_poly    = [7.0149e-03, 1.3491e-03, 1.2219e-04, 2.7321e-05, 7.4897e-06, 8.6814e-07, 2.6519e-07, 6.5219e-08]
+errs_grad_poly = [2.6227e-01, 6.5657e-02, 8.3423e-03, 2.0098e-03, 6.1051e-04, 7.6386e-05, 2.7662e-05, 7.2932e-06]
 
 # BDF convergence: keys are BDF orders -----------------------------------------------------------------------------------------------------
 errs_c_bdf = {
