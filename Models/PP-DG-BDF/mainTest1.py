@@ -2,7 +2,7 @@ from SolverPpDgBDF import SolverPpDgBDF
 
 from dolfin import *
 
-from Meshes.Meshes                import mesh_factory
+from Meshes.ImportMesh            import mesh_factory
 from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
 from Plots.PlotUtilities          import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence

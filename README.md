@@ -29,16 +29,15 @@ If you are on macOS (including Apple Silicon M1/M2/M3) or Windows native, using 
 
 ### 1 - Build the Docker image (only needed the first time):
 ```bash
-docker build -t fisher_kolmogorov .
+sudo docker build -t fisher_kolmogorov .
 ```
 
 ### 2 - Run the container interactively with a shared volume:
 ```bash
-docker run -ti -v "$(pwd):/home/fenics/shared" fisher_kolmogorov
+sudo docker run -ti --rm -v "$(pwd):/home/fenics/shared" fisher_kolmogorov /bin/bash
 ```
-Note: The -v flag mounts your current directory inside the container in real-time. You can edit the code on your host machine using your favorite IDE, and the container will see the updates instantly. You do not need to run pip install -e . inside Docker.
+**Note on Visualization**: The Docker container is currently configured as a "headless" environment. It is designed specifically for reproducing numerical calculations and simulations. It is not configured to render or display plots directly (plotting routines will crash if they attempt to open an interactive window). You can use this environment to run your scripts, but for visualization, we recommend saving the output as files (.png) within the shared volume and viewing them on your host machine.
 
-# ---
 
 # Discontinuous Galerkin - based methods for Fisher-Kolmogorov
 

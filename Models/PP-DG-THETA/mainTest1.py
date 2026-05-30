@@ -2,7 +2,7 @@ from SolverPpDgTheta import SolverPpDgTheta
 
 from dolfin import *
 
-from Meshes.Meshes                import mesh_factory
+from Meshes.ImportMesh            import mesh_factory
 from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
 from Plots.PlotUtilities          import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
@@ -41,9 +41,9 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref     = [2, 3, 4]
         N_list    = [2**n for n in N_ref]
-        l_space   = 2 
-        T_space   = 2e-4
-        dt_space  = 1e-5
+        l_space   = 8 
+        T_space   = 1e-5
+        dt_space  = 1e-6
         tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 

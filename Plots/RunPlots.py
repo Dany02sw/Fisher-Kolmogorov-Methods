@@ -9,7 +9,7 @@ PLOT          = ConvType.POLYNOMIAL
 STUDY         = StudyType.CONVERGENCE
 SpaceSatOrder = PolyDegree.P2
 COMBINED      = True
-SAVE          = True
+SAVE          = False
 
 # Dynamic config import ___________________________________________________________________________________________________________________
 if SPACE == SpaceMethod.SPLDG:

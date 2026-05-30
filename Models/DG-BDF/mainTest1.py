@@ -2,7 +2,7 @@ from SolverDgBDF import SolverDgBDF
 
 from dolfin import *
 
-from Meshes.Meshes                import mesh_factory
+from Meshes.ImportMesh            import mesh_factory
 from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
 from Plots.PlotUtilities          import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref    = [2, 3, 4]
         N_list   = [2**n for n in N_ref]
-        l_space  = 8 
+        l_space  = 4
         T_space  = 1e-1
         dt_space = 1e-2
         nu_space = 1

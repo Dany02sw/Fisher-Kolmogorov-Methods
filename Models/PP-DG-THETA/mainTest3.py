@@ -2,7 +2,7 @@ from SolverPpDgTheta import SolverPpDgTheta
 
 from dolfin import *
 
-from Meshes.Meshes                import mesh_factory
+from Meshes.ImportMesh            import mesh_factory
 from Utilities.EnumUtilities      import BrainSection, MeshType
 from Utilities.InitialConditions  import get_initial_condition
 from Utilities.ProfilingUtilities import timer

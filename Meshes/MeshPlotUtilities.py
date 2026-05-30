@@ -6,7 +6,7 @@ from datetime          import datetime
 from matplotlib.collections import PolyCollection
 
 from config              import MESHES_DIR
-from Meshes              import mesh_factory
+from Meshes.ImportMesh   import mesh_factory
 from Plots.PlotUtilities import _save_plot
 
 # Dictionary for brain subdomains _________________________________________________________________________________________________________

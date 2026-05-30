@@ -170,9 +170,9 @@ def main():
     output_directory = script_dir / ".." / "MshFiles"
 
     print("\n")
-    print(36*"#")
+    print(40*"#")
     print("### Brain mesh generator: STL -> MSH ###")
-    print(37*"#")
+    print(40*"#")
 
     # --- Check STL exists ---
     if not stl_path.exists():

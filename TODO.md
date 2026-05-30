@@ -7,4 +7,4 @@
 - [ ] modificare e metodi di _ConvergenceTestPostprocessing per restituire c_h da salcare nell'output manager
 - [ ] Print utility per le stampe di ConvergenceTestPostprocessing e SolvePostprocessing
 - [ ] riempire le tabelle degli errori
-- [ ] aggiornare il readme 
+- [x] aggiornare il readme 

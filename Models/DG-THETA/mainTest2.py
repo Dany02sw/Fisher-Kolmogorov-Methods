@@ -3,7 +3,7 @@ from SolverDgTheta import SolverDgTheta
 from dolfin import *
 from ufl import tanh
 
-from Meshes.Meshes                import mesh_factory
+from Meshes.ImportMesh            import mesh_factory
 from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
 from Plots.PlotUtilities          import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Model parameters
     eps       = 0.0
-    eta_0     = 1.0
+    eta_0     = 10.0
     smoothing = 0.0
 
     # Solver parameters

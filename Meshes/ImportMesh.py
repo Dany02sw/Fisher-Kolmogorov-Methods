@@ -183,7 +183,7 @@ def create_brain_mesh_2d(
                 f"  python {generator_path}"
             )
         print(f"[INFO] XDMF not found, converting from MSH: {msh_path.name}...")
-        from Meshes.BrainMeshes.Converter import msh_to_xdmf  # local import to avoid circular deps
+        from Meshes.BrainMeshes.Converter.Msh_to_xdmf import msh_to_xdmf  # local import to avoid circular deps
         msh_to_xdmf(msh_path, mesh_src_dir)
 
     mesh      = Mesh()

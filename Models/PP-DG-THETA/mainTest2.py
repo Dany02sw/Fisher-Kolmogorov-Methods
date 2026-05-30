@@ -3,7 +3,7 @@ from SolverPpDgTheta import SolverPpDgTheta
 from dolfin import *
 from ufl import tanh
 
-from Meshes.Meshes                import mesh_factory
+from Meshes.ImportMesh            import mesh_factory
 from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
 from Plots.PlotUtilities          import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Model parameters
     eps       = 0.0
-    eta_0     = 1.0
+    eta_0     = 10.0
     smoothing = 0.0
 
     # Solver parameters
@@ -45,8 +45,8 @@ if __name__ == "__main__":
         N_ref     = [3, 4, 5]
         N_list    = [2**n for n in N_ref]
         l_space   = 2 
-        T_space   = 3e-3
-        dt_space  = 1e-4
+        T_space   = 1e-1
+        dt_space  = 1e-2
         tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 

@@ -2,7 +2,7 @@ from SolverDgTheta import SolverDgTheta
 
 from dolfin import *
 
-from Meshes.Meshes                import mesh_factory
+from Meshes.ImportMesh            import mesh_factory
 from Utilities.ProfilingUtilities import timer
 from Utilities.EnumUtilities      import ConvType, MeshType, MeshStructure
 from Plots.PlotUtilities          import plot_spatial_convergence, plot_polynomial_convergence, plot_time_convergence
@@ -12,7 +12,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("DG + θ-METHOD")
 
-    convType = ConvType.TEMPORAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     t0    = 0.0
 
     # Model parameters
-    eta_0 = 5.0
+    eta_0 = 10.0
 
     # Solver parameters
     tol   = 1e-12
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref     = [2, 3, 4]
         N_list    = [2**n for n in N_ref]
-        l_space   = 6 
+        l_space   = 4 
         T_space   = 1e-4
         dt_space  = 1e-5
         tht_space = 0.5
