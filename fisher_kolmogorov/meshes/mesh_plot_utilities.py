@@ -2,10 +2,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 
-from datetime          import datetime
+from datetime               import datetime
 from matplotlib.collections import PolyCollection
 
-from config              import MESHES_DIR
+from config import MESHES_DIR
+
 from fisher_kolmogorov.meshes.mesh_import   import mesh_factory
 from fisher_kolmogorov.plots.plot_utilities import _save_plot
 

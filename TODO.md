@@ -1,6 +1,6 @@
 # TODO List
 
-- [ ] Qualcosa che unifichi i test su tutti i modelli (unificare i main)
+- [x] Qualcosa che unifichi i test su tutti i modelli (unificare i main)
 - [ ] RK implicito e testare RK esplicito con dt sufficientemente piccoli
 - [ ] Testare le estrapolazioni esplicite in convergenze spaziali
 - [ ] SIP-SPDG (reduced1)
@@ -8,3 +8,7 @@
 - [ ] Print utility per le stampe di ConvergenceTestPostprocessing e SolvePostprocessing
 - [ ] riempire le tabelle degli errori
 - [x] aggiornare il readme 
+- [ ] pyptoject.toml
+- [ ] environment update
+- [ ] main per i plot sia dei grafici che delle mesh
+- [ ] folder local

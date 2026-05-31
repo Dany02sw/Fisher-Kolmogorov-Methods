@@ -18,13 +18,13 @@ from fisher_kolmogorov.utilities.print_utilities import print_title, print_subti
 
 # Registry maps ___________________________________________________________________________________________________________________________
 SOLVER_REGISTRY = {
-    "DgBDF"     : ("SolverDgBDF",    "SolverDgBDF"),
-    "DgTheta"   : ("SolverDgTheta",  "SolverDgTheta"),
-    "LdgBDF"    : ("SolverLdgBDF",   "SolverLdgBDF"),
-    "LdgTheta"  : ("SolverLdgTheta", "SolverLdgTheta"),
-    "PpDgBDF"   : ("SolverPpDgBDF",  "SolverPpDgBDF"),
-    "PpDgTheta" : ("SolverPpDgTheta", "SolverPpDgTheta"),
-    "SpLdgBDF"  : ("SolverSpLdgBDF", "SolverSpLdgBDF"),
+    "DgBDF"     : ("SolverDgBDF",      "SolverDgBDF"),
+    "DgTheta"   : ("SolverDgTheta",    "SolverDgTheta"),
+    "LdgBDF"    : ("SolverLdgBDF",     "SolverLdgBDF"),
+    "LdgTheta"  : ("SolverLdgTheta",   "SolverLdgTheta"),
+    "PpDgBDF"   : ("SolverPpDgBDF",    "SolverPpDgBDF"),
+    "PpDgTheta" : ("SolverPpDgTheta",  "SolverPpDgTheta"),
+    "SpLdgBDF"  : ("SolverSpLdgBDF",   "SolverSpLdgBDF"),
     "SpLdgTheta": ("SolverSpLdgTheta", "SolverSpLdgTheta"),
 }
 
@@ -61,13 +61,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--save-plot", action="store_true",    help="Save convergence plots to disk.")
 
     # Model-specific parameters (all optional; ignored when not relevant)
-    parser.add_argument("--eta0",      type=float, help="DG / SP-LDG / PP-DG penalty coefficient.")
+    parser.add_argument("--eta_0",     type=float, help="DG / SP-LDG / PP-DG penalty coefficient.")
     parser.add_argument("--C11",       type=float, help="LDG stabilisation coefficient.")
     parser.add_argument("--C12",       type=float, help="LDG normal stabilisation coefficient.")
     parser.add_argument("--eps",       type=float, help="SP-LDG / PP-DG stabilisation coefficient.")
     parser.add_argument("--gamma",     type=float, help="DG penalty type (SIP=1, IIP=0, NIP=-1).")
     parser.add_argument("--theta",     type=float, help="SP-LDG averaging exponent.")
-    parser.add_argument("--smoothing", type=float, help="PP-DG smoothing parameter.")
+    parser.add_argument("--smoothing", type=float, help="Transformations smoothing parameter.")
 
     return parser
 
@@ -81,10 +81,10 @@ def build_model_params(model_key: str, args: argparse.Namespace):
         "DgTheta"   : DgParams,
         "LdgBDF"    : LdgParams,
         "LdgTheta"  : LdgParams,
-        "SpLdgBDF"  : SpLdgParams,
-        "SpLdgTheta": SpLdgParams,
         "PpDgBDF"   : PpDgParams,
         "PpDgTheta" : PpDgParams,
+        "SpLdgBDF"  : SpLdgParams,
+        "SpLdgTheta": SpLdgParams,
     }
     cls  = defaults[model_key]
     inst = cls()  # start from dataclass defaults

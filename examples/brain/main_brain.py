@@ -33,7 +33,7 @@ from fisher_kolmogorov.utilities.enum_utilities      import MeshType
 from fisher_kolmogorov.utilities.initial_conditions  import get_initial_condition
 from fisher_kolmogorov.utilities.profiling_utilities import timer
 from fisher_kolmogorov.utilities.print_utilities     import print_title, print_subtitle
-from fisher_kolmogorov.configs.test_configs.base             import BrainConfig, SimulationParams
+from fisher_kolmogorov.configs.test_configs.base     import BrainConfig, SimulationParams
 
 
 def build_brain_pde_data(config: BrainConfig):

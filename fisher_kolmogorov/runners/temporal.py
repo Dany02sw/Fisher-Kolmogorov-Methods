@@ -5,9 +5,9 @@ from fisher_kolmogorov.utilities.profiling_utilities import timer
 from fisher_kolmogorov.utilities.print_utilities     import print_time_rates
 from fisher_kolmogorov.utilities.math_utilities      import get_decimals
 from fisher_kolmogorov.plots.plot_utilities          import plot_time_convergence
-from fisher_kolmogorov.utilities.enum_utilities      import TimeMethod
-from fisher_kolmogorov.configs.test_configs.base             import TestConfig
-from fisher_kolmogorov.configs.model_configs.base             import ModelParams
+from fisher_kolmogorov.utilities.enum_utilities      import BdfOrder
+from fisher_kolmogorov.configs.test_configs.base     import TestConfig
+from fisher_kolmogorov.configs.model_configs.base    import ModelParams
 
 
 def run_temporal_convergence(
@@ -65,7 +65,7 @@ def run_temporal_convergence(
 
     # Detect whether nu_or_tht encodes BDF order or theta value
     nu_or_tht = p.nu_or_tht
-    is_bdf    = isinstance(nu_or_tht, int)
+    is_bdf    = isinstance(nu_or_tht, BdfOrder)
     dt_max    = p.dt_list[0]
 
     label = f"ν={nu_or_tht}" if is_bdf else f"θ={nu_or_tht}"
@@ -80,7 +80,7 @@ def run_temporal_convergence(
             )
 
             if is_bdf:
-                # Shift the window so the BDF stencil is fully warm-started
+                # Shift the window so the BDF stencil is fully warm-started 
                 t0_eff = config.t0 + (nu_or_tht - 1) * dt_max
                 T_eff  = p.T       + (nu_or_tht - 1) * dt_max
                 E_L2, E_DG, _ = solver.ConvergenceTest(

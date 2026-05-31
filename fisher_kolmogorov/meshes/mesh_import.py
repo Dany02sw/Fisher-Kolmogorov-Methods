@@ -166,15 +166,15 @@ def create_brain_mesh_2d(
     
     mesh_name, xdmf_filename, msh_filename = mesh_dict[plane]
 
-    mesh_src_dir = script_dir / "BrainMeshes" / "MeshSrc"
-    msh_dir      = script_dir / "BrainMeshes" / "MshFiles"
+    mesh_src_dir = script_dir / "brain_meshes" / "mesh_src"
+    msh_dir      = script_dir / "brain_meshes" / "msh_files"
     xdmf_path    = mesh_src_dir / xdmf_filename
     msh_path     = msh_dir / msh_filename
 
     # Fallback: if xdmf is missing, try to convert from msh
     if not xdmf_path.exists():
         if not msh_path.exists():
-            generator_path = script_dir / "BrainMeshes" / "MeshGenerator2D.py"
+            generator_path = script_dir / "brain_meshes" / "mesh_generator" / "mesh_generator_2D.py"
             raise FileNotFoundError(
                 f"No mesh found for '{mesh_name}'.\n"
                 f"  Expected XDMF : {xdmf_path}\n"
@@ -186,7 +186,7 @@ def create_brain_mesh_2d(
         from fisher_kolmogorov.meshes.brain_meshes.converter.gmsh_to_fenics import msh_to_xdmf  # local import to avoid circular deps
         msh_to_xdmf(msh_path, mesh_src_dir)
 
-    mesh      = Mesh()
+    mesh = Mesh()
     try:
         with XDMFFile(str(xdmf_path)) as infile:
             infile.read(mesh)

@@ -4,8 +4,8 @@ from fisher_kolmogorov.meshes.mesh_import            import mesh_factory
 from fisher_kolmogorov.utilities.profiling_utilities import timer
 from fisher_kolmogorov.utilities.print_utilities     import print_space_rates
 from fisher_kolmogorov.plots.plot_utilities          import plot_spatial_convergence
-from fisher_kolmogorov.configs.test_configs.base             import TestConfig
-from fisher_kolmogorov.configs.model_configs.base             import ModelParams
+from fisher_kolmogorov.configs.test_configs.base     import TestConfig
+from fisher_kolmogorov.configs.model_configs.base    import ModelParams
 
 
 def run_spatial_convergence(

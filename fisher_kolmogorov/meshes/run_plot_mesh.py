@@ -1,5 +1,5 @@
-from fisher_kolmogorov.meshes.config.mesh_test_2 import MESH_GRID_CONFIGS, MESH_GRID_NAME
-from fisher_kolmogorov.meshes.mesh_plot_utilities        import plot_mesh_grid
+from fisher_kolmogorov.meshes.mesh_configs.mesh_test_3  import MESH_GRID_CONFIGS, MESH_GRID_NAME
+from fisher_kolmogorov.meshes.mesh_plot_utilities import plot_mesh_grid
 
 
 # ── Mesh grid parameters ──────────────────────────────────────────────────────
