@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
+from typing      import Union
 from dolfin      import *
 
 from fisher_kolmogorov.utilities.enum_utilities import PolyDegree, BdfOrder, ThetaMethod, MeshType, MeshStructure, BrainSection
@@ -25,10 +28,10 @@ class ConvergenceParams:
     l_space       : PolyDegree = PolyDegree.P3
     T             : float      = 1e-1
     dt            : float      = 1e-2
-    nu_or_tht     : BdfOrder | ThetaMethod = BdfOrder.BDF1
-    dt_list       : list             = field(default_factory=lambda: [0.5, 0.25, 0.125])
-    l_list        : list[PolyDegree] = field(default_factory=lambda: [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3])
-    N_fixed       : int              = 8
+    nu_or_tht     : Union[BdfOrder, ThetaMethod] = BdfOrder.BDF1
+    dt_list       : list                         = field(default_factory=lambda: [0.5, 0.25, 0.125])
+    l_list        : list                         = field(default_factory=lambda: [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3])
+    N_fixed       : int           = 8
     mesh_type     : MeshType      = MeshType.UNIT_SQUARE
     mesh_structure: MeshStructure = MeshStructure.UNSTRUCTURED
 
@@ -81,13 +84,13 @@ class SimulationParams:
         tol       : nonlinear solver tolerance
         max_it    : maximum nonlinear solver iterations
     """
-    l         : PolyDegree             = PolyDegree.P2
-    T         : float                  = 50.0
-    dt        : float                  = 2.5e-1
-    nu_or_tht : BdfOrder | ThetaMethod = ThetaMethod.CN
-    t0        : float                  = 0.0
-    tol       : float                  = 1e-6
-    max_it    : int                    = 500
+    l         : PolyDegree                   = PolyDegree.P2
+    T         : float                        = 50.0
+    dt        : float                        = 2.5e-1
+    nu_or_tht : Union[BdfOrder, ThetaMethod] = ThetaMethod.CN
+    t0        : float                        = 0.0
+    tol       : float                        = 1e-6
+    max_it    : int                          = 500
 
 
 # Class for a configuration of a brain simulation __________________________________________________________________________________________
