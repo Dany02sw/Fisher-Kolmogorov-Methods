@@ -48,7 +48,7 @@ def run_temporal_convergence(
 
     parameters["form_compiler"]["quadrature_degree"] = p.l_space ** 2 + 4
 
-    d_ext = Constant(config.d_ext_conv)
+    d_ext = Constant(config.d_ext)
     D     = config.D_factory(d_ext, mesh=None)
     alpha = config.alpha
 

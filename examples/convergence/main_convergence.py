@@ -8,10 +8,10 @@ Edit the four variables in the "CONFIGURATION" block and run with:
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
-from fisher_kolmogorov.models.solver_dg_bdf    import SolverDgBDF      # swap to any of the 8 solver classes
-from fisher_kolmogorov.configs.model_configs    import DgParams          # matching ModelParams subclass
-from fisher_kolmogorov.configs.test_configs    import COSINE_SPATIAL    # swap to any TestConfig instance
-from fisher_kolmogorov.utilities.enum_utilities import ConvType
+from fisher_kolmogorov.models.solver_dg_bdf        import SolverDgBDF      # swap to any of the 8 solver classes
+from fisher_kolmogorov.configs.model_configs       import DgParams          # matching ModelParams subclass
+from fisher_kolmogorov.configs.test_configs.cosine import COSINE_SPATIAL    # swap to any TestConfig instance
+from fisher_kolmogorov.utilities.enum_utilities    import ConvType
 
 SOLVER_CLASS = SolverDgBDF
 MODEL_PARAMS = DgParams(eta_0=10.0)

@@ -39,7 +39,7 @@ def run_polynomial_convergence(
     """
     p = config.polynomial
 
-    d_ext = Constant(config.d_ext_conv)
+    d_ext = Constant(config.d_ext)
     D     = config.D_factory(d_ext, mesh=None)
     alpha = config.alpha
 
