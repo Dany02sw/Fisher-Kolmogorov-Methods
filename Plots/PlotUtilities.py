@@ -21,7 +21,7 @@ POLY_COLORS = {
     PolyDegree.P5: "blue",
     PolyDegree.P6: "crimson",
     PolyDegree.P7: "gold",
-    PolyDegree.P8: "lime",
+    PolyDegree.P8: "magenta",
 }  # One color per polynomial degree, used consistently across all convergence plots
 
 BDF_COLORS = {

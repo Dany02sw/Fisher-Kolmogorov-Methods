@@ -17,13 +17,13 @@ def get_convergence_dir(space_method, time_method):
     """Returns the convergence output directory for a given space+time method pair."""
     return CONVERGENCE_DIR / f"{space_method.name}{time_method.name}"
 
-def get_waves_dir(space_method, time_method, l):
+def get_waves_dir(space_method, time_method, l, time_order):
     """Returns the waves output directory for a given space+time method pair and polynomial degree."""
-    return WAVES_DIR / f"{space_method.name}{time_method.name}" / f"degree_{l}"
+    return WAVES_DIR / f"{space_method.name}{time_method.name}" / f"P{l}_time_order_{time_order}"
 
-def ensure_waves_dir(space_method, time_method, l):
+def ensure_waves_dir(space_method, time_method, l, time_order):
     """Creates and returns the waves output directory for a given method pair and polynomial degree."""
-    d = get_waves_dir(space_method, time_method, l)
+    d = get_waves_dir(space_method, time_method, l, time_order)
     d.mkdir(parents=True, exist_ok=True)
     return d
 

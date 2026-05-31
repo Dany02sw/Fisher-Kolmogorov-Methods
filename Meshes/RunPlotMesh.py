@@ -1,4 +1,4 @@
-from PlotMeshConfig.meshTest3 import MESH_GRID_CONFIGS, MESH_GRID_NAME
+from PlotMeshConfig.meshTest2 import MESH_GRID_CONFIGS, MESH_GRID_NAME
 from MeshPlotUtilities        import plot_mesh_grid
 
 

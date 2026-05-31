@@ -5,11 +5,11 @@ TIME  = TimeMethod.BDF
 SPACE = SpaceMethod.SPLDG
 
 # Plot selector ___________________________________________________________________________________________________________________________
-PLOT          = ConvType.POLYNOMIAL
+PLOT          = ConvType.SPATIAL
 STUDY         = StudyType.CONVERGENCE
 SpaceSatOrder = PolyDegree.P2
 COMBINED      = True
-SAVE          = False
+SAVE          = True
 
 # Dynamic config import ___________________________________________________________________________________________________________________
 if SPACE == SpaceMethod.SPLDG:

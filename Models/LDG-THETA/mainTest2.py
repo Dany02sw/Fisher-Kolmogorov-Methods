@@ -13,7 +13,7 @@ from Utilities.MathUtilities      import get_decimals
 if __name__ == "__main__":
     print_title("LDG + θ-METHOD")
 
-    convType = ConvType.POLYNOMIAL
+    convType = ConvType.SPATIAL
 
     # Data
     alpha = Constant(1.0)
@@ -41,11 +41,11 @@ if __name__ == "__main__":
         print_subtitle("Space convergence test - waves")
 
         # Space convergence parameters 
-        N_ref     = [3, 4, 5]
+        N_ref     = [3, 4, 5, 6]
         N_list    = [2**n for n in N_ref]
         l_space   = 2 
-        T_space   = 3e-3
-        dt_space  = 1e-4
+        T_space   = 1e-5
+        dt_space  = 1e-6
         tht_space = 0.5
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 

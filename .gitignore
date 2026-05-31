@@ -33,3 +33,5 @@ Results/
 
 # JIT
 jitfailure-*/
+
+convergence_refactor/
