@@ -39,6 +39,77 @@ sudo docker run -ti --rm -v "$(pwd):/home/fenics/shared" fisher_kolmogorov /bin/
 **Note on Visualization**: The Docker container is currently configured as a "headless" environment. It is designed specifically for reproducing numerical calculations and simulations. It is not configured to render or display plots directly (plotting routines will crash if they attempt to open an interactive window). You can use this environment to run your scripts, but for visualization, we recommend saving the output as files (.png) within the shared volume and viewing them on your host machine.
 
 
+# Running the Project
+
+## 1 — Run a simulation
+
+The models are organized in the `Models/` directory. Each subfolder corresponds to a specific spatial-temporal discretization scheme:
+
+```
+Models/
+├── DG-BDF/         ├── DG-THETA/
+├── LDG-BDF/        ├── LDG-THETA/
+├── PP-DG-BDF/      ├── PP-DG-THETA/
+├── SP-LDG-BDF/     └── SP-LDG-THETA/
+```
+
+Navigate into the model of your choice and launch the main script for the desired test:
+
+```bash
+cd Models/DG-BDF        # replace with the model you want to run
+python mainTest1.py     # Test 1: Cosine (convergence analysis)
+python mainTest2.py     # Test 2: Waves (robustness on sharp fronts)
+python mainTest3.py     # Test 3: Brain Application
+```
+
+Each `mainTestN.py` runs the full simulation and saves the convergence/solution plots automatically.
+
+> **Note:** Before running `mainTest3.py`, make sure the brain meshes are available. See step 3 below.
+
+---
+
+## 2 — Plot the meshes
+
+To visualize the computational meshes used in all three tests, run the dedicated script from the project root:
+
+```bash
+python Meshes/RunPlotMesh.py
+```
+
+---
+
+## 3 — Prepare the brain meshes for Test 3
+
+Test 3 requires 2D brain section meshes derived from an STL geometry. This involves two steps. Note that if the `.xdmf` files are missing but the pre-generated `.msh` files in `Meshes/BrainMeshes/MshFiles/` are present, the conversion will be triggered automatically when `mainTest3.py` is launched.
+
+### Step 3a — Generate the `.msh` files from the STL
+
+Download the brain STL model from [this source](https://cults3d.com/en/3d-model/tool/brain-bygonza), rename it `brain.stl`, and place it at:
+
+```
+Meshes/BrainMeshes/StlFiles/brain.stl
+```
+
+Create the `StlFiles/` folder if it does not exist. Then run the mesh generator from the project root:
+
+```bash
+python Meshes/BrainMeshes/MeshGenerators/meshGenerator2D.py
+```
+
+The script is interactive: it will prompt you to select the anatomical section (sagittal, coronal, or horizontal) and the cutting offset. The output `.msh` file is saved in `Meshes/BrainMeshes/MshFiles/`. Repeat for each section you need.
+
+### Step 3b — Convert the `.msh` files to `.xdmf`
+
+FEniCS requires meshes in XDMF format. Run the converter from the project root:
+
+```bash
+python Meshes/BrainMeshes/Converter/Msh_to_xdmf.py
+```
+
+The script is interactive: it will list the available `.msh` files and ask you to select one. The converted `.xdmf` file is saved in `Meshes/BrainMeshes/MeshSrc/`. Repeat for each section you need. Once the XDMF files are in place, `mainTest3.py` can be executed normally.
+
+---
+
 # Discontinuous Galerkin - based methods for Fisher-Kolmogorov
 
 This repository contains various Discontinuous Galerkin (DG) methods for solving the Fisher-Kolmogorov equation. We provide four different spatial discretizations for the diffusive term, each paired with two temporal schemes: a BDF (Backward Differentiation Formula) scheme for higher-order time accuracy, and a $\theta$-method (which includes the Crank-Nicolson scheme).
