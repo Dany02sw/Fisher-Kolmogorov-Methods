@@ -1,4 +1,4 @@
-## Installation & Setup
+# Installation & Setup
 
 First, clone the repository and navigate into the project directory:
 
@@ -38,6 +38,84 @@ sudo docker run -ti --rm -v "$(pwd):/home/fenics/shared" fisher_kolmogorov /bin/
 ```
 **Note on Visualization**: The Docker container is currently configured as a "headless" environment. It is designed specifically for reproducing numerical calculations and simulations. It is not configured to render or display plots directly (plotting routines will crash if they attempt to open an interactive window). You can use this environment to run your scripts, but for visualization, we recommend saving the output as files (.png) within the shared volume and viewing them on your host machine.
 
+
+# How to run
+
+## 1 — Run a simulation
+
+The models are organized in the `Models/` directory. Each subfolder corresponds to a specific spatial-temporal discretization scheme:
+
+```
+Models/
+├── DG-BDF/         ├── DG-THETA/
+├── LDG-BDF/        ├── LDG-THETA/
+├── PP-DG-BDF/      ├── PP-DG-THETA/
+├── SP-LDG-BDF/     └── SP-LDG-THETA/
+```
+
+Launch the test corresponding to the model of your choice by using the following commands(replace the model folder with the desired one):
+
+```bash
+python3 Models/DG-BDF/mainTest1.py     # Test 1: Cosine (convergence analysis)
+python3 Models/DG-BDF/mainTest2.py     # Test 2: Waves (robustness on sharp fronts / saturation effect)
+python3 Models/DG-BDF/mainTest3.py     # Test 3: Brain Application
+```
+
+Each `mainTest<N>.py` script executes the full simulation followed by a post-processing phase, which varies depending on the test case:
+
+* **Tests 1 & 2 (`ConvergenceTest` method):** Computes convergence rates and generates the relative plots. Plot saving is disabled by default but can be enabled by setting the `save` flag to `True`.
+* **Test 3 (`Solve` method):** Stores the solution data by exporting the corresponding `.xdmf` and `.h5` files.
+  
+> **Note:** Before running `mainTest3.py`, make sure the brain meshes are available. See step 3 below.
+
+---
+
+## 2 — Plot the meshes
+
+To visualize the computational meshes used in all three tests, run the dedicated script from the project root:
+
+```bash
+python3 Meshes/RunPlotMesh.py
+```
+
+By default, the script plots the meshes used for the spatial convergence analysis in Tests 1 and 2, as well as the specific brain meshes used for the simulations illustrated in the report.
+
+---
+
+## 3 — Brain meshes for Test 3
+
+Test 3 utilizes 2D brain section meshes. The repository **already includes** the pre-generated `.msh` files inside `Meshes/BrainMeshes/MshFiles/`. 
+
+* **Standard Run:** No manual preparation is required. Launching `mainTest3.py` will automatically trigger the conversion from `.msh` to `.xdmf` if the latter files are missing.
+* **Custom Mesh Generation:** If you wish to customize the cutting sections or regenerate the meshes from scratch, you can follow the pipeline described below.
+
+### Step 3a — Generate the `.msh` files from the STL
+
+Download the brain STL model from [this source](https://cults3d.com/en/3d-model/tool/brain-bygonza), rename it `brain.stl`, and place it at:
+
+```
+Meshes/BrainMeshes/StlFiles/brain.stl
+```
+
+Create the `StlFiles/` folder if it does not exist. Then run the mesh generator from the project root:
+
+```bash
+python3 Meshes/BrainMeshes/MeshGenerators/meshGenerator2D.py
+```
+
+The script is interactive: it will prompt you to select the anatomical section (sagittal, coronal, or horizontal) and the cutting offset. The output `.msh` file is saved in `Meshes/BrainMeshes/MshFiles/`. Repeat for each section you need.
+
+### Step 3b — Convert the `.msh` files to `.xdmf`
+
+FEniCS requires meshes in XDMF format. Run the converter from the project root:
+
+```bash
+python3 Meshes/BrainMeshes/Converter/Msh_to_xdmf.py
+```
+
+The script is interactive: it will list the available `.msh` files and ask you to select one. The converted `.xdmf` file is saved in `Meshes/BrainMeshes/MeshSrc/`. Repeat for each section you need. Once the XDMF files are in place, `mainTest3.py` can be executed normally.
+
+---
 
 # Discontinuous Galerkin - based methods for Fisher-Kolmogorov
 
