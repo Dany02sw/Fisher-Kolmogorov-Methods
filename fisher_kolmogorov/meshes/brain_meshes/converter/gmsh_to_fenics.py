@@ -57,8 +57,8 @@ def main():
     script_dir = Path(__file__).parent.resolve()
 
     # --- Build the input and output directories ---
-    input_directory = script_dir / ".." / "MshFiles"
-    output_directory = script_dir / ".." / "MeshSrc"
+    input_directory  = script_dir / ".." / "msh_files"
+    output_directory = script_dir / ".." / "mesh_src"
 
     # --- Check existence of input directory ---
     if not input_directory.exists():

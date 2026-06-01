@@ -8,11 +8,12 @@ from fisher_kolmogorov.utilities.transform_utilities import Identity
 from fisher_kolmogorov.utilities.fenics_utilities    import havg
 
 class SolverDgBDF(SolverBDF):
-    def __init__(self, mesh, D, alpha, c_0, eta_0, gamma=PenaltyType.SIP):
+    def __init__(self, mesh, D, alpha, c_0, eta_0, gamma=PenaltyType.SIP, Linearize=False):
         super().__init__(mesh, D, alpha, c_0, transform=Identity())
         self.eta_0   = eta_0   if isinstance(eta_0,   ufl.core.expr.Expr) else Constant(eta_0)
         self.gamma   = gamma   if isinstance(gamma,   ufl.core.expr.Expr) else Constant(gamma)
         self.SM      = SpaceMethod.DG
+        self.lin     = Linearize
 
     def _BuildFunctionSpaces(self, l=1):
         l = int(l)
@@ -45,11 +46,16 @@ class SolverDgBDF(SolverBDF):
             (c,)   = components_now
             (c_t,) = components_time
             w      = TestFunction(self.WR)
-
+            
             F = A(c_t, w) \
-                - alpha*c_t*(1.0 - c_t)*w*dx \
                 - inner(Force, w)*dx \
                 + inner(gN, self.n)*w*ds
+            
+            if self.lin:
+                from fisher_kolmogorov.utilities.explicit_extrapolations import EXPLICIT_EXTRAPOLATIONS # local import
+                F += - alpha*EXPLICIT_EXTRAPOLATIONS[self.nu](self.u_old)*(1.0 - c_t)*w*dx
+            else:
+                F += - alpha*c_t*(1.0 - c_t)*w*dx
             
             return F, c, w
 

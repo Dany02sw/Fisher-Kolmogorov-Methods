@@ -166,8 +166,8 @@ def main():
     Interactive logic for brain mesh generation.
     """
     script_dir       = Path(__file__).parent.resolve()
-    stl_path         = script_dir / ".." / "StlFiles" / "brain.stl"
-    output_directory = script_dir / ".." / "MshFiles"
+    stl_path         = script_dir / ".." / "stl_files" / "brain.stl"
+    output_directory = script_dir / ".." / "msh_files"
 
     print("\n")
     print(40*"#")

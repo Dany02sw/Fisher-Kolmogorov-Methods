@@ -7,11 +7,12 @@ from fisher_kolmogorov.utilities.enum_utilities      import SpaceMethod
 from fisher_kolmogorov.utilities.transform_utilities import Identity
 
 class SolverLdgBDF(SolverBDF):
-    def __init__(self, mesh, D, alpha, c_0, C11, C12):
+    def __init__(self, mesh, D, alpha, c_0, C11, C12, Linearize=False):
         super().__init__(mesh, D, alpha, c_0, transform=Identity())
         self.C11   = C11   if isinstance(C11,   ufl.core.expr.Expr) else Constant(C11)
         self.C12   = C12   if isinstance(C12,   ufl.core.expr.Expr) else Constant(C12)
         self.SM    = SpaceMethod.LDG
+        self.lin   = Linearize
 
     def _BuildFunctionSpaces(self, l=1):
         l = int(l)
@@ -51,9 +52,14 @@ class SolverLdgBDF(SolverBDF):
             # Fc dependent on the time discretization
             Fc = inner(q_t, grad(v))*dx \
                 - inner(avg(q_t) - (C11/h_avg)*jump(c_t, n) - C12*jump(q_t, n), jump(v, n))*dS \
-                - alpha*c_t*(1.0 - c_t)*v*dx \
                 - inner(Force, v)*dx \
                 - inner(gN, n)*v*ds
+            
+            if self.lin:
+                from fisher_kolmogorov.utilities.explicit_extrapolations import EXPLICIT_EXTRAPOLATIONS # local import
+                Fc += - alpha*EXPLICIT_EXTRAPOLATIONS[self.nu](self.u_old)*(1.0 - c_t)*v*dx
+            else:
+                Fc += - alpha*c_t*(1.0 - c_t)*v*dx
 
             return Fq + Fc, c, v
 

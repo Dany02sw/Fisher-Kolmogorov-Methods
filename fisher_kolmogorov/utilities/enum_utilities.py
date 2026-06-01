@@ -21,6 +21,10 @@ class SpaceMethod(Enum):
     PPDG  = auto()
     SPLDG = auto()
 
+class TestType(Enum):
+    COSINE = auto()
+    WAVE   = auto()
+
 class MeshType(Enum):
     UNIT_SQUARE  = auto()
     RECTANGLE    = auto()
