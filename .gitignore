@@ -34,3 +34,6 @@ Results/
 # JIT
 jitfailure-*/
 
+# Local qol folder
+local/
+
