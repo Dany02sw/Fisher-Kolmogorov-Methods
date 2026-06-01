@@ -38,6 +38,35 @@ sudo docker run -ti --rm -v "$(pwd):/home/fenics/shared" fisher_kolmogorov /bin/
 ```
 **Note on Visualization**: The Docker container is currently configured as a "headless" environment. It is designed specifically for reproducing numerical calculations and simulations. It is not configured to render or display plots directly (plotting routines will crash if they attempt to open an interactive window). You can use this environment to run your scripts, but for visualization, we recommend saving the output as files (.png) within the shared volume and viewing them on your host machine.
 
+# Repository Structure
+
+Here is a brief overview of the main directories and how the project is organized:
+
+```
+Fisher-Kolmogorov-Methods/
+├── Meshes/          # Mesh generation, brain STL files, and conversion utilities
+├── Models/          # Core solvers grouped by spatial-temporal discretization
+├── Plots/           # Scripts to visualize simulation results and convergence charts
+├── Utilities/       # Auxiliary routines and shared helper functions
+└── config.py        # Global path configurations
+```
+
+### Core Components
+
+* **`Models/`**: This is the heart of the repository, built upon a modular object-oriented design. It features a core base solver from which specialized BDF and $\theta$-method solvers inherit. From these, the 8 distinct numerical models are derived (combining the 4 spatial discretizations with the 2 temporal schemes). Each model has its own subfolder containing its specific solver implementation and the `mainTest<N>.py` executable scripts.
+* **`Meshes/`**: Contains the complete pipeline for geometric domains, handling mesh generation, conversion, and visualization for all test cases. The directory components are all located at the root of this folder:
+  * `ImportMeshes.py`: Contains the centralized `mesh_factory` function used to load and manage meshes across the repository.
+  * `MeshPlotUtilities.py`: Provides the underlying grid-plotting functions, including `plot_mesh_grid`.
+  * `RunPlotMesh.py`: The main executable script used to plot and visualize the computational meshes.
+  * `PlotMeshConfig/`: Stores reference mesh configurations (specifically for spatial convergence studies and brain simulations) used during visualization.
+  * `BrainMeshes/`: Handles the generation of 2D brain slices from raw `.stl` data, interactive slicing scripts, and tools to convert meshes into FEniCS-compatible `.xdmf` formats.
+* **`Plots/`**: Houses the configuration and plotting scripts used to post-process simulation data, evaluate error norms, and format final figures. 
+  * `ModelConfig/`: Contains template scripts for storing model-specific data (with `SP-LDG-BDF` model configuration currently fully populated).
+  * `PlotUtilities.py` provides the underlying plotting functions executed by the main entry point `RunPlots.py`.
+* **`Utilities/`**: Contains auxiliary scripts organized by task. It encapsulates specific classes, configuration dictionaries, and shared helper functions used throughout the codebase to ensure modularity and clean structure.
+* **`config.py`**: Defines the global path and directory structures used across the repository to automatically standardize where output files are stored and organized.
+
+---
 
 # How to run
 
