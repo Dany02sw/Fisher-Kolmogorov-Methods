@@ -21,7 +21,7 @@ if __name__ == "__main__":
     t0    = 0.0
 
     # Model parameters
-    C11 = 10.0
+    C11 = 1.0
     C12 = 0.5
 
     # Solver parameters
@@ -41,10 +41,10 @@ if __name__ == "__main__":
         # Space convergence parameters 
         N_ref    = [2, 3, 4]
         N_list   = [2**n for n in N_ref]
-        l_space  = 4 
+        l_space  = 8 
         T_space  = 1e-1
         dt_space = 1e-2
-        nu_space = 1
+        nu_space = 4
         parameters["form_compiler"]["quadrature_degree"] = l_space**2 + 4
 
         # Storage variables
@@ -114,10 +114,10 @@ if __name__ == "__main__":
         print_subtitle("Time convergence test — exponential time profile")
 
         # Time convergence parameters 
-        N_time  = 64
+        N_time  = 45
         l_time  = 4
         T_time  = 2
-        dt_list = [0.125, 0.125/2]
+        dt_list = [0.5, 0.25, 0.125]
         nu_time = 6
         parameters["form_compiler"]["quadrature_degree"] = l_time**2 + 4
 

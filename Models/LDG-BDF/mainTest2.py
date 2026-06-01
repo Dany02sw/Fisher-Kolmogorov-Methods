@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
         # Polynomial degree convergence parameters 
         N_poly  = 16
-        l_list  = [1, 2]
+        l_list  = [1, 2, 3]
         T_poly  = 10.0
         dt_poly = 2.5e-2
         nu_poly = 6

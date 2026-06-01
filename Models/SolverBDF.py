@@ -184,13 +184,6 @@ class SolverBDF(SolverBase):
         E_c    = None
         E_grad = None
 
-        # # Initialize output manager (we don't want here to save always)
-        # from config import ensure_waves_dir
-        # output_dir = ensure_waves_dir(self.SM, self.TM, l, self.nu)
-        # exporter = make_output_manager(self.mesh, output_dir)
-        # exporter.open()
-        # exporter.save(project(self.c_ex, self.W), t_val)
-
         # Time loop
         self.decimals = get_decimals(dt)
         for i in range(nsteps-nu+1):
@@ -207,7 +200,5 @@ class SolverBDF(SolverBase):
 
             # Update old solutions
             self._UpdateOldState(u_h)
-
-            # exporter.save(project(self.T(u_h), self.W), t_val)
 
         return E_c, E_grad, h_avg
