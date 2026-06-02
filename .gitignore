@@ -5,6 +5,7 @@ build/
 __pycache__/
 *.pyc
 .jit_utils/
+*.pytest_cache/
 
 # Logs file
 Logs/

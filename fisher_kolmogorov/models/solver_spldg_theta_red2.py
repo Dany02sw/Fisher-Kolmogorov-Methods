@@ -7,7 +7,7 @@ from fisher_kolmogorov.utilities.enum_utilities      import SpaceMethod
 from fisher_kolmogorov.utilities.transform_utilities import Sigmoid
 from fisher_kolmogorov.utilities.spldg_utilities     import div_LDG, grad_LDG, inner_LDG
 
-class SolverSpLdgTheta(SolverTheta):
+class SolverSpLdgThetaReduced2(SolverTheta):
     def __init__(self, mesh, D, alpha, c_0, eps, eta_0, theta, smoothing=0.0):
         super().__init__(mesh, D, alpha, c_0, transform=Sigmoid(eps=smoothing))
         self.eps     = eps     if isinstance(eps,     ufl.core.expr.Expr) else Constant(eps)
@@ -22,7 +22,7 @@ class SolverSpLdgTheta(SolverTheta):
         self.R        = VectorFunctionSpace(self.mesh, "DG", l)
         element_c     = self.W.ufl_element()
         element_sigma = self.R.ufl_element()
-        mixed_element = MixedElement([element_c, element_sigma, element_sigma, element_sigma])
+        mixed_element = MixedElement([element_c, element_sigma])
         self.WR       = FunctionSpace(self.mesh, mixed_element)
 
     def _BuildSpatialForm(self):
@@ -45,38 +45,34 @@ class SolverSpLdgTheta(SolverTheta):
         dx, dS, ds = self.dx, self.dS, self.ds
 
         def F_space(components_now, components_time, transf_time, Force, gN):
-            (w, sigma, z, r)         = components_now
-            (w_t, sigma_t, z_t, r_t) = components_time
-            Phi                      = TestFunction(self.WR)
-            (psi, phi, eta, chi)     = split(Phi)
+            (w, sigma)     = components_now
+            (w_t, sigma_t) = components_time
+            Phi            = TestFunction(self.WR)
+            (psi, phi)     = split(Phi)
 
             # No time derivative involved in these equations, so we use the current time here
-            F1 = inner(z, eta)*dx + grad_LDG(w, eta, n, gamma, dx, dS)
-            F2 = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx - inner(D*z, phi)*dx
-            F3 = inner(r, chi)*dx - inner(D*sigma, chi)*dx
+            F_sigma = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx + grad_LDG(w, D.T*phi, n, gamma, dx, dS)
 
             # Here there is the time derivative, so we use time-disretization dependent components
-            F4 = self.eps*inner_LDG(w_t, psi, n, gamma, h_avg, D, dx, dS, alpha) \
-                + div_LDG(r_t, psi, n, gamma, dx, dS) \
+            F_w = self.eps*inner_LDG(w_t, psi, n, gamma, h_avg, D, dx, dS, alpha) \
+                + div_LDG(D*sigma_t, psi, n, gamma, dx, dS) \
                 + inner(gN, n)*psi*ds \
                 + inner((1.0/h_avg)*jump(w_t, n), jump(psi, n))*dS \
                 - inner(alpha*transf_time*(1.0 - transf_time), psi)*dx \
                 - inner(Force, psi)*dx
             
-            return F1 + F2 + F3 + F4, w, psi 
-
+            return F_sigma + F_w, w, psi
+        
         return F_space
     
     def _SetInitialCondition(self, c_0):
-        assign(self.U.sub(0), project(self.T.s1(c_0),            self.W))
-        assign(self.U.sub(1), project(-grad(c_0),                self.R))
-        assign(self.U.sub(2), project(-self.T.s2(c_0)*grad(c_0), self.R))
-        assign(self.U.sub(3), project(dot(self.D, -grad(c_0)),   self.R))
+        assign(self.U.sub(0), project(self.T.s1(c_0), self.W))
+        assign(self.U.sub(1), project(-grad(c_0),     self.R))
 
     def _SolvePostprocessing(self, t_val):
         # Extract solution
-        (w_h, sigma_h, z_h, r_h) = self.U.split(deepcopy=True)
-        c_h                      = project(self.T(w_h), self.W)
+        (w_h, sigma_h) = self.U.split(deepcopy=True)
+        c_h            = project(self.T(w_h), self.W)
 
         # Compute min and max values
         c_min     = c_h.vector().min()
@@ -96,8 +92,8 @@ class SolverSpLdgTheta(SolverTheta):
     
     def _ConvergenceTestPostprocessing(self, t_val):
         # Extract solution
-        (w_h, sigma_h, z_h, r_h) = self.U.split(deepcopy=True)
-        c_h                      = project(self.T(w_h), self.W)
+        (w_h, sigma_h) = self.U.split(deepcopy=True)
+        c_h            = project(self.T(w_h), self.W)
 
         # Compute errors
         E_c = sqrt(assemble((self.c_ex - self.T(w_h))*(self.c_ex - self.T(w_h))*self.dx))

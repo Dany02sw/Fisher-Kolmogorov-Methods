@@ -66,8 +66,8 @@ class SolverSpLdgBDFReduced2(SolverBDF):
         return F_space
     
     def _SetInitialCondition(self, c_0):
-        assign(self.U.sub(0), project(self.T.s1(c_0),           self.W))
-        assign(self.U.sub(1), project(-grad(c_0),               self.R))
+        assign(self.U.sub(0), project(self.T.s1(c_0), self.W))
+        assign(self.U.sub(1), project(-grad(c_0),     self.R))
 
     def _SolvePostprocessing(self, t_val):
         # Extract solution

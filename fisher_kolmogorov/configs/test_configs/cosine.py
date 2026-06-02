@@ -10,7 +10,8 @@ def _D_factory(d_ext, mesh):
 
 
 def _c_exact_spatial(x, t):
-    """Exact solution for spatial/polynomial convergence (linear in time — exact with BDF1/IE)."""
+    """Exact solution for spatial/polynomial convergence (linear in time — exact with BDF1/IE unless explicit
+    extrapolations are used)."""
     c_space = 0.25 * (cos(2 * pi * x[0]) * cos(2 * pi * x[1]) + 2.0)
     return c_space * (1.0 - t)
 
@@ -18,7 +19,7 @@ def _c_exact_spatial(x, t):
 def _c_exact_temporal(x, t):
     """Exact solution for temporal convergence."""
     c_space = 0.25 * (cos(2 * pi * x[0]) * cos(2 * pi * x[1]) + 2.0)
-    return c_space * exp(-t)
+    return c_space * exp(-0.75*t)
 
 
 # Spatial — BDF _______________________________________________________________________________________________________________________________
@@ -55,7 +56,7 @@ COSINE_SPATIAL_THETA = TestConfig(
         dt             = 1e-2,
         nu_or_tht      = ThetaMethod.IE,
         mesh_type      = MeshType.UNIT_SQUARE,
-        mesh_structure = MeshStructure.STRUCTURED,
+        mesh_structure = MeshStructure.UNSTRUCTURED,
     ),
 )
 # COSINE_SPATIAL_THETA = COSINE_SPATIAL_BDF
@@ -70,11 +71,11 @@ COSINE_POLYNOMIAL_BDF = TestConfig(
     t0        = 0.0,
     d_ext     = 1.0,
     polynomial = ConvergenceParams(
-        N_fixed        = 8,
+        N_fixed        = 5,
         l_list         = [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3],
         T              = 2.5e-4,
         dt             = 1e-5,
-        nu_or_tht      = BdfOrder.BDF4,
+        nu_or_tht      = BdfOrder.BDF1,
         mesh_type      = MeshType.UNIT_SQUARE,
         mesh_structure = MeshStructure.UNSTRUCTURED,
     ),
@@ -89,7 +90,7 @@ COSINE_POLYNOMIAL_THETA = TestConfig(
     t0        = 0.0,
     d_ext     = 1.0,
     polynomial = ConvergenceParams(
-        N_fixed        = 8,
+        N_fixed        = 5,
         l_list         = [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3],
         T              = 2.5e-4,
         dt             = 1e-5,
@@ -109,10 +110,10 @@ COSINE_TEMPORAL_BDF = TestConfig(
     d_ext     = 1e-3,
     temporal  = ConvergenceParams(
         N_fixed        = 32,
-        l_space        = PolyDegree.P4,
+        l_space        = PolyDegree.P2,
         T              = 2.0,
         dt_list        = [0.5, 0.25, 0.125],
-        nu_or_tht      = BdfOrder.BDF5,
+        nu_or_tht      = BdfOrder.BDF2,
         mesh_type      = MeshType.UNIT_SQUARE,
         mesh_structure = MeshStructure.UNSTRUCTURED,
     ),
@@ -128,10 +129,10 @@ COSINE_TEMPORAL_THETA = TestConfig(
     d_ext     = 1e-3,
     temporal  = ConvergenceParams(
         N_fixed        = 32,
-        l_space        = PolyDegree.P4,
+        l_space        = PolyDegree.P2,
         T              = 2.0,
         dt_list        = [0.5, 0.25, 0.125],
-        nu_or_tht      = ThetaMethod.IE,
+        nu_or_tht      = ThetaMethod.CN,
         mesh_type      = MeshType.UNIT_SQUARE,
         mesh_structure = MeshStructure.UNSTRUCTURED,
     ),
