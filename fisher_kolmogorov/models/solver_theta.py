@@ -62,8 +62,8 @@ class SolverTheta(SolverBase):
             raise ValueError("tht must be between in [0, 1]")
 
 
-    def Solve(self, t0, dt, T, tht, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
-        self._ValidateInput(t0, dt, tht, T, l)
+    def Solve(self, t0, dt, T, time_order, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
+        self._ValidateInput(t0, dt, time_order, T, l)
         
         # Mesh data
         x = SpatialCoordinate(self.mesh)
@@ -72,7 +72,7 @@ class SolverTheta(SolverBase):
         t_val    = t0 
         nsteps   = round((T - t0)/dt)
         t        = Constant(t0)
-        self.tht = Constant(tht)
+        self.tht = Constant(time_order)
 
         # Functional setting 
         self._BuildFunctionSpaces(l)
@@ -124,8 +124,9 @@ class SolverTheta(SolverBase):
         exporter.close()
 
 
-    def ConvergenceTest(self, t0, dt, T, tht, l, tol, maxIt):
-        self._ValidateInput(t0, dt, tht, T, l)
+    def ConvergenceTest(self, t0, dt, T, time_order, l, tol, maxIt):
+
+        self._ValidateInput(t0, dt, time_order, T, l)
 
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
@@ -135,7 +136,7 @@ class SolverTheta(SolverBase):
         t_val    = t0 
         nsteps   = round((T - t0)/dt)
         t        = Constant(t0)
-        self.tht = Constant(tht)
+        self.tht = Constant(time_order)
 
         # Data
         D         = self.D

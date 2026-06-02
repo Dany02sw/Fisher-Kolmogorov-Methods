@@ -63,13 +63,13 @@ def run_polynomial_convergence(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
                 **model_params.to_kwargs(),
             )
-            E_L2, E_DG, h = solver.ConvergenceTest(
+            E_c, E_grad, h = solver.ConvergenceTest(
                 t0=config.t0, dt=p.dt, T=p.T,
-                nu=p.nu_or_tht, l=l,
+                time_order=p.nu_or_tht, l=l,
                 tol=tol, maxIt=max_it,
             )
-            errors_base.append(E_L2)
-            errors_grad.append(E_DG)
+            errors_base.append(E_c)
+            errors_grad.append(E_grad)
 
     print_polynomial_rates(errors_base, errors_grad, p.l_list, method=solver.SM)
     plot_polynomial_convergence(errors_base, errors_grad, p.l_list, h, method=solver.SM, save=save_plot)

@@ -83,20 +83,20 @@ def run_temporal_convergence(
                 # Shift the window so the BDF stencil is fully warm-started 
                 t0_eff = config.t0 + (nu_or_tht - 1) * dt_max
                 T_eff  = p.T       + (nu_or_tht - 1) * dt_max
-                E_L2, E_DG, _ = solver.ConvergenceTest(
+                E_c, E_grad, _ = solver.ConvergenceTest(
                     t0=t0_eff, dt=dt, T=T_eff,
-                    nu=nu_or_tht, l=p.l_space,
+                    time_order=nu_or_tht, l=p.l_space,
                     tol=tol, maxIt=max_it,
                 )
             else:
-                E_L2, E_DG, _ = solver.ConvergenceTest(
+                E_c, E_grad, _ = solver.ConvergenceTest(
                     t0=config.t0, dt=dt, T=p.T,
-                    tht=nu_or_tht, l=p.l_space,
+                    time_order=nu_or_tht, l=p.l_space,
                     tol=tol, maxIt=max_it,
                 )
 
-            errors_base.append(E_L2)
-            errors_grad.append(E_DG)
+            errors_base.append(E_c)
+            errors_grad.append(E_grad)
 
     print_time_rates(
         errors_base, errors_grad, p.dt_list, nu_or_tht,

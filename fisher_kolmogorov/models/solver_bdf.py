@@ -69,9 +69,9 @@ class SolverBDF(SolverBase):
         if not isinstance(nu, int) or nu < 1 or nu > 6:
             raise ValueError(f"Values of nu must be an integer from 1 to 6, got {nu}")
         
-    def Solve(self, t0, dt, T, nu, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
+    def Solve(self, t0, dt, T, time_order, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
   
-        self._ValidateInput(t0, dt, nu ,T, l)
+        self._ValidateInput(t0, dt, time_order, T, l)
         
         # Mesh data
         x = SpatialCoordinate(self.mesh)
@@ -80,7 +80,7 @@ class SolverBDF(SolverBase):
         t_val   = t0
         nsteps  = round((T - t0)/dt)
         t       = Constant(t0)
-        self.nu = nu
+        self.nu = time_order
 
         # Functional setting 
         self._BuildFunctionSpaces(l)
@@ -94,7 +94,7 @@ class SolverBDF(SolverBase):
         c_0 = Normalize(c_0)
         self._SetInitialCondition(c_0)
         self.u_old[0].assign(project(self.T.inv(c_0), self.W))
-        for j in range(1, nu):
+        for j in range(1, self.nu):
             t_back = t0 - j*dt
             t.assign(t_back)
             c_back = project(self.c_0(x, t), self.W)
@@ -136,19 +136,19 @@ class SolverBDF(SolverBase):
         # Close output file
         exporter.close()
 
-    def ConvergenceTest(self, t0, dt, T, nu, l, tol, maxIt, output_dir=None):
+    def ConvergenceTest(self, t0, dt, T, time_order, l, tol, maxIt, output_dir=None):
 
-        self._ValidateInput(t0, dt, nu ,T, l)
+        self._ValidateInput(t0, dt, time_order, T, l)
 
         # Mesh data
         x     = SpatialCoordinate(self.mesh)
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
 
         # Time loop parameters
-        t_val   = t0 - (nu - 1)*dt 
+        t_val   = t0 - (time_order - 1)*dt 
         nsteps  = round((T - t_val)/dt)
         t       = Constant(t_val)
-        self.nu = nu
+        self.nu = time_order
 
         # Data
         D         = self.D
@@ -169,7 +169,7 @@ class SolverBDF(SolverBase):
 
         # Initial guess for solver and old terms
         self.u_old[-1].assign(project(self.T.inv(self.c_ex), self.W))
-        for i in range(1, nu):
+        for i in range(1, self.nu):
             t_val += dt
             t.assign(t_val)
             u_tmp = project(self.T.inv(self.c_ex), self.W)
@@ -186,7 +186,7 @@ class SolverBDF(SolverBase):
 
         # Time loop
         self.decimals = get_decimals(dt)
-        for i in range(nsteps-nu+1):
+        for i in range(nsteps-self.nu+1):
 
             # Update time step
             t_val += dt

@@ -67,13 +67,13 @@ def run_spatial_convergence(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
                 **model_params.to_kwargs(),
             )
-            E_L2, E_DG, h = solver.ConvergenceTest(
+            E_c, E_grad, h = solver.ConvergenceTest(
                 t0=config.t0, dt=p.dt, T=p.T,
-                nu=p.nu_or_tht, l=p.l_space,
+                time_order=p.nu_or_tht, l=p.l_space,
                 tol=tol, maxIt=max_it,
             )
-            errors_base.append(E_L2)
-            errors_grad.append(E_DG)
+            errors_base.append(E_c)
+            errors_grad.append(E_grad)
             hs.append(h)
 
     print_space_rates(errors_base, errors_grad, hs, N_el_list, p.l_space, method=solver.SM)
