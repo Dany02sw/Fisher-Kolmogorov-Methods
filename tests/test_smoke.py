@@ -9,20 +9,20 @@ completes without raising an exception.
 import pytest
 from dolfin import *
 
-from fisher_kolmogorov.models.solver_dg_bdf      import SolverDgBDF
-from fisher_kolmogorov.models.solver_dg_theta    import SolverDgTheta
-from fisher_kolmogorov.models.solver_ldg_bdf     import SolverLdgBDF
-from fisher_kolmogorov.models.solver_ldg_theta   import SolverLdgTheta
-from fisher_kolmogorov.models.solver_ppdg_bdf    import SolverPpDgBDF
-from fisher_kolmogorov.models.solver_ppdg_theta  import SolverPpDgTheta
-from fisher_kolmogorov.models.solver_spldg_bdf   import SolverSpLdgBDF
-from fisher_kolmogorov.models.solver_spldg_theta import SolverSpLdgTheta
-from fisher_kolmogorov.configs.model_configs     import DgParams, LdgParams, PpDgParams, SpLdgParams
-from fisher_kolmogorov.utilities.enum_utilities  import PolyDegree, BdfOrder, ThetaMethod
+from fisher_kolmogorov.models.solver_dg_bdf         import SolverDgBDF
+from fisher_kolmogorov.models.solver_dg_theta       import SolverDgTheta
+from fisher_kolmogorov.models.solver_ldg_bdf        import SolverLdgBDF
+from fisher_kolmogorov.models.solver_ldg_theta      import SolverLdgTheta
+from fisher_kolmogorov.models.solver_ppdg_bdf       import SolverPpDgBDF
+from fisher_kolmogorov.models.solver_ppdg_theta     import SolverPpDgTheta
+from fisher_kolmogorov.models.solver_spldg_bdf      import SolverSpLdgBDF
+from fisher_kolmogorov.models.solver_spldg_bdf_red2 import SolverSpLdgBDFReduced2
+from fisher_kolmogorov.models.solver_spldg_theta    import SolverSpLdgTheta
+from fisher_kolmogorov.configs.model_configs        import DgParams, LdgParams, PpDgParams, SpLdgParams
+from fisher_kolmogorov.utilities.enum_utilities     import PolyDegree, BdfOrder, ThetaMethod
 
 
-# ── Shared fixtures ────────────────────────────────────────────────────────────
-
+# Shared fixtures _________________________________________________________________________________________________________________________ 
 @pytest.fixture(scope="module")
 def minimal_mesh():
     return UnitSquareMesh(4, 4)
@@ -39,8 +39,7 @@ def pde_data():
     return D, alpha, c_0
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
-
+# Helpers __________________________________________________________________________________________________________________________________ 
 def _run_one_step_bdf(solver_class, mesh, D, alpha, c_0, model_params):
     solver = solver_class(mesh, D, alpha, c_0, **model_params.to_kwargs())
     solver.ConvergenceTest(
@@ -59,8 +58,7 @@ def _run_one_step_theta(solver_class, mesh, D, alpha, c_0, model_params):
     )
 
 
-# ── DG ─────────────────────────────────────────────────────────────────────────
-
+# Tests smoke on DG methods ______________________________________________________________________________________________________________
 def test_dg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
     _run_one_step_bdf(SolverDgBDF, minimal_mesh, D, alpha, c_0, DgParams())
@@ -71,8 +69,7 @@ def test_dg_theta_smoke(minimal_mesh, pde_data):
     _run_one_step_theta(SolverDgTheta, minimal_mesh, D, alpha, c_0, DgParams())
 
 
-# ── LDG ────────────────────────────────────────────────────────────────────────
-
+# Tests smoke on LDG methods ______________________________________________________________________________________________________________
 def test_ldg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
     _run_one_step_bdf(SolverLdgBDF, minimal_mesh, D, alpha, c_0, LdgParams())
@@ -83,8 +80,7 @@ def test_ldg_theta_smoke(minimal_mesh, pde_data):
     _run_one_step_theta(SolverLdgTheta, minimal_mesh, D, alpha, c_0, LdgParams())
 
 
-# ── PP-DG ──────────────────────────────────────────────────────────────────────
-
+# Tests smoke on PP-DG methods ____________________________________________________________________________________________________________  
 def test_ppdg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
     _run_one_step_bdf(SolverPpDgBDF, minimal_mesh, D, alpha, c_0, PpDgParams())
@@ -95,8 +91,7 @@ def test_ppdg_theta_smoke(minimal_mesh, pde_data):
     _run_one_step_theta(SolverPpDgTheta, minimal_mesh, D, alpha, c_0, PpDgParams())
 
 
-# ── SP-LDG ─────────────────────────────────────────────────────────────────────
-
+# Tests smoke on SP-LDG methods ___________________________________________________________________________________________________________ 
 def test_spldg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
     _run_one_step_bdf(SolverSpLdgBDF, minimal_mesh, D, alpha, c_0, SpLdgParams())
@@ -105,3 +100,8 @@ def test_spldg_bdf_smoke(minimal_mesh, pde_data):
 def test_spldg_theta_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
     _run_one_step_theta(SolverSpLdgTheta, minimal_mesh, D, alpha, c_0, SpLdgParams())
+
+
+def test_spldg_bdf_red2_smoke(minimal_mesh, pde_data):
+    D, alpha, c_0 = pde_data
+    _run_one_step_bdf(SolverSpLdgBDFReduced2, minimal_mesh, D, alpha, c_0, SpLdgParams())
