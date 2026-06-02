@@ -50,9 +50,9 @@ class PpDgParams(ModelParams):
         eta_0    : penalty coefficient(default = 10.0).
         smoothing: smoothing parameter for the positive-part operator(default = 0.0).
     """
-    eps      : float = 0.0
-    eta_0    : float = 10.0
-    smoothing: float = 0.0
+    eps       : float = 0.0
+    eta_0     : float = 10.0
+    smoothing : float = 0.0
 
     def to_kwargs(self) -> dict:
         return {"eps": self.eps, "eta_0": self.eta_0, "smoothing": self.smoothing}
@@ -68,10 +68,12 @@ class SpLdgParams(ModelParams):
         eps  : LDG form stabilisation coefficient(default = 0.0).
         eta_0: penalty coefficient(default 1.0).
         theta: SP-LDG averaging exponent(default = -1.0).
+        smoothing : smoothing parameter for the structure-preserving-part operator(default = 0.0).
     """
-    eps  : float = 0.0
-    eta_0: float = 1.0
-    theta: float = -1.0
+    eps       : float = 0.0
+    eta_0     : float = 1.0
+    theta     : float = -1.0
+    smoothing : float = 0.0
 
     def to_kwargs(self) -> dict:
-        return {"eps": self.eps, "eta_0": self.eta_0, "theta": self.theta}
+        return {"eps": self.eps, "eta_0": self.eta_0, "theta": self.theta, "smoothing": self.smoothing}
