@@ -5,10 +5,10 @@ TIME  = TimeMethod.BDF
 SPACE = SpaceMethod.SPLDG
 
 # Plot selector ___________________________________________________________________________________________________________________________
-PLOT          = ConvType.SPATIAL
+PLOT          = ConvType.TEMPORAL
 STUDY         = StudyType.CONVERGENCE
 SpaceSatOrder = PolyDegree.P2
-COMBINED      = True
+COMBINED      = False
 SAVE          = True
 
 # Dynamic config import ___________________________________________________________________________________________________________________
@@ -79,7 +79,9 @@ if __name__ == "__main__":
                     save             = SAVE,
                 )
             else:
-                plot_polynomial_convergence(errs_c_poly, errs_grad_poly, PolyConvLList, PolyConvH, method=SPACE)
+                plot_polynomial_convergence(
+                    errs_c_poly, errs_grad_poly, PolyConvLList, PolyConvH, space_method=SPACE, time_method=TIME, save=SAVE
+                )
 
         elif PLOT == ConvType.TEMPORAL:
             if TIME == TimeMethod.BDF:

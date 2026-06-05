@@ -17,6 +17,7 @@ def run_temporal_convergence(
     tol          : float = 1e-11,
     max_it       : int   = 200,
     save_plot    : bool  = False,
+    **solver_kwargs,
 ) -> None:
     """
     Run a temporal (dt-refinement) convergence study.
@@ -43,6 +44,9 @@ def run_temporal_convergence(
         Maximum nonlinear-solver iterations.
     save_plot    : bool
         Whether to save the convergence plot to disk.
+    **solver_kwargs : dict
+        Additional solver-specific keyword arguments (e.g., ``Linearize``) 
+        passed directly to the ``solver_class`` constructor.   
     """
     p = config.temporal
 
@@ -77,6 +81,7 @@ def run_temporal_convergence(
             solver = solver_class(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
                 **model_params.to_kwargs(),
+                **solver_kwargs,
             )
 
             if is_bdf:
@@ -104,5 +109,5 @@ def run_temporal_convergence(
     )
     plot_time_convergence(
         p.dt_list, errors_base, errors_grad, nu_or_tht,
-        method=solver.TM, space_method=solver.SM, save=save_plot,
+        time_method=solver.TM, space_method=solver.SM, save=save_plot,
     )

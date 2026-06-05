@@ -71,9 +71,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--theta",     type=float, help="SP-LDG averaging exponent.")
     parser.add_argument("--smoothing", type=float, help="PP-DG smoothing parameter.")
 
+    # kwargs
+    parser.add_argument(
+        "--linearize", action="store_true", help="Enable linearization of the reaction term (dg_bdf / ldg_bdf only)."
+    )
+
     return parser
 
 
+# Helpers _________________________________________________________________________________________________________________________________
 def build_model_params(solver_key: str, args: argparse.Namespace):
     """Instantiate the correct ModelParams subclass from CLI args."""
     from fisher_kolmogorov.configs.model_configs import DgParams, LdgParams, SpLdgParams, PpDgParams
@@ -105,22 +111,28 @@ def build_model_params(solver_key: str, args: argparse.Namespace):
 
     return inst
 
+def build_solver_kwargs(solver_key: str, args: argparse.Namespace) -> dict:
+    """Collect solver-specific keyword arguments from CLI args."""
+    kwargs = {}
+    if solver_key in ("dg_bdf", "ldg_bdf") and args.linearize:
+        kwargs["Linearize"] = True
+    return kwargs
+
 
 # Entry point _____________________________________________________________________________________________________________________________
-if __name__ == "__main__":
-    from dolfin import *
-    from fisher_kolmogorov.configs.test_configs.base     import BrainConfig, SimulationParams
-    from fisher_kolmogorov.meshes.mesh_import            import mesh_factory
-    from fisher_kolmogorov.utilities.enum_utilities      import MeshType
-    from fisher_kolmogorov.utilities.initial_conditions  import get_initial_condition
+def main():
+    from dolfin import parameters
+    from fisher_kolmogorov.configs.test_configs.base     import SimulationParams
     from fisher_kolmogorov.utilities.profiling_utilities import timer
-    from examples.brain.main_brain                       import build_brain_pde_data
+    from fisher_kolmogorov.runners.brain                 import build_brain_pde_data
 
     args    = build_parser().parse_args()
     section = SECTION_MAP[args.section]
 
-    brain_config = BrainConfig(plane=section)
-    sim_params   = SimulationParams(
+    from fisher_kolmogorov.configs.test_configs.brain import make_brain_config
+    brain_config = make_brain_config(section)
+
+    sim_params = SimulationParams(
         l         = PolyDegree(args.l),
         T         = args.T,
         dt        = args.dt,
@@ -132,6 +144,7 @@ if __name__ == "__main__":
     mod_path, cls_name = SOLVER_REGISTRY[args.solver]
     solver_class       = getattr(importlib.import_module(mod_path), cls_name)
     model_params       = build_model_params(args.solver, args)
+    solver_kwargs      = build_solver_kwargs(args.solver, args)
 
     print_title("α-synuclein spreading — brain simulation")
 
@@ -141,14 +154,18 @@ if __name__ == "__main__":
 
     print_subtitle(f"Spreading on {mesh.name()}  ·  {cls_name}")
 
-    solver = solver_class(mesh, D, alpha, c_0, **model_params.to_kwargs())
+    solver = solver_class(mesh, D, alpha, c_0, **model_params.to_kwargs(), **solver_kwargs)
     with timer(f"Spreading on {mesh.name()}"):
         solver.Solve(
-            t0    = sim_params.t0,
-            dt    = sim_params.dt,
-            T     = sim_params.T,
-            order = sim_params.nu_or_tht,
-            l     = sim_params.l,
-            tol   = sim_params.tol,
-            maxIt = sim_params.max_it,
+            t0         = sim_params.t0,
+            dt         = sim_params.dt,
+            T          = sim_params.T,
+            time_order = sim_params.nu_or_tht,
+            l          = sim_params.l,
+            tol        = sim_params.tol,
+            maxIt      = sim_params.max_it,
         )
+
+
+if __name__ == "__main__":
+    main()

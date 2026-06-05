@@ -1,4 +1,4 @@
-## Installation & Setup
+# Installation & Setup
 
 First, clone the repository and navigate into the project directory:
 
@@ -38,6 +38,123 @@ sudo docker run -ti --rm -v "$(pwd):/home/fenics/shared" fisher_kolmogorov /bin/
 ```
 **Note on Visualization**: The Docker container is currently configured as a "headless" environment. It is designed specifically for reproducing numerical calculations and simulations. It is not configured to render or display plots directly (plotting routines will crash if they attempt to open an interactive window). You can use this environment to run your scripts, but for visualization, we recommend saving the output as files (.png) within the shared volume and viewing them on your host machine.
 
+# Repository Structure
+
+```
+fisher-kolmogorov/
+├── config.py                            # Output directory paths
+├── pyproject.toml                       # Package metadata and CLI entry points
+│
+├── fisher_kolmogorov/                   # Main package
+│   ├── models/                          # Solver implementations
+│   │   ├── solver_base.py               # Abstract base class
+│   │   ├── solver_bdf.py                # BDF time integrator (orders 1–6)
+│   │   ├── solver_theta.py              # θ-method time integrator
+│   │   ├── solver_rk.py                 # Explicit RK (BDF startup + stand-alone)
+│   │   ├── solver_dg_bdf.py             # Interior penalty DG — BDF
+│   │   ├── solver_dg_theta.py           # Interior penalty DG — θ
+│   │   ├── solver_ldg_bdf.py            # LDG — BDF
+│   │   ├── solver_ldg_theta.py          # LDG — θ
+│   │   ├── solver_spldg_bdf.py          # Structure-preserving LDG — BDF
+│   │   ├── solver_spldg_theta.py        # Structure-preserving LDG — θ
+│   │   ├── solver_ppdg_bdf.py           # Positivity-preserving DG — BDF
+│   │   └── solver_ppdg_theta.py         # Positivity-preserving DG — θ
+│   │
+│   ├── runners/                         # Convergence and simulation orchestration
+│   │   ├── spatial_runner.py
+│   │   ├── polynomial_runner.py
+│   │   ├── temporal_runner.py
+│   │   └── brain_runner.py
+│   │
+│   ├── cli/                             # CLI entry points (installed as system commands)
+│   │   ├── main_convergence_cli.py      # → fk-convergence
+│   │   └── main_brain_cli.py            # → fk-brain
+│   │
+│   ├── configs/
+│   │   ├── model_configs/               # Solver parameter dataclasses
+│   │   │   ├── base.py                  # ModelParams base dataclass
+│   │   │   ├── dg_configs.py            # DgParams
+│   │   │   └── ldg_configs.py           # LdgParams, SpLdgParams, PpDgParams
+│   │   └── test_configs/                # Convergence test specifications
+│   │       ├── base.py                  # TestConfig, ConvergenceParams, BrainConfig
+│   │       ├── cosine.py                # Cosine test factories
+│   │       ├── waves.py                 # Wave (tanh) test factories
+│   │       └── brain.py                 # Brain simulation factory
+│   │
+│   ├── meshes/                          # Mesh generation and loading utilities
+│   │
+│   ├── plots/                           # Plot utilities and per-model convergence data
+│   │   ├── _primitives.py               # add_ref_line, add_slope_triangle, save_plot
+│   │   ├── _axes.py                     # finalize_ax, finalize_ax_pair
+│   │   ├── _curves.py                   # Curve-drawing helpers per study type
+│   │   ├── plot_utilities.py            # Public API — one function per plot type
+│   │   └── models_config/               # Per-model numerical results for plotting
+│   │       ├── __init__.py              # CONFIG_REGISTRY + load_config
+│   │       ├── ldg_bdf.py
+│   │       └── ...
+│   │
+│   └── utilities/                       # Shared utilities
+│       ├── enum_utilities.py            # All enums (SpaceMethod, TimeMethod, ...)
+│       ├── fenics_utilities.py
+│       ├── io_utilities.py
+│       ├── math_utilities.py
+│       ├── transform_utilities.py       # Identity, Sigmoid, Exponential transforms
+│       ├── explicit_extrapolations.py   # Extrapolation table for linearized solvers
+│       └── dictionary_utilities.py      # Label maps for plots
+│
+├── reproduce/                           # Reproducible paper results
+│   ├── README.md                        # Paper reference, hardware, expected runtimes
+│   └── sh/                              # Bash scripts — one per study type
+│       ├── spatial_all.sh
+│       ├── temporal_all.sh
+│       ├── polynomial.sh
+│       ├── spatial_saturation.sh
+│       └── polynomial_saturation.sh
+│
+├── local/                               # Personal quick-launch scripts (git-ignored)
+└── tests/                               # Smoke and convergence tests
+```
+
+---
+
+## Usage
+
+After installation, two commands are available system-wide:
+
+### Convergence studies — `fk-convergence`
+
+```bash
+fk-convergence --solver ldg_bdf --test cosine --conv spatial --l 2
+fk-convergence --solver spldg_bdf --test wave  --conv temporal \
+    --tol 1e-11 --max-it 200
+# Linearized reaction term (dg_bdf / ldg_bdf only):
+fk-convergence --solver dg_bdf --test cosine --conv temporal --linearize
+```
+
+Available solvers: `dg_bdf`, `dg_theta`, `ldg_bdf`, `ldg_theta`, `ppdg_bdf`, `ppdg_theta`, `spldg_bdf`, `spldg_bdf_red2`, `spldg_theta`, `spldg_theta_red2`.
+
+Run `fk-convergence --help` for the full option list.
+
+### Brain simulation — `fk-brain`
+
+```bash
+fk-brain --solver ldg_theta --section sagittal
+fk-brain --solver dg_bdf --section coronal \
+    --l 2 --T 50.0 --dt 0.25 --scheme bdf2 --eta0 10.0 --linearize
+```
+
+Run `fk-brain --help` for the full option list.
+
+### Reproducing paper results
+
+See `reproduce/README.md` for the paper reference, hardware details, and expected runtimes. Each script loops over the relevant solvers and parameters:
+
+```bash
+bash reproduce/sh/spatial_all.sh
+bash reproduce/sh/temporal_all.sh
+```
+
+---
 
 # Discontinuous Galerkin - based methods for Fisher-Kolmogorov
 
@@ -104,7 +221,7 @@ The $\theta$-method provides a flexible temporal framework. Depending on the cho
 The first test case employs a cosine-based analytical solution to evaluate the formal convergence properties of the models. Specifically, we perform a spatial convergence analysis with respect to both the mesh size ($h$) and the polynomial degree ($p$) separately, alongside a temporal convergence analysis to validate the accuracy of the BDF and $\theta$-method schemes.
 
 ## - Test 2: Waves 
-This test is designed to assess the robustness of the spatial discretizations. It demonstrates the ability of the schemes to maintain stability and accuracy even when capturing sharp fronts and high gradients, which are characteristic of the Fisher-KPP equation. Moreover, we exploit this test to perform a saturation study of the time discretization when doing a spatial convergence analysis, as can be observed in the `Plot/ModelConfig/*` scripts. 
+This test is designed to assess the robustness of the spatial discretizations. It demonstrates the ability of the schemes to maintain stability and accuracy even when capturing sharp fronts and high gradients, which are characteristic of the Fisher-KPP equation. Moreover, we exploit this test to perform a saturation study of the time discretization when doing a spatial convergence analysis, as can be observed in the `fisher_kolmogorov/plots/model_config/*` scripts. 
 
 ## - Test 3: Simple Brain Application
 The final test case evaluates the performance of the models within complex geometries and under non-homogeneous diffusion and reaction coefficients. The simulation is conducted on three anatomical brain sections (sagittal, coronal, and horizontal) derived from the [following STL model](https://cults3d.com/en/3d-model/tool/brain-bygonza). This test highlights the methods' applicability to realistic biological scenarios involving heterogeneous media.

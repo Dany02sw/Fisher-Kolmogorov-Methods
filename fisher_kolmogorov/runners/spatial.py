@@ -15,6 +15,7 @@ def run_spatial_convergence(
     tol          : float = 1e-11,
     max_it       : int   = 200,
     save_plot    : bool  = False,
+    **solver_kwargs,
 ) -> None:
     """
     Run a spatial (h-refinement) convergence study.
@@ -37,6 +38,9 @@ def run_spatial_convergence(
         Maximum nonlinear-solver iterations.
     save_plot    : bool
         Whether to save the convergence plot to disk.
+    **solver_kwargs : dict
+        Additional solver-specific keyword arguments (e.g., ``Linearize``) 
+        passed directly to the ``solver_class`` constructor.  
     """
     p = config.spatial
 
@@ -66,6 +70,7 @@ def run_spatial_convergence(
             solver = solver_class(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
                 **model_params.to_kwargs(),
+                **solver_kwargs,
             )
             E_c, E_grad, h = solver.ConvergenceTest(
                 t0=config.t0, dt=p.dt, T=p.T,
@@ -77,4 +82,6 @@ def run_spatial_convergence(
             hs.append(h)
 
     print_space_rates(errors_base, errors_grad, hs, N_el_list, p.l_space, method=solver.SM)
-    plot_spatial_convergence(hs, errors_base, errors_grad, p.l_space, method=solver.SM, save=save_plot)
+    plot_spatial_convergence(
+        hs, errors_base, errors_grad, p.l_space, space_method=solver.SM, time_method=solver.TM, save=save_plot
+    )

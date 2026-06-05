@@ -1,12 +1,13 @@
 from fisher_kolmogorov.configs.test_configs.base   import TestConfig, ConvergenceParams
 from fisher_kolmogorov.configs.test_configs.cosine import (
-    COSINE_SPATIAL_BDF,    COSINE_SPATIAL_THETA,
-    COSINE_POLYNOMIAL_BDF, COSINE_POLYNOMIAL_THETA,
-    COSINE_TEMPORAL_BDF,   COSINE_TEMPORAL_THETA,
+    make_cosine_spatial,
+    make_cosine_polynomial,
+    make_cosine_temporal,
+    make_c_exact_temporal_scaled
 )
 from fisher_kolmogorov.configs.test_configs.wave import (
-    WAVE_SPATIAL_BDF,    WAVE_SPATIAL_THETA,
-    WAVE_POLYNOMIAL_BDF, WAVE_POLYNOMIAL_THETA,
-    WAVE_TEMPORAL_BDF,   WAVE_TEMPORAL_THETA,
+    make_wave_spatial,
+    make_wave_polynomial,
+    make_wave_temporal
 )
 

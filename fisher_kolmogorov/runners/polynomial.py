@@ -15,6 +15,7 @@ def run_polynomial_convergence(
     tol          : float = 1e-11,
     max_it       : int   = 200,
     save_plot    : bool  = False,
+    **solver_kwargs,
 ) -> None:
     """
     Run a polynomial-degree (p-refinement) convergence study.
@@ -36,6 +37,9 @@ def run_polynomial_convergence(
         Maximum nonlinear-solver iterations.
     save_plot    : bool
         Whether to save the convergence plot to disk.
+    **solver_kwargs : dict
+        Additional solver-specific keyword arguments (e.g., ``Linearize``) 
+        passed directly to the ``solver_class`` constructor.    
     """
     p = config.polynomial
 
@@ -62,6 +66,7 @@ def run_polynomial_convergence(
             solver = solver_class(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
                 **model_params.to_kwargs(),
+                **solver_kwargs,
             )
             E_c, E_grad, h = solver.ConvergenceTest(
                 t0=config.t0, dt=p.dt, T=p.T,
@@ -72,4 +77,6 @@ def run_polynomial_convergence(
             errors_grad.append(E_grad)
 
     print_polynomial_rates(errors_base, errors_grad, p.l_list, method=solver.SM)
-    plot_polynomial_convergence(errors_base, errors_grad, p.l_list, h, method=solver.SM, save=save_plot)
+    plot_polynomial_convergence(
+        errors_base, errors_grad, p.l_list, h, space_method=solver.SM, time_method=solver.TM, save=save_plot
+    )

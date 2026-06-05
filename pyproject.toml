@@ -5,3 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fisher-kolmogorov"
 version = "0.1.0"
+
+[project.scripts]
+fk-convergence = "fisher_kolmogorov.cli.main_convergence_cli:main"
+fk-brain       = "fisher_kolmogorov.cli.main_brain_cli:main"

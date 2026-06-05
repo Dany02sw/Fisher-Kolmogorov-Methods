@@ -37,4 +37,6 @@ jitfailure-*/
 
 # Local qol folder
 local/
+reproduce/
 
+solver_explicit_rk.py

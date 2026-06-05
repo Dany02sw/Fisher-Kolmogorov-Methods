@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import trimesh
 import numpy as np
 import gmsh
@@ -7,22 +9,17 @@ from pathlib import Path
 
 
 # ===== Mesh configuration =====
-# Edit these values to change the mesh quality without touching the interactive logic.
-
 MESH_CONFIG = {
-    "lc"               : 1.0,   # characteristic length (used for gmsh points)
-    "simplify_tol"     : 0.1,   # polygon simplification tolerance
-    "size_min"         : 0.8,   # Mesh.MeshSizeMin
-    "size_max"         : 1.2,   # Mesh.MeshSizeMax
-    "optimize"         : True,  # Mesh.Optimize
-    "optimize_netgen"  : True,  # Mesh.OptimizeNetgen
-    "scale_factor"     : 1.0,   # coordinate scale factor
+    "lc"               : 1.0,
+    "simplify_tol"     : 0.1,
+    "size_min"         : 0.8,
+    "size_max"         : 1.2,
+    "optimize"         : True,
+    "optimize_netgen"  : True,
+    "scale_factor"     : 1.0,
 }
 
 # ===== Section definitions =====
-# Each entry: (label, plane_normal, offset_axis_index)
-# offset_axis_index: 0=x, 1=y, 2=z
-
 SECTIONS = {
     "sagittal"   : {"normal": [1, 0, 0], "default_offset":  20.0, "axis": "x"},
     "coronal"    : {"normal": [0, 1, 0], "default_offset":   0.0, "axis": "y"},
@@ -30,37 +27,31 @@ SECTIONS = {
 }
 
 
+
 # ===== Mesh generator =====
-def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset: float):
+def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset: float,
+                        normal: list):
     """
     Generate a 2-D brain mesh from a .stl file and save it as .msh.
 
     Parameters
     ----------
-    stl_path    : Path   — path to the input .stl file
-    output_path : Path   — path to the output .msh file
-    section     : str    — anatomical section: 'sagittal', 'coronal', or 'horizontal'
-    offset      : float  — offset along the section normal axis
+    stl_path    : Path  — path to the input .stl file
+    output_path : Path  — path to the output .msh file
+    section     : str   — label used for display only (e.g. 'sagittal' or 'custom')
+    offset      : float — offset along the section normal axis
+    normal      : list  — plane normal as a 3-element list, e.g. [1, 0, 0]
     """
-    cfg     = MESH_CONFIG
-    sec     = SECTIONS[section]
-    normal  = sec["normal"]
-    axis    = sec["axis"]
-    lc      = cfg["lc"]
+    cfg = MESH_CONFIG
+    lc  = cfg["lc"]
 
-    # --- Load STL ---
     print(f"\nLoading STL: {stl_path.name}...")
     mesh = trimesh.load(str(stl_path))
     if not mesh.is_watertight:
         print("[WARNING]: Mesh is not watertight. Results may be unreliable.")
 
-    # --- Slice ---
-    offset_array          = np.array([0.0, 0.0, 0.0])
-    axis_index            = {"x": 0, "y": 1, "z": 2}[axis]
-    offset_array[axis_index] = offset
-    origin                = mesh.centroid + offset_array
-
-    print(f"Slicing along {section} plane (normal={normal}, offset {axis}={offset:+.2f})...")
+    print(f"Slicing along {section} plane (normal={normal}, offset={offset:+.2f})...")
+    origin   = mesh.centroid + np.array(normal) * offset
     slice_3d = mesh.section(plane_normal=normal, plane_origin=origin)
     if slice_3d is None:
         print("[ERROR]: The cutting plane does not intersect the mesh. Try a different offset.")
@@ -70,16 +61,15 @@ def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset:
     print(f"Number of contours: {len(slice_2d.polygons_full)}")
     slice_2d.show()
 
-    # --- Build gmsh geometry ---
     all_polygons = slice_2d.polygons_full[:-1]
 
     gmsh.initialize()
     gmsh.model.add(f"brain_{section}")
 
-    gmsh.option.setNumber("Mesh.MeshSizeMin",      cfg["size_min"])
-    gmsh.option.setNumber("Mesh.MeshSizeMax",      cfg["size_max"])
-    gmsh.option.setNumber("Mesh.Optimize",         int(cfg["optimize"]))
-    gmsh.option.setNumber("Mesh.OptimizeNetgen",   int(cfg["optimize_netgen"]))
+    gmsh.option.setNumber("Mesh.MeshSizeMin",    cfg["size_min"])
+    gmsh.option.setNumber("Mesh.MeshSizeMax",    cfg["size_max"])
+    gmsh.option.setNumber("Mesh.Optimize",       int(cfg["optimize"]))
+    gmsh.option.setNumber("Mesh.OptimizeNetgen", int(cfg["optimize_netgen"]))
 
     surfaces              = []
     white_matter_surfaces = []
@@ -90,7 +80,6 @@ def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset:
         poly_sim = poly.simplify(tolerance=cfg["simplify_tol"], preserve_topology=True)
         coords   = np.array(poly_sim.exterior.coords) * cfg["scale_factor"]
 
-        # Exterior points and curve
         poly_point_tags = []
         for c in coords[:-1]:
             p_tag = gmsh.model.geo.addPoint(c[0], c[1], 0, lc)
@@ -105,7 +94,6 @@ def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset:
         current_surface_loops = [cl_ext]
         physical_boundaries["exterior"].append(l_tag_ext)
 
-        # Interior (white matter) holes
         wm_tag = None
         for j, interior in enumerate(poly_sim.interiors):
             coords_int = np.array(interior.coords) * cfg["scale_factor"]
@@ -132,7 +120,6 @@ def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset:
 
     gmsh.model.geo.synchronize()
 
-    # Physical groups
     gmsh.model.addPhysicalGroup(2, surfaces, tag=1)
     gmsh.model.setPhysicalName(2, 1, "gray_matter")
 
@@ -147,7 +134,6 @@ def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset:
         gmsh.model.addPhysicalGroup(1, physical_boundaries["holes"], tag=11)
         gmsh.model.setPhysicalName(1, 11, "internal_boundaries")
 
-    # Generate and save
     gmsh.model.mesh.generate(2)
 
     if "-nopopup" not in sys.argv:
@@ -161,63 +147,136 @@ def generate_brain_mesh(stl_path: Path, output_path: Path, section: str, offset:
 
 
 # ===== Interactive logic =====
-def main():
-    """
-    Interactive logic for brain mesh generation.
-    """
-    script_dir       = Path(__file__).parent.resolve()
-    stl_path         = script_dir / ".." / "stl_files" / "brain.stl"
-    output_directory = script_dir / ".." / "msh_files"
-
-    print("\n")
-    print(40*"#")
-    print("### Brain mesh generator: STL -> MSH ###")
-    print(40*"#")
-
-    # --- Check STL exists ---
-    if not stl_path.exists():
-        print(f"\n[FATAL ERROR]: STL file not found at: {stl_path.resolve()}")
-        print("Place 'brain.stl' inside the 'StlFiles' folder and try again.")
+def _select_stl(stl_dir: Path) -> Path:
+    """Prompt the user to choose one of the .stl files found in stl_dir."""
+    stl_files = sorted(stl_dir.glob("*.stl"))
+    if not stl_files:
+        print(f"\n[ERROR]: No .stl files found in: {stl_dir.resolve()}")
+        print(f"Place your .stl file there and try again.")
+        print(f"If you do not have a brain .stl model, refer to the download link in the README.")
         sys.exit(1)
 
-    # --- Choose section ---
-    section_names = list(SECTIONS.keys())
-    print("\nAvailable sections:")
-    for i, name in enumerate(section_names):
-        sec = SECTIONS[name]
-        print(f"  [{i}] {name:<12} (normal={sec['normal']},  default offset {sec['axis']}={sec['default_offset']:+.1f})")
+    print("\nAvailable .stl files:")
+    for i, f in enumerate(stl_files):
+        print(f"  [{i}] {f.name}")
 
     try:
-        choice = int(input("\nInsert the number corresponding to the section: "))
-        if choice < 0 or choice >= len(section_names):
+        choice = int(input("\nInsert the number corresponding to the .stl file to use: "))
+        if choice < 0 or choice >= len(stl_files):
             raise ValueError
     except ValueError:
         print("[ERROR]: Invalid choice.")
         sys.exit(1)
 
-    section = section_names[choice]
-    sec     = SECTIONS[section]
+    return stl_files[choice]
 
-    # --- Choose offset ---
-    default_offset = sec["default_offset"]
+
+def _select_section() -> tuple[str, list, str]:
+    """
+    Prompt the user to choose a section or provide a custom normal.
+
+    Returns
+    -------
+    section_name : str   — label for display and default filename
+    normal       : list  — 3-element plane normal
+    axis_label   : str   — axis label for offset prompt ('x', 'y', 'z', or 'offset')
+    """
+    section_names = list(SECTIONS.keys())
+
+    print("\nAvailable sections:")
+    for i, name in enumerate(section_names):
+        sec = SECTIONS[name]
+        print(f"  [{i}] {name:<12} (normal={sec['normal']},  default offset {sec['axis']}={sec['default_offset']:+.1f})")
+    print(f"  [{len(section_names)}] custom       (specify normal manually)")
+
     try:
-        raw = input(f"Insert offset along {sec['axis']} axis [default {default_offset:+.1f}]: ").strip()
-        offset = float(raw) if raw else default_offset
+        choice = int(input("\nInsert the number corresponding to the section: "))
+        if choice < 0 or choice > len(section_names):
+            raise ValueError
+    except ValueError:
+        print("[ERROR]: Invalid choice.")
+        sys.exit(1)
+
+    if choice < len(section_names):
+        name = section_names[choice]
+        return name, SECTIONS[name]["normal"], SECTIONS[name]["axis"]
+
+    # Custom normal
+    print("\nEnter the three components of the plane normal (space-separated, e.g. '1 0 0'):")
+    try:
+        parts  = input("  normal [nx ny nz]: ").strip().split()
+        normal = [float(p) for p in parts]
+        if len(normal) != 3:
+            raise ValueError
+    except ValueError:
+        print("[ERROR]: Invalid normal. Provide exactly three floats.")
+        sys.exit(1)
+
+    norm = np.linalg.norm(normal)
+    if norm == 0:
+        print("[ERROR]: Normal vector cannot be zero.")
+        sys.exit(1)
+    normal = [v / norm for v in normal]
+    print(f"  Normalized normal: {[f'{v:.4f}' for v in normal]}")
+
+    return "custom", normal, "offset"
+
+
+def _select_offset(section_name: str, axis_label: str) -> float:
+    """Prompt the user for the offset, using the section default when available."""
+    default = SECTIONS[section_name]["default_offset"] if section_name in SECTIONS else 0.0
+    try:
+        raw    = input(f"Insert offset along {axis_label} axis [default {default:+.1f}]: ").strip()
+        return float(raw) if raw else default
     except ValueError:
         print("[ERROR]: Invalid offset value.")
         sys.exit(1)
 
-    # --- Output filename ---
-    output_path = output_directory / f"{section}.msh"
+
+def _select_output_name(section_name: str, output_dir: Path) -> Path:
+    """
+    Prompt the user for the output filename, defaulting to the section name.
+
+    Returns the full output Path (including directory and .msh extension).
+    """
+    raw = input(f"Output filename (without extension) [{section_name}]: ").strip()
+    name = raw if raw else section_name
+    return output_dir / f"{name}.msh"
+
+
+def main():
+    """Interactive logic for brain mesh generation."""
+    script_dir       = Path(__file__).parent.resolve()
+    stl_dir          = script_dir / ".." / "stl_files"
+    output_directory = script_dir / ".." / "msh_files"
+
+    print("\n")
+    print(40 * "#")
+    print("### Brain mesh generator: STL -> MSH ###")
+    print(40 * "#")
+
+    # --- Ensure stl_dir exists ---
+    if not stl_dir.exists():
+        stl_dir.mkdir(parents=True)
+        print(f"\n[WARNING]: The folder 'stl_files' did not exist and has been created at:")
+        print(f"  {stl_dir.resolve()}")
+        print(f"Please place your .stl file there and run the script again.")
+        print(f"If you do not have a brain .stl model, refer to the download link in the README.")
+        sys.exit(0)
+
+    stl_path                     = _select_stl(stl_dir)
+    section_name, normal, axis   = _select_section()
+    offset                       = _select_offset(section_name, axis)
+    output_path                  = _select_output_name(section_name, output_directory)
 
     generate_brain_mesh(
         stl_path    = stl_path,
         output_path = output_path,
-        section     = section,
+        section     = section_name,
         offset      = offset,
+        normal      = normal,
     )
 
 
-# ===== Main =====
 if __name__ == "__main__":
     main()
