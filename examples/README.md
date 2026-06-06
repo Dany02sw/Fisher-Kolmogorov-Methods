@@ -20,17 +20,26 @@ configuration variables at the top, and run it:
 ```python
 _CONV_TYPE     = ConvType.SPATIAL   # SPATIAL | POLYNOMIAL | TEMPORAL
 _TEST_TYPE     = TestType.COSINE    # COSINE  | WAVE
-_SOLVER_KWARGS = {"Linearize": False}
+_SOLVER_KWARGS = {}
 ```
 
 ```bash
-python examples/main/ldg_bdf.py
+python3 examples/main/ldg_bdf.py
 ```
 
 Model parameters (penalty coefficients, stabilisation constants, …) are set via
 the `_PARAMS_CONFIG` dict — one entry per `TestType` so you can keep separate
 tunings for each test case without editing the launch call.
 
-## `reproduce/` — paper results(*TODO*)
+---
 
-See [`reproduce/README.md`](reproduce/README.md) for instructions to run individual or all studies.
+## `reproduce/` — paper results
+
+See [`reproduce/README.md`](reproduce/README.md) for full instructions.
+To run everything in one shot:
+
+```bash
+python3 examples/reproduce/run_all_reproduce.py
+```
+
+Results are written to `reproduce/runs/<study>/<study>.txt`.

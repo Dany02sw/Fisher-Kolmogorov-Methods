@@ -35,8 +35,8 @@ Results/
 # JIT
 jitfailure-*/
 
-# Local qol folder
-local/
-reproduce/
+# Results
+**/.done/
+examples/reproduce/runs/
 
 solver_explicit_rk.py

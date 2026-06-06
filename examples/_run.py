@@ -12,7 +12,7 @@ from fisher_kolmogorov.runners                  import (
     run_polynomial_convergence,
     run_temporal_convergence,
 )
-from fisher_kolmogorov.utilities.enum_utilities import ConvType, TestType
+from fisher_kolmogorov.utilities.enum_utilities import ConvType, TestType, BdfOrder, PolyDegree
 from fisher_kolmogorov.utilities.print_utilities import print_title, print_subtitle
 
 from fisher_kolmogorov.configs.test_configs.cosine import (
@@ -50,7 +50,7 @@ _RUNNER_MAP = {
 
 
 def launch(solver_class, model_params, conv_type, test_type,
-           tol=1e-11, max_it=200, **solver_kwargs):
+           tol=1e-11, max_it=200, l=None, nu=None, **solver_kwargs):
     """
     Run a single convergence study for the given solver and model parameters.
 
@@ -68,15 +68,35 @@ def launch(solver_class, model_params, conv_type, test_type,
         Nonlinear solver tolerance.
     max_it        : int
         Maximum nonlinear iterations.
+    l             : int, optional
+        Polynomial degree integer (e.g. 2 for P2); converted to PolyDegree
+        and forwarded to the factory as ``l_space`` for SPATIAL and TEMPORAL
+        studies. Ignored for POLYNOMIAL studies, whose factory iterates over
+        an internal ``l_list`` and does not accept a single ``l_space``.
+    nu            : int, optional
+        BDF order integer (e.g. 3 for BDF3); converted to BdfOrder and
+        forwarded to the factory as ``nu_or_tht`` for all study types.
+        Theta-method solvers (``is_bdf=False``) never pass ``nu``, so this
+        stays None and the factory falls back to its default ThetaMethod.
     **solver_kwargs
         Additional solver-specific keyword arguments passed directly to the runner.
     """
-    is_bdf           = issubclass(solver_class, SolverBDF)
-    factory          = _FACTORY_REGISTRY[(is_bdf, conv_type, test_type)]
-    config           = factory()
+    is_bdf  = issubclass(solver_class, SolverBDF)
+    factory = _FACTORY_REGISTRY[(is_bdf, conv_type, test_type)]
+
+    factory_kwargs = {}
+    if nu is not None:
+        factory_kwargs["nu_or_tht"] = BdfOrder(nu)
+    if l is not None and conv_type != ConvType.POLYNOMIAL:
+        factory_kwargs["l_space"] = PolyDegree(l)
+
+    config           = factory(**factory_kwargs)
     runner, subtitle = _RUNNER_MAP[conv_type]
 
-    print_title(f"{solver_class.__name__}  ·  {config.name}")
+    parts = [solver_class.__name__]
+    if l  is not None: parts.append(f"l={l}")
+    if nu is not None: parts.append(f"BDF{nu}")
+    print_title(" · ".join(parts))
     print_subtitle(subtitle)
     runner(
         solver_class = solver_class,

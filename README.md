@@ -56,7 +56,9 @@ fisher-kolmogorov/
 │   │   ├── solver_ldg_bdf.py            # LDG — BDF
 │   │   ├── solver_ldg_theta.py          # LDG — θ
 │   │   ├── solver_spldg_bdf.py          # Structure-preserving LDG — BDF
+|   |   ├── solver_spldg_bdf_red2.py     # Structure-preserving LDG — BDF (reduced to 2 equations)
 │   │   ├── solver_spldg_theta.py        # Structure-preserving LDG — θ
+|   |   ├── solver_spldg_theta_red2.py   # Structure-preserving LDG — θ   (reduced to 2 equations)
 │   │   ├── solver_ppdg_bdf.py           # Positivity-preserving DG — BDF
 │   │   └── solver_ppdg_theta.py         # Positivity-preserving DG — θ
 │   │
