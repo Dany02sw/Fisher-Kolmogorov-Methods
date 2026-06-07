@@ -35,5 +35,6 @@ if __name__ == "__main__":
                 test_type    = TestType.WAVE,
                 l            = l,
                 nu           = nu,
+                factory_kwargs = {"N_list": [10, 20, 35, 55, 70, 100]},
             )
     clear_done(ConvType.SPATIAL, TestType.WAVE)

@@ -117,4 +117,4 @@ class SolverSpLdgBDF(SolverBDF):
         print(f"  {'sigma_h':<8} ∈ [{sigma_min: 7.6f}, {sigma_max: 7.6f}]      {'‖∇c_ex + sigma_h‖_L²':<20} = {E_sigma:.4e}")
         print(f"{'─'*80}\n")
 
-        return E_c, E_sigma, w_h
+        return E_c, E_sigma, w_h, c_h

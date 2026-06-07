@@ -10,7 +10,7 @@ Usage:
 
 from fisher_kolmogorov.models.solver_spldg_bdf_red2 import SolverSpLdgBDFReduced2
 from fisher_kolmogorov.configs.model_configs        import SpLdgParams
-from fisher_kolmogorov.utilities.enum_utilities     import ConvType, TestType
+from fisher_kolmogorov.utilities.enum_utilities     import ConvType, TestType, PolyDegree
 
 from examples.reproduce._run_reproduce import launch_reproduce, clear_done
 
@@ -21,5 +21,9 @@ if __name__ == "__main__":
         model_params = SpLdgParams(eta_0=1.0, theta=-1.0),
         conv_type    = ConvType.POLYNOMIAL,
         test_type    = TestType.COSINE,
+        factory_kwargs = {
+        "N_fixed": 5,
+        "l_list" : list(PolyDegree),
+    },
     )
     clear_done(ConvType.POLYNOMIAL, TestType.COSINE)

@@ -1,75 +1,52 @@
-# Reproducing the paper results
+# reproduce/py/
 
-This folder contains entry points to reproduce the numerical results presented in:
+Python entry points to reproduce the numerical results of the paper.
 
-> **[Author(s)], "[Title]", [Journal], [Year]. DOI: [doi]** *TODO*
-
-Two equivalent interfaces are provided — use whichever fits your workflow:
-
-| Interface | Location | How to run |
-|-----------|----------|------------|
-| Python scripts | `py/` | `python3 examples/reproduce/py/<script>.py` |
-| Bash scripts (HPC) | `sh/` | `qsub examples/reproduce/sh/<script>.sh` |
-
-The Python scripts configure the run programmatically and call the same
-runners used internally by the package. The bash scripts wrap them for
-PBS job submission. Both produce identical output.
-
----
-
-## Hardware and expected runtimes (*TODO*)
-
-Results were produced on: **[machine description, e.g. Intel Core i7-12700, 16 GB RAM]**
-
-| Study | Estimated runtime |
-|-------|-------------------|
-| Cosine · spatial | ~ X h |
-| Cosine · polynomial | ~ X h |
-| Cosine · temporal | ~ X h |
-| Wave · spatial saturation | ~ X h |
-| Wave · polynomial saturation | ~ X h |
-
----
-
-## Running a single study
+## Running all studies
 
 ```bash
-python3 examples/reproduce/py/cosine/cosine_spatial_all.py
-python3 examples/reproduce/py/wave/wave_spatial_saturation_all.py
+python examples/reproduce/run_all_reproduce.py
 ```
 
-## Running all studies sequentially
+## Running individual studies
+
+| Script | Study | Loop |
+|--------|-------|------|
+| `cosine/cosine_spatial_all.py` | Cosine · spatial | l = 1 … 8 |
+| `cosine/cosine_polynomial.py` | Cosine · polynomial | — |
+| `cosine/cosine_temporal_all.py` | Cosine · temporal | BDF1 … BDF6 |
+| `wave/wave_spatial_saturation_all.py` | Wave · spatial | l = 2, 3 × BDF1 … BDF6 |
+| `wave/wave_polynomial_saturation_all.py` | Wave · polynomial | BDF1 … BDF6 |
+| `brain/brain_all.py` | Brain simulation | sagittal, coronal, horizontal |
 
 ```bash
-python3 examples/reproduce/run_all_reproduce.py
+python examples/reproduce/py/cosine/cosine_spatial_all.py
+python examples/reproduce/py/brain/brain_all.py
 ```
 
-> **Warning:** running all studies sequentially may take several days if the full model spdg_bdf is used
-> on the reference hardware. Consider submitting individual jobs via the
-> `sh/` scripts.
+## Checkpoints and resuming
 
-## Output layout
+Each convergence `*_all.py` script tracks completed steps via checkpoint
+files under `reproduce/runs/<study>/.done/`. If a run is interrupted,
+relaunching the same script skips already-completed steps automatically.
+On successful completion, checkpoint files are deleted and only the result
+log is kept.
 
-```
-reproduce/runs/
-  cosine_spatial/
-    .done/          ← checkpoint files (deleted on clean completion)
-    cosine_spatial.txt
-  cosine_temporal/
-    ...
-  wave_spatial/
-    ...
-```
+The brain simulation has no checkpoint — it always runs all three sections
+from scratch.
 
-Each `.txt` log grows monotonically: completed steps are appended with a
-timestamp header so partial results are never lost.
+## Output
 
-## Resetting a study
+Convergence results are written to `reproduce/runs/<study>/<study>.txt`.
+Brain simulation output (XDMF) is saved directly by the solver to the
+paths configured in the mesh/output utilities.
+
+## Resetting a convergence study
 
 ```bash
 # Reset everything (checkpoints + log)
-rm -rf examples/reproduce/runs/cosine_spatial/
+rm -rf Results/Reproduce/cosine_spatial/
 
 # Reset only checkpoints, keep the log
-rm -rf examples/reproduce/runs/cosine_spatial/.done/
+rm -rf Results/Reproduce/cosine_spatial/.done/
 ```

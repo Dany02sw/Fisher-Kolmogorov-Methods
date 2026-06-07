@@ -106,4 +106,4 @@ class SolverLdgTheta(SolverTheta):
         print(f"  q_h  ∈ [{q_min: 7.6f}, {q_max: 7.6f}]   ‖D∇c_ex − q_h‖_L²  = {E_q:.4e}")
         print(f"{'─'*80}\n")
 
-        return E_c, E_q
+        return E_c, E_q, c_h, c_h

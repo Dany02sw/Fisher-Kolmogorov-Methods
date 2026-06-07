@@ -39,30 +39,31 @@ MAX_IT = 200
 # Directory layout
 # ---------------------------------------------------------------------------
 
-_REPRODUCE_DIR = Path(__file__).parent
-_RUNS_DIR      = _REPRODUCE_DIR / "runs"
+from config import REPRODUCE_DIR
 
 # ---------------------------------------------------------------------------
 # Checkpoint helpers
 # ---------------------------------------------------------------------------
 
-def _study_dir(conv_type: ConvType, test_type: TestType) -> Path:
+def _study_dir(conv_type: ConvType, test_type: TestType,
+               study_name: Optional[str] = None) -> Path:
     """Return the per-study directory, which holds both checkpoints and the log."""
     name = f"{test_type.name.lower()}_{conv_type.name.lower()}"
-    return _RUNS_DIR / name
+    if study_name is not None: name = f"{study_name}_{name}"
+    return REPRODUCE_DIR / name
 
 
-def _mark_done(conv_type: ConvType, test_type: TestType, tag: str) -> None:
-    done_dir = _study_dir(conv_type, test_type) / ".done"
+def _mark_done(conv_type: ConvType, test_type: TestType, tag: str, study_name : Optional[str] = None,) -> None:
+    done_dir = _study_dir(conv_type, test_type, study_name) / ".done"
     done_dir.mkdir(parents=True, exist_ok=True)
     (done_dir / tag).touch()
 
 
-def _is_done(conv_type: ConvType, test_type: TestType, tag: str) -> bool:
-    return (_study_dir(conv_type, test_type) / ".done" / tag).exists()
+def _is_done(conv_type: ConvType, test_type: TestType, tag: str, study_name : Optional[str] = None,) -> bool:
+    return (_study_dir(conv_type, test_type, study_name) / ".done" / tag).exists()
 
 
-def clear_done(conv_type: ConvType, test_type: TestType) -> None:
+def clear_done(conv_type: ConvType, test_type: TestType, study_name : Optional[str] = None,) -> None:
     """
     Remove all checkpoint files for the given study, leaving the log intact.
 
@@ -70,24 +71,26 @@ def clear_done(conv_type: ConvType, test_type: TestType) -> None:
     from scratch without manually deleting checkpoint files.
     """
     import shutil
-    done_dir = _study_dir(conv_type, test_type) / ".done"
+    done_dir = _study_dir(conv_type, test_type, study_name) / ".done"
     if done_dir.exists():
         shutil.rmtree(done_dir)
 
 
 def checkpoint_tag(conv_type: ConvType, test_type: TestType,
-                   l: Optional[int] = None, nu: Optional[int] = None) -> str:
+                   l: Optional[int] = None, nu: Optional[int] = None,
+                   study_name: Optional[str] = None) -> str:
     """Build a unique tag for a single (l, nu, conv_type, test_type) run."""
     parts = [test_type.name.lower(), conv_type.name.lower()]
+    if study_name is not None: parts.insert(0, study_name)
     if l  is not None: parts.append(f"l{l}")
     if nu is not None: parts.append(f"bdf{nu}")
     return "_".join(parts)
 
 
-def _study_log_path(conv_type: ConvType, test_type: TestType) -> Path:
+def _study_log_path(conv_type: ConvType, test_type: TestType, study_name=None) -> Path:
     """Return the path to the per-study aggregated log file."""
     name = f"{test_type.name.lower()}_{conv_type.name.lower()}.txt"
-    return _study_dir(conv_type, test_type) / name
+    return _study_dir(conv_type, test_type, study_name) / name
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +152,8 @@ def _capture_and_tee(log_path: Path, tag: str):
 
 def launch_reproduce(solver_class, model_params, conv_type: ConvType,
                      test_type: TestType, l: Optional[int] = None,
-                     nu: Optional[int] = None, **solver_kwargs) -> None:
+                     nu: Optional[int] = None, study_name : Optional[str] = None,
+                     **solver_kwargs) -> None:
     """
     Run a single reproduce step, skipping it if already completed.
 
@@ -172,16 +176,19 @@ def launch_reproduce(solver_class, model_params, conv_type: ConvType,
         Polynomial degree (used in tag and printed header).
     nu            : int, optional
         BDF order (used in tag and printed header).
+    study_name    : str, optional
+        If provided, prefixes the checkpoint tag and study directory name.
+        Use to differentiate studies that share the same conv_type and test_type.
     **solver_kwargs
         Extra keyword arguments forwarded to the runner (e.g. Linearize=False).
     """
     from examples._run import launch  # imported here to avoid circular imports
 
-    tag      = checkpoint_tag(conv_type, test_type, l=l, nu=nu)
-    _study_dir(conv_type, test_type).mkdir(parents=True, exist_ok=True)
-    log_path = _study_log_path(conv_type, test_type)
+    tag = checkpoint_tag(conv_type, test_type, l=l, nu=nu, study_name=study_name)
+    _study_dir(conv_type, test_type, study_name).mkdir(parents=True, exist_ok=True)
+    log_path = _study_log_path(conv_type, test_type, study_name)
 
-    if _is_done(conv_type, test_type, tag):
+    if _is_done(conv_type, test_type, tag, study_name):
         print(f"[skip] {tag} — already completed")
         return
 
@@ -199,4 +206,4 @@ def launch_reproduce(solver_class, model_params, conv_type: ConvType,
                 **solver_kwargs,
             )
 
-    _mark_done(conv_type, test_type, tag)
+    _mark_done(conv_type, test_type, tag, study_name)

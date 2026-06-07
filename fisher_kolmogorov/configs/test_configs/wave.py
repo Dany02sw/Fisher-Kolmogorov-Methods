@@ -129,7 +129,7 @@ def make_wave_polynomial(nu_or_tht=BdfOrder.BDF4,
     config_kwargs     : overrides for TestConfig fields
     """
     base_polynomial = dict(
-        N_fixed        = N_fixed if N_fixed is not None else 8,
+        N_fixed        = N_fixed if N_fixed is not None else 16,
         l_list         = l_list or [PolyDegree.P1, PolyDegree.P2],
         T              = 10.0,
         dt             = 2.5e-2,

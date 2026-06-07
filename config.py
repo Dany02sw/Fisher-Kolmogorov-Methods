@@ -4,8 +4,9 @@ ROOT_DIR            = Path(__file__).parent.resolve()
 DEFAULT_RESULTS_DIR = ROOT_DIR / "Results" / "Default"
 CONVERGENCE_DIR     = ROOT_DIR / "Results" / "Convergence"
 MESHES_DIR          = ROOT_DIR / "Results" / "Meshes"
-WAVES_DIR           = ROOT_DIR / "Results" / "Simulations" / "Waves"
-BRAIN_DIR           = ROOT_DIR / "Results" / "Simulations" / "Brain"
+WAVE_DIR            = ROOT_DIR / "Results" / "Waves"
+BRAIN_DIR           = ROOT_DIR / "Results" / "Brain"
+REPRODUCE_DIR       = ROOT_DIR / "Results" / "Reproduce"
 
 SAGITTAL_DIR   = BRAIN_DIR / "Sagittal"
 CORONAL_DIR    = BRAIN_DIR / "Coronal"
@@ -19,7 +20,7 @@ def get_convergence_dir(space_method, time_method):
 
 def get_waves_dir(space_method, time_method, l, time_order):
     """Returns the waves output directory for a given space+time method pair and polynomial degree."""
-    return WAVES_DIR / f"{space_method.name}{time_method.name}" / f"P{l}_time_order_{time_order}"
+    return WAVE_DIR / f"{space_method.name}{time_method.name}" / f"P{l}_time_order_{time_order}"
 
 def ensure_waves_dir(space_method, time_method, l, time_order):
     """Creates and returns the waves output directory for a given method pair and polynomial degree."""

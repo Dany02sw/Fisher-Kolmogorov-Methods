@@ -13,7 +13,7 @@ Usage:
 
 from fisher_kolmogorov.models.solver_spldg_bdf_red2 import SolverSpLdgBDFReduced2
 from fisher_kolmogorov.configs.model_configs        import SpLdgParams
-from fisher_kolmogorov.utilities.enum_utilities     import ConvType, TestType
+from fisher_kolmogorov.utilities.enum_utilities     import ConvType, TestType, PolyDegree
 
 from examples.reproduce._run_reproduce import launch_reproduce, clear_done
 
@@ -27,5 +27,9 @@ if __name__ == "__main__":
             conv_type    = ConvType.POLYNOMIAL,
             test_type    = TestType.WAVE,
             nu           = nu,
+            factory_kwargs = {
+                "N_fixed": 16,
+                "l_list" : [PolyDegree(i) for i in range(1, 7)],
+            },
         )
     clear_done(ConvType.POLYNOMIAL, TestType.WAVE)

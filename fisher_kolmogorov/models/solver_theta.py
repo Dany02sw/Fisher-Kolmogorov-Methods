@@ -5,7 +5,7 @@ from config import DEFAULT_RESULTS_DIR
 
 from fisher_kolmogorov.utilities.fenics_utilities import Normalize
 from fisher_kolmogorov.utilities.enum_utilities   import TimeMethod
-from fisher_kolmogorov.utilities.io_utilities     import OutputManager
+from fisher_kolmogorov.utilities.io_utilities     import OutputManager, make_output_manager
 from fisher_kolmogorov.utilities.math_utilities   import get_decimals
 
 class SolverTheta(SolverBase):
@@ -124,7 +124,7 @@ class SolverTheta(SolverBase):
         exporter.close()
 
 
-    def ConvergenceTest(self, t0, dt, T, time_order, l, tol, maxIt):
+    def ConvergenceTest(self, t0, dt, T, time_order, l, tol, maxIt, output_dir=None):
 
         self._ValidateInput(t0, dt, time_order, T, l)
 
@@ -171,19 +171,23 @@ class SolverTheta(SolverBase):
 
         # Time loop
         self.decimals = get_decimals(dt)
-        for i in range(nsteps):
+        with make_output_manager(self.mesh, output_dir) as exporter:
+            for i in range(nsteps):
 
-            # Update time step
-            t_val += dt
-            t.assign(t_val)
+                # Update time step
+                t_val += dt
+                t.assign(t_val)
 
-            # Solve the problem
-            self.solver.solve()
+                # Solve the problem
+                self.solver.solve()
 
-            # Print convergence iterations
-            E_c, E_grad = self._ConvergenceTestPostprocessing(t_val)
+                # Print convergence iterations
+                E_c, E_grad, u_h, c_h = self._ConvergenceTestPostprocessing(t_val)
 
-            # Update old solutions
-            self._UpdateOldState()
+                # Save the solution(only if the output directory is not None)
+                exporter.save(c_h, t_val)
+
+                # Update old solutions
+                self._UpdateOldState()
 
         return E_c, E_grad, h_avg

@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing  import Optional
+from pathlib import Path  # to avoid pylance errors
+
 from dolfin import *
 
 from fisher_kolmogorov.meshes.mesh_import            import mesh_factory
@@ -15,6 +20,7 @@ def run_polynomial_convergence(
     tol          : float = 1e-11,
     max_it       : int   = 200,
     save_plot    : bool  = False,
+    output_dir   : Optional[Path] = None,
     **solver_kwargs,
 ) -> None:
     """
@@ -37,6 +43,9 @@ def run_polynomial_convergence(
         Maximum nonlinear-solver iterations.
     save_plot    : bool
         Whether to save the convergence plot to disk.
+    output_dir   : Path or None
+        If provided, solver solutions are written to XDMF files in this
+        directory at every time step. Used for model comparison studies.
     **solver_kwargs : dict
         Additional solver-specific keyword arguments (e.g., ``Linearize``) 
         passed directly to the ``solver_class`` constructor.    
@@ -72,6 +81,7 @@ def run_polynomial_convergence(
                 t0=config.t0, dt=p.dt, T=p.T,
                 time_order=p.nu_or_tht, l=l,
                 tol=tol, maxIt=max_it,
+                output_dir=output_dir,
             )
             errors_base.append(E_c)
             errors_grad.append(E_grad)

@@ -14,7 +14,7 @@ Usage:
 """
 from fisher_kolmogorov.models.solver_spldg_bdf_red2 import SolverSpLdgBDFReduced2
 from fisher_kolmogorov.configs.model_configs        import SpLdgParams
-from fisher_kolmogorov.utilities.enum_utilities     import ConvType, TestType
+from fisher_kolmogorov.utilities.enum_utilities     import ConvType, TestType, PolyDegree
 from fisher_kolmogorov.configs.test_configs.cosine  import make_c_exact_temporal_scaled
 
 from examples.reproduce._run_reproduce import launch_reproduce, clear_done
@@ -30,6 +30,10 @@ if __name__ == "__main__":
             conv_type    = ConvType.TEMPORAL,
             test_type    = TestType.COSINE,
             nu           = nu,
-            config_kwargs = {"c_exact": make_c_exact_temporal_scaled(0.75)},
+            factory_kwargs = {
+            "N_fixed"      : 64,
+            "l_space"      : PolyDegree.P4,
+            "config_kwargs": {"c_exact": make_c_exact_temporal_scaled(0.75)},
+        },
         )
     clear_done(ConvType.TEMPORAL, TestType.COSINE)

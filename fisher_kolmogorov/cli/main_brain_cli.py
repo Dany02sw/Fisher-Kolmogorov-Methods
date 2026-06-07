@@ -2,37 +2,38 @@
 Brain simulation entry point — CLI.
 
 Usage:
-    python main_brain_cli.py --solver ldg_theta --section sagittal
-    python main_brain_cli.py --solver dg_bdf --section coronal \\
-        --l 2 --T 50.0 --dt 0.25 --scheme bdf2 --eta0 10.0
+    fk-brain --solver spldg_bdf_red2 --section sagittal
+    fk-brain --solver spldg_bdf_red2 --section coronal \\
+        --l 2 --T 50.0 --dt 0.25 --scheme bdf2 --eta0 1.0
 
-Run ``python main_brain_cli.py --help`` for the full option list.
+Run ``fk-brain --help`` for the full option list.
 """
 
 import argparse
 import importlib
 
 from fisher_kolmogorov.utilities.enum_utilities  import (
-    PolyDegree, BdfOrder, ThetaMethod, BrainSection, PenaltyType
+    PolyDegree, BdfOrder, ThetaMethod, BrainSection, PenaltyType,
 )
-from fisher_kolmogorov.utilities.print_utilities import print_title, print_subtitle
 
 # Registry maps ___________________________________________________________________________________________________________________________
-SOLVER_REGISTRY = {
-    "dg_bdf"     : ("fisher_kolmogorov.models.solver_dg_bdf",     "SolverDgBDF"),
-    "dg_theta"   : ("fisher_kolmogorov.models.solver_dg_theta",   "SolverDgTheta"),
-    "ldg_bdf"    : ("fisher_kolmogorov.models.solver_ldg_bdf",    "SolverLdgBDF"),
-    "ldg_theta"  : ("fisher_kolmogorov.models.solver_ldg_theta",  "SolverLdgTheta"),
-    "ppdg_bdf"   : ("fisher_kolmogorov.models.solver_ppdg_bdf",   "SolverPpDgBDF"),
-    "ppdg_theta" : ("fisher_kolmogorov.models.solver_ppdg_theta", "SolverPpDgTheta"),
-    "spldg_bdf"  : ("fisher_kolmogorov.models.solver_spldg_bdf",  "SolverSpLdgBDF"),
-    "spldg_theta": ("fisher_kolmogorov.models.solver_spldg_theta","SolverSpLdgTheta"),
+_SOLVER_REGISTRY = {
+    "dg_bdf"           : ("fisher_kolmogorov.models.solver_dg_bdf",           "SolverDgBDF"),
+    "dg_theta"         : ("fisher_kolmogorov.models.solver_dg_theta",         "SolverDgTheta"),
+    "ldg_bdf"          : ("fisher_kolmogorov.models.solver_ldg_bdf",          "SolverLdgBDF"),
+    "ldg_theta"        : ("fisher_kolmogorov.models.solver_ldg_theta",        "SolverLdgTheta"),
+    "ppdg_bdf"         : ("fisher_kolmogorov.models.solver_ppdg_bdf",         "SolverPpDgBDF"),
+    "ppdg_theta"       : ("fisher_kolmogorov.models.solver_ppdg_theta",       "SolverPpDgTheta"),
+    "spldg_bdf"        : ("fisher_kolmogorov.models.solver_spldg_bdf",        "SolverSpLdgBDF"),
+    "spldg_theta"      : ("fisher_kolmogorov.models.solver_spldg_theta",      "SolverSpLdgTheta"),
+    "spldg_bdf_red2"   : ("fisher_kolmogorov.models.solver_spldg_bdf_red2",   "SolverSpLdgBDFReduced2"),
+    "spldg_theta_red2" : ("fisher_kolmogorov.models.solver_spldg_theta_red2", "SolverSpLdgThetaReduced2"),
 }
 
-SECTION_MAP = {s.name.lower(): s for s in BrainSection}
+_SECTION_MAP = {s.name.lower(): s for s in BrainSection}
 
 # Scheme strings → BdfOrder or ThetaMethod
-SCHEME_MAP = {
+_SCHEME_MAP = {
     **{f"bdf{o.value}": o for o in BdfOrder},
     "ie": ThetaMethod.IE,
     "cn": ThetaMethod.CN,
@@ -41,23 +42,22 @@ SCHEME_MAP = {
 
 
 # Argument parsing ________________________________________________________________________________________________________________________
-def build_parser() -> argparse.ArgumentParser:
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run a forward brain simulation for Fisher-Kolmogorov.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--solver",  required=True, choices=SOLVER_REGISTRY.keys(),
-                        help="Solver (snake_case, e.g. ldg_theta).")
+    parser.add_argument("--solver",  required=True, choices=_SOLVER_REGISTRY.keys(),
+                        help="Solver (snake_case, e.g. spldg_bdf_red2).")
     parser.add_argument("--section", required=True, choices=[s.name.lower() for s in BrainSection],
                         help="Brain section to simulate.")
 
     # Simulation parameters (all optional — defaults come from SimulationParams dataclass)
     parser.add_argument("--l",      type=int,   default=PolyDegree.P2.value,
-                        choices=[p.value for p in PolyDegree],
-                        help="Polynomial degree.")
+                        choices=[p.value for p in PolyDegree], help="Polynomial degree.")
     parser.add_argument("--T",      type=float, default=50.0,  help="Final simulation time.")
     parser.add_argument("--dt",     type=float, default=0.25,  help="Time step size.")
-    parser.add_argument("--scheme", type=str,   default="cn",  choices=SCHEME_MAP.keys(),
+    parser.add_argument("--scheme", type=str,   default="bdf2", choices=_SCHEME_MAP.keys(),
                         help="Time integration scheme (bdf1..bdf6 | ie | cn | ee).")
     parser.add_argument("--tol",    type=float, default=1e-6,  help="Nonlinear solver tolerance.")
     parser.add_argument("--max-it", type=int,   default=500,   help="Max nonlinear solver iterations.")
@@ -69,7 +69,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--eps",       type=float, help="SP-LDG / PP-DG stabilisation coefficient.")
     parser.add_argument("--gamma",     type=float, help="DG penalty type (SIP=1, IIP=0, NIP=-1).")
     parser.add_argument("--theta",     type=float, help="SP-LDG averaging exponent.")
-    parser.add_argument("--smoothing", type=float, help="PP-DG smoothing parameter.")
+    parser.add_argument("--smoothing", type=float, help="SP_LDG / PP-DG smoothing parameter.")
 
     # kwargs
     parser.add_argument(
@@ -80,19 +80,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # Helpers _________________________________________________________________________________________________________________________________
-def build_model_params(solver_key: str, args: argparse.Namespace):
+def _build_model_params(solver_key: str, args: argparse.Namespace):
     """Instantiate the correct ModelParams subclass from CLI args."""
     from fisher_kolmogorov.configs.model_configs import DgParams, LdgParams, SpLdgParams, PpDgParams
 
     DEFAULTS = {
-        "dg_bdf"     : DgParams,
-        "dg_theta"   : DgParams,
-        "ldg_bdf"    : LdgParams,
-        "ldg_theta"  : LdgParams,
-        "ppdg_bdf"   : PpDgParams,
-        "ppdg_theta" : PpDgParams,
-        "spldg_bdf"  : SpLdgParams,
-        "spldg_theta": SpLdgParams,
+        "dg_bdf"         : DgParams,    "dg_theta"         : DgParams,
+        "ldg_bdf"        : LdgParams,   "ldg_theta"        : LdgParams,
+        "ppdg_bdf"       : PpDgParams,  "ppdg_theta"       : PpDgParams,
+        "spldg_bdf"      : SpLdgParams, "spldg_theta"      : SpLdgParams,
+        "spldg_bdf_red2" : SpLdgParams, "spldg_theta_red2" : SpLdgParams,
     }
     inst = DEFAULTS[solver_key]()
 
@@ -108,10 +105,10 @@ def build_model_params(solver_key: str, args: argparse.Namespace):
     for field, value in overrides.items():
         if value is not None and hasattr(inst, field):
             setattr(inst, field, value)
-
     return inst
 
-def build_solver_kwargs(solver_key: str, args: argparse.Namespace) -> dict:
+
+def _build_solver_kwargs(solver_key: str, args: argparse.Namespace) -> dict:
     """Collect solver-specific keyword arguments from CLI args."""
     kwargs = {}
     if solver_key in ("dg_bdf", "ldg_bdf") and args.linearize:
@@ -121,50 +118,34 @@ def build_solver_kwargs(solver_key: str, args: argparse.Namespace) -> dict:
 
 # Entry point _____________________________________________________________________________________________________________________________
 def main():
-    from dolfin import parameters
-    from fisher_kolmogorov.configs.test_configs.base     import SimulationParams
-    from fisher_kolmogorov.utilities.profiling_utilities import timer
-    from fisher_kolmogorov.runners.brain                 import build_brain_pde_data
-
-    args    = build_parser().parse_args()
-    section = SECTION_MAP[args.section]
-
+    from fisher_kolmogorov.configs.test_configs.base  import SimulationParams
     from fisher_kolmogorov.configs.test_configs.brain import make_brain_config
-    brain_config = make_brain_config(section)
+    from fisher_kolmogorov.runners.brain              import run_brain_simulation
+
+    args    = _build_parser().parse_args()
+    section = _SECTION_MAP[args.section]
 
     sim_params = SimulationParams(
         l         = PolyDegree(args.l),
         T         = args.T,
         dt        = args.dt,
-        nu_or_tht = SCHEME_MAP[args.scheme],
+        nu_or_tht = _SCHEME_MAP[args.scheme],
         tol       = args.tol,
         max_it    = args.max_it,
     )
 
-    mod_path, cls_name = SOLVER_REGISTRY[args.solver]
+    mod_path, cls_name = _SOLVER_REGISTRY[args.solver]
     solver_class       = getattr(importlib.import_module(mod_path), cls_name)
-    model_params       = build_model_params(args.solver, args)
-    solver_kwargs      = build_solver_kwargs(args.solver, args)
+    model_params       = _build_model_params(args.solver, args)
+    solver_kwargs      = _build_solver_kwargs(args.solver, args)
 
-    print_title("α-synuclein spreading — brain simulation")
-
-    mesh, _, alpha, D, c_0 = build_brain_pde_data(brain_config)
-
-    parameters["form_compiler"]["quadrature_degree"] = sim_params.l ** 2 + 4
-
-    print_subtitle(f"Spreading on {mesh.name()}  ·  {cls_name}")
-
-    solver = solver_class(mesh, D, alpha, c_0, **model_params.to_kwargs(), **solver_kwargs)
-    with timer(f"Spreading on {mesh.name()}"):
-        solver.Solve(
-            t0         = sim_params.t0,
-            dt         = sim_params.dt,
-            T          = sim_params.T,
-            time_order = sim_params.nu_or_tht,
-            l          = sim_params.l,
-            tol        = sim_params.tol,
-            maxIt      = sim_params.max_it,
-        )
+    run_brain_simulation(
+        solver_class = solver_class,
+        model_params = model_params,
+        sim_config   = make_brain_config(section),
+        sim_params   = sim_params,
+        **solver_kwargs,
+    )
 
 
 if __name__ == "__main__":

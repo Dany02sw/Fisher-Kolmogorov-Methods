@@ -137,7 +137,7 @@ def make_cosine_polynomial(nu_or_tht=BdfOrder.BDF1,
     Parameters
     ----------
     nu_or_tht         : BdfOrder or ThetaMethod  (default: BDF1)
-    l_list            : list of PolyDegree       (default: P1, P2, P3)
+    l_list            : list of PolyDegree       (default: all PolyDegree values)
     N_fixed           : int or None              (default: 5)
     mesh_structure    : MeshStructure             (default: UNSTRUCTURED)
     polynomial_kwargs : overrides for ConvergenceParams fields
@@ -145,7 +145,7 @@ def make_cosine_polynomial(nu_or_tht=BdfOrder.BDF1,
     """
     base_polynomial = dict(
         N_fixed        = N_fixed if N_fixed is not None else 5,
-        l_list         = l_list or [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3],
+        l_list         = l_list or [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3, PolyDegree.P4],
         T              = 2.5e-4,
         dt             = 1e-5,
         nu_or_tht      = nu_or_tht,

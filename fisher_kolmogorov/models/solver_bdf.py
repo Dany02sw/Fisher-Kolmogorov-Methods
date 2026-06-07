@@ -136,6 +136,7 @@ class SolverBDF(SolverBase):
         # Close output file
         exporter.close()
 
+
     def ConvergenceTest(self, t0, dt, T, time_order, l, tol, maxIt, output_dir=None):
 
         self._ValidateInput(t0, dt, time_order, T, l)
@@ -186,19 +187,23 @@ class SolverBDF(SolverBase):
 
         # Time loop
         self.decimals = get_decimals(dt)
-        for i in range(nsteps-self.nu+1):
+        with make_output_manager(self.mesh, output_dir) as exporter:
+            for i in range(nsteps-self.nu+1):
 
-            # Update time step
-            t_val += dt
-            t.assign(t_val)
+                # Update time step
+                t_val += dt
+                t.assign(t_val)
 
-            # Solve the problem
-            self.solver.solve()
+                # Solve the problem
+                self.solver.solve()
 
-            # Print convergence iterations
-            E_c, E_grad, u_h = self._ConvergenceTestPostprocessing(t_val)
+                # Print convergence iterations
+                E_c, E_grad, u_h, c_h = self._ConvergenceTestPostprocessing(t_val)
 
-            # Update old solutions
-            self._UpdateOldState(u_h)
-            
+                # Save the solution(only if the output directory is not None)
+                exporter.save(c_h, t_val)
+
+                # Update old solutions
+                self._UpdateOldState(u_h)
+
         return E_c, E_grad, h_avg

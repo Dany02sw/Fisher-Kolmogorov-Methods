@@ -98,4 +98,4 @@ class SolverDgTheta(SolverTheta):
         print(f"  {'':30}  ‖c_ex  − c_h‖_DG   = {E_DG:.4e}")
         print(f"{'─'*80}\n")
 
-        return E_L2, E_DG
+        return E_L2, E_DG, c_h, c_h

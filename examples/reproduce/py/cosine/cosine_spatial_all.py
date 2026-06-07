@@ -27,5 +27,6 @@ if __name__ == "__main__":
             conv_type    = ConvType.SPATIAL,
             test_type    = TestType.COSINE,
             l            = l,
+            factory_kwargs = {"N_ref": [2, 3, 4, 5]},
         )
     clear_done(ConvType.SPATIAL, TestType.COSINE)
