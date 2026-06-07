@@ -33,12 +33,14 @@ if __name__ == "__main__":
         output_dir = WAVE_DIR / solver_class.__name__
         output_dir.mkdir(parents=True, exist_ok=True)
         launch_reproduce(
-            solver_class = solver_class,
-            model_params = model_params,
-            conv_type    = ConvType.POLYNOMIAL,
-            test_type    = TestType.WAVE,
-            study_name   = "comparison",
-            output_dir   = output_dir,
+            solver_class   = solver_class,
+            model_params   = model_params,
+            conv_type      = ConvType.POLYNOMIAL,
+            test_type      = TestType.WAVE,
+            study_name     = "comparison",
+            output_dir     = output_dir,
+            tol            = 1e-10,
+            max_it         = 300,
             factory_kwargs = {"l_list": [PolyDegree.P1, PolyDegree.P2], "nu_or_tht": BdfOrder.BDF6},
         )
     clear_done(ConvType.POLYNOMIAL, TestType.WAVE, study_name="comparison")

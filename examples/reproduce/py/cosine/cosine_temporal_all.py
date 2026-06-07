@@ -25,11 +25,13 @@ MAX_NU = 6
 if __name__ == "__main__":
     for nu in range(1, MAX_NU + 1):
         launch_reproduce(
-            solver_class = SolverSpLdgBDFReduced2,
-            model_params = SpLdgParams(eta_0=1.0, theta=-1.0),
-            conv_type    = ConvType.TEMPORAL,
-            test_type    = TestType.COSINE,
-            nu           = nu,
+            solver_class   = SolverSpLdgBDFReduced2,
+            model_params   = SpLdgParams(eta_0=1.0, theta=-1.0),
+            conv_type      = ConvType.TEMPORAL,
+            test_type      = TestType.COSINE,
+            nu             = nu,
+            tol            = 1e-12,
+            max_it         = 300,
             factory_kwargs = {
             "N_fixed"      : 64,
             "l_space"      : PolyDegree.P4,

@@ -22,11 +22,13 @@ MAX_L = 8
 if __name__ == "__main__":
     for l in range(1, MAX_L + 1):
         launch_reproduce(
-            solver_class = SolverSpLdgBDFReduced2,
-            model_params = SpLdgParams(eta_0=1.0, theta=-1.0),
-            conv_type    = ConvType.SPATIAL,
-            test_type    = TestType.COSINE,
-            l            = l,
+            solver_class   = SolverSpLdgBDFReduced2,
+            model_params   = SpLdgParams(eta_0=1.0, theta=-1.0),
+            conv_type      = ConvType.SPATIAL,
+            test_type      = TestType.COSINE,
+            l              = l,
+            tol            = 1e-12,
+            max_it         = 300,
             factory_kwargs = {"N_ref": [2, 3, 4, 5]},
         )
     clear_done(ConvType.SPATIAL, TestType.COSINE)

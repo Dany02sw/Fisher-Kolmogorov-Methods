@@ -22,11 +22,13 @@ MAX_NU = 6
 if __name__ == "__main__":
     for nu in range(1, MAX_NU + 1):
         launch_reproduce(
-            solver_class = SolverSpLdgBDFReduced2,
-            model_params = SpLdgParams(eta_0=1.0, theta=-1.0),
-            conv_type    = ConvType.POLYNOMIAL,
-            test_type    = TestType.WAVE,
-            nu           = nu,
+            solver_class   = SolverSpLdgBDFReduced2,
+            model_params   = SpLdgParams(eta_0=1.0, theta=-1.0, smoothing=1e-12),
+            conv_type      = ConvType.POLYNOMIAL,
+            test_type      = TestType.WAVE,
+            nu             = nu,
+            tol            = 1e-10,
+            max_it         = 300,
             factory_kwargs = {
                 "N_fixed": 16,
                 "l_list" : [PolyDegree(i) for i in range(1, 7)],

@@ -153,6 +153,7 @@ def _capture_and_tee(log_path: Path, tag: str):
 def launch_reproduce(solver_class, model_params, conv_type: ConvType,
                      test_type: TestType, l: Optional[int] = None,
                      nu: Optional[int] = None, study_name : Optional[str] = None,
+                     tol: Optional[float] = TOL, max_it: Optional[int] = MAX_IT,
                      **solver_kwargs) -> None:
     """
     Run a single reproduce step, skipping it if already completed.
@@ -179,6 +180,10 @@ def launch_reproduce(solver_class, model_params, conv_type: ConvType,
     study_name    : str, optional
         If provided, prefixes the checkpoint tag and study directory name.
         Use to differentiate studies that share the same conv_type and test_type.
+    tol           : float
+        Nonlinear solver tolerance. Defaults to the paper-fixed value TOL.
+    max_it        : int
+        Maximum nonlinear solver iterations. Defaults to the paper-fixed value MAX_IT.
     **solver_kwargs
         Extra keyword arguments forwarded to the runner (e.g. Linearize=False).
     """
@@ -199,8 +204,8 @@ def launch_reproduce(solver_class, model_params, conv_type: ConvType,
                 model_params  = model_params,
                 conv_type     = conv_type,
                 test_type     = test_type,
-                tol           = TOL,
-                max_it        = MAX_IT,
+                tol           = tol,
+                max_it        = max_it,
                 l             = l,
                 nu            = nu,
                 **solver_kwargs,

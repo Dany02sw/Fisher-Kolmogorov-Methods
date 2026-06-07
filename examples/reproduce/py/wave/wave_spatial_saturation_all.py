@@ -29,12 +29,14 @@ if __name__ == "__main__":
     for l in range(2, MAX_L + 1):
         for nu in range(1, MAX_NU + 1):
             launch_reproduce(
-                solver_class = SolverSpLdgBDFReduced2,
-                model_params = SpLdgParams(eta_0=1.0, theta=-1.0),
-                conv_type    = ConvType.SPATIAL,
-                test_type    = TestType.WAVE,
-                l            = l,
-                nu           = nu,
+                solver_class   = SolverSpLdgBDFReduced2,
+                model_params   = SpLdgParams(eta_0=1.0, theta=-1.0, smoothing=1e-12),
+                conv_type      = ConvType.SPATIAL,
+                test_type      = TestType.WAVE,
+                l              = l,
+                nu             = nu,
+                tol            = 1e-10,
+                max_it         = 300,
                 factory_kwargs = {"N_list": [10, 20, 35, 55, 70, 100]},
             )
     clear_done(ConvType.SPATIAL, TestType.WAVE)
