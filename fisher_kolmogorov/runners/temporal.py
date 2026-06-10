@@ -7,13 +7,11 @@ from fisher_kolmogorov.utilities.math_utilities      import get_decimals
 from fisher_kolmogorov.plots.plot_utilities          import plot_time_convergence
 from fisher_kolmogorov.utilities.enum_utilities      import BdfOrder
 from fisher_kolmogorov.configs.test_configs.base     import TestConfig
-from fisher_kolmogorov.configs.model_configs.base    import ModelParams
 
 
 def run_temporal_convergence(
     solver_class : type,
     config       : TestConfig,
-    model_params : ModelParams,
     tol          : float = 1e-11,
     max_it       : int   = 200,
     save_plot    : bool  = False,
@@ -80,7 +78,6 @@ def run_temporal_convergence(
 
             solver = solver_class(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
-                **model_params.to_kwargs(),
                 **solver_kwargs,
             )
 

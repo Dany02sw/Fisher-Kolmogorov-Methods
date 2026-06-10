@@ -10,7 +10,6 @@ from fisher_kolmogorov.utilities.initial_conditions  import get_initial_conditio
 from fisher_kolmogorov.utilities.profiling_utilities import timer
 from fisher_kolmogorov.utilities.print_utilities     import print_title, print_subtitle
 from fisher_kolmogorov.configs.test_configs.base     import BrainConfig, SimulationParams
-from fisher_kolmogorov.configs.model_configs.base    import ModelParams
 
 
 def build_brain_pde_data(config: BrainConfig):
@@ -53,7 +52,6 @@ def build_brain_pde_data(config: BrainConfig):
 
 def run_brain_simulation(
     solver_class : type,
-    model_params : ModelParams,
     sim_config   : BrainConfig,
     sim_params   : SimulationParams,
     save_plot    : bool  = False,
@@ -70,8 +68,6 @@ def run_brain_simulation(
         Brain physical data and section type.
     sim_params   : SimulationParams
         Numerical parameters for the forward time-stepping loop.
-    model_params : ModelParams
-        Model-specific parameters.
     **solver_kwargs : dict
         Additional solver-specific keyword arguments passed to the constructor.
     """
@@ -89,7 +85,6 @@ def run_brain_simulation(
     # Initialize solver with parameters and eventual extra kwargs
     solver = solver_class(
         mesh, D, alpha, c_0,
-        **model_params.to_kwargs(),
         **solver_kwargs,
     )
 

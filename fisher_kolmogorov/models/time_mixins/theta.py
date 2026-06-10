@@ -1,5 +1,3 @@
-from fisher_kolmogorov.models.solver_base import SolverBase
-
 from dolfin import *
 from config import DEFAULT_RESULTS_DIR
 
@@ -8,9 +6,16 @@ from fisher_kolmogorov.utilities.enum_utilities   import TimeMethod
 from fisher_kolmogorov.utilities.io_utilities     import OutputManager, make_output_manager
 from fisher_kolmogorov.utilities.math_utilities   import get_decimals
 
-class SolverTheta(SolverBase):
-    def __init__(self, mesh, D, alpha, c_0, transform):
-        super().__init__(mesh, D, alpha, c_0, transform)
+
+class TimeMixinTheta:
+    """Theta-method time discretization mixin.
+
+    Expects the space mixin and SolverBase to be present in the MRO.
+    'time_order' in Solve/ConvergenceTest is interpreted as the theta
+    parameter in [0, 1].
+    """
+
+    def _init_time(self):
         self.TM        = TimeMethod.THETA
         self.W         = None
         self.R         = None
@@ -18,7 +23,7 @@ class SolverTheta(SolverBase):
         self.Force_old = None
         self.gN        = None
         self.gN_old    = None
-        
+
     def _BuildFunctions(self):
         self.U     = Function(self.WR)
         self.U_old = Function(self.WR)
@@ -27,7 +32,7 @@ class SolverTheta(SolverBase):
         dx    = self.dx
         u_old = split(self.U_old)[0]
         return (1.0/tau)*(self.T(u) - self.T(u_old))*v*dx
-    
+
     def _BuildVariationalForms(self, tau):
         self.tau  = Constant(tau)
         F_space   = self._BuildSpatialForm()
@@ -45,36 +50,35 @@ class SolverTheta(SolverBase):
         F, u, v     = F_space(comps_now, comps_time, transf_time, F_tht, gN_tht)
         F_time      = self._BuildTimeForm(tau, u, v)
         self.Form   = F + F_time
-    
+
     def _SetSourceTerm(self, x, t, extForce, NeumannBC):
         super()._SetSourceTerm(x, t, extForce, NeumannBC)
         self.Force_old = Function(self.W)
         self.gN_old    = Function(self.R)
-    
+
     def _UpdateOldState(self):
         self.U_old.assign(self.U)
         self.Force_old.assign(project(self.Force, self.W))
         self.gN_old.assign(project(self.gN, self.R))
-    
+
     def _ValidateInput(self, t0, dt, tht, T, l):
         super()._ValidateInput(t0, dt, T, l)
         if not (0.0 <= tht <= 1.0):
-            raise ValueError("tht must be between in [0, 1]")
-
+            raise ValueError("tht must be in [0, 1]")
 
     def Solve(self, t0, dt, T, time_order, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
         self._ValidateInput(t0, dt, time_order, T, l)
-        
+
         # Mesh data
         x = SpatialCoordinate(self.mesh)
 
         # Time loop parameters
-        t_val    = t0 
+        t_val    = t0
         nsteps   = round((T - t0)/dt)
         t        = Constant(t0)
         self.tht = Constant(time_order)
 
-        # Functional setting 
+        # Functional setting
         self._BuildFunctionSpaces(l)
         self._BuildFunctions()
 
@@ -111,9 +115,9 @@ class SolverTheta(SolverBase):
             # Solve the problem
             self.solver.solve()
 
-            # Print the iteration
-            c_h = self._SolvePostprocessing(t_val)
-            
+            # Print the iteration (u_h unused by Theta, but all space mixins return both)
+            c_h, _ = self._SolvePostprocessing(t_val)
+
             # Update old solutions
             self._UpdateOldState()
 
@@ -122,7 +126,6 @@ class SolverTheta(SolverBase):
 
         # Close output file
         exporter.close()
-
 
     def ConvergenceTest(self, t0, dt, T, time_order, l, tol, maxIt, output_dir=None):
 
@@ -133,7 +136,7 @@ class SolverTheta(SolverBase):
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
 
         # Time loop parameters
-        t_val    = t0 
+        t_val    = t0
         nsteps   = round((T - t0)/dt)
         t        = Constant(t0)
         self.tht = Constant(time_order)
@@ -143,7 +146,7 @@ class SolverTheta(SolverBase):
         alpha     = self.alpha
         self.c_ex = self.c_0(x, t)
 
-        # Functional setting 
+        # Functional setting
         self._BuildFunctionSpaces(l)
         self._BuildFunctions()
 
@@ -161,7 +164,7 @@ class SolverTheta(SolverBase):
         self._SetInitialCondition(self.c_ex)
         self._UpdateOldState()
 
-        # Forms ansd solver
+        # Forms and solver
         self._BuildVariationalForms(dt)
         self._BuildNonlinearSolver(tol, maxIt)
 
@@ -184,7 +187,7 @@ class SolverTheta(SolverBase):
                 # Print convergence iterations
                 E_c, E_grad, u_h, c_h = self._ConvergenceTestPostprocessing(t_val)
 
-                # Save the solution(only if the output directory is not None)
+                # Save the solution (only if the output directory is not None)
                 exporter.save(c_h, t_val)
 
                 # Update old solutions

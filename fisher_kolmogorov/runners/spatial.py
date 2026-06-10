@@ -5,13 +5,11 @@ from fisher_kolmogorov.utilities.profiling_utilities import timer
 from fisher_kolmogorov.utilities.print_utilities     import print_space_rates
 from fisher_kolmogorov.plots.plot_utilities          import plot_spatial_convergence
 from fisher_kolmogorov.configs.test_configs.base     import TestConfig
-from fisher_kolmogorov.configs.model_configs.base    import ModelParams
 
 
 def run_spatial_convergence(
     solver_class : type,
     config       : TestConfig,
-    model_params : ModelParams,
     tol          : float = 1e-11,
     max_it       : int   = 200,
     save_plot    : bool  = False,
@@ -30,8 +28,6 @@ def run_spatial_convergence(
         Uninitialised solver class (e.g. SolverDgBDF).
     config       : TestConfig
         Test configuration carrying physical data and study hyperparameters.
-    model_params : ModelParams
-        Model-specific parameters (penalty, stabilisation, …).
     tol          : float
         Nonlinear-solver absolute/relative tolerance.
     max_it       : int
@@ -69,7 +65,6 @@ def run_spatial_convergence(
 
             solver = solver_class(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
-                **model_params.to_kwargs(),
                 **solver_kwargs,
             )
             E_c, E_grad, h = solver.ConvergenceTest(

@@ -5,23 +5,16 @@
 #PBS -l walltime=24:00:00
 #PBS -j oe
 
-source /work/u10795357/miniconda3/etc/profile.d/conda.sh
-conda activate fenics2019
-cd "$PBS_O_WORKDIR"
+source examples/reproduce/sh/_env.sh
+source examples/reproduce/sh/_runner.sh
 
 STUDIES=(
-    "reproduce/py/cosine/cosine_spatial_all.py"
-    "reproduce/py/cosine/cosine_polynomial.py"
-    "reproduce/py/cosine/cosine_temporal_all.py"
-    "reproduce/py/wave/wave_spatial_saturation_all.py"
-    "reproduce/py/wave/wave_polynomial_saturation_all.py"
+    "examples/reproduce/py/cosine/cosine_spatial_all.py"
+    "examples/reproduce/py/cosine/cosine_polynomial.py"
+    "examples/reproduce/py/cosine/cosine_temporal_all.py"
+    "examples/reproduce/py/wave/wave_spatial_saturation_all.py"
+    "examples/reproduce/py/wave/wave_polynomial_saturation_all.py"
 )
-
-if [ "${args:-}" = "--mpi" ]; then
-    RUNNER="mpirun python3"
-else
-    RUNNER="python3"
-fi
 
 for study in "${STUDIES[@]}"; do
     echo ""

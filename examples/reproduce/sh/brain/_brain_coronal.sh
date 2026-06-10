@@ -1,18 +1,11 @@
 #!/bin/bash
-#PBS -N brain_coronal
-#PBS -l walltime=03:00:00
-#PBS -l select=1:ncpus=1:mem=8gb
+#PBS -N FK_brain_coronal
+#PBS -q cpu
+#PBS -l select=1:ncpus=4:mpiprocs=4:mem=32gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
 
-cd "$PBS_O_WORKDIR" || exit 1
+source examples/reproduce/sh/_env.sh
+source examples/reproduce/sh/_runner.sh
 
-fk-brain \
-    --solver  spldg_bdf_red2 \
-    --section coronal        \
-    --scheme  bdf2           \
-    --l       2              \
-    --T       50.0           \
-    --dt      0.25           \
-    --tol     1e-6           \
-    --max-it  500            \
-    --eta0    1.0            \
-    --theta   -1.0
+$RUNNER examples/reproduce/py/brain/_brain_coronal.py

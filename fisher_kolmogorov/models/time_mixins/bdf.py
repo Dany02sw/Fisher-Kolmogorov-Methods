@@ -1,5 +1,3 @@
-from fisher_kolmogorov.models.solver_base import SolverBase
-
 from dolfin import *
 from config import DEFAULT_RESULTS_DIR
 
@@ -18,12 +16,17 @@ BDF_COEFFS = {
 }
 
 
-class SolverBDF(SolverBase):
-    def __init__(self, mesh, D, alpha, c_0, transform):
-        super().__init__(mesh, D, alpha, c_0, transform)
-        self.TM      = TimeMethod.BDF
-        self.W = None
-        
+class TimeMixinBdf:
+    """BDF time discretization mixin (orders 1–6).
+
+    Expects the space mixin and SolverBase to be present in the MRO.
+    The 'nu' attribute set in Solve/ConvergenceTest controls the BDF order.
+    """
+
+    def _init_time(self):
+        self.TM = TimeMethod.BDF
+        self.W  = None
+
     def _BuildFunctions(self):
         self.U     = Function(self.WR)
         self.u_old = [Function(self.W) for _ in range(self.nu)] # small letter because when you have mixed spaces the backward steps will only use the first space
@@ -39,7 +42,7 @@ class SolverBDF(SolverBase):
         transformed_old_steps = sum(a[j]*self.T(self.u_old[j]) for j in range(len(a)))
 
         return (1.0/(tau*beta))*(self.T(u) - transformed_old_steps)*v*dx
-    
+
     def _BuildVariationalForms(self, tau):
         self.tau    = Constant(tau)
 
@@ -58,7 +61,7 @@ class SolverBDF(SolverBase):
 
         # Put space and time part together
         self.Form   = F + F_time
-    
+
     def _UpdateOldState(self, u):
         for j in range(self.nu-1, 0, -1):
             self.u_old[j].assign(self.u_old[j-1])
@@ -68,11 +71,11 @@ class SolverBDF(SolverBase):
         super()._ValidateInput(t0, dt, T, l)
         if not isinstance(nu, int) or nu < 1 or nu > 6:
             raise ValueError(f"Values of nu must be an integer from 1 to 6, got {nu}")
-        
+
     def Solve(self, t0, dt, T, time_order, l, tol, maxIt, extForce=None, NeumannBC=None, output_dir=None):
-  
+
         self._ValidateInput(t0, dt, time_order, T, l)
-        
+
         # Mesh data
         x = SpatialCoordinate(self.mesh)
 
@@ -82,7 +85,7 @@ class SolverBDF(SolverBase):
         t       = Constant(t0)
         self.nu = time_order
 
-        # Functional setting 
+        # Functional setting
         self._BuildFunctionSpaces(l)
         self._BuildFunctions()
 
@@ -136,7 +139,6 @@ class SolverBDF(SolverBase):
         # Close output file
         exporter.close()
 
-
     def ConvergenceTest(self, t0, dt, T, time_order, l, tol, maxIt, output_dir=None):
 
         self._ValidateInput(t0, dt, time_order, T, l)
@@ -146,7 +148,7 @@ class SolverBDF(SolverBase):
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
 
         # Time loop parameters
-        t_val   = t0 - (time_order - 1)*dt 
+        t_val   = t0 - (time_order - 1)*dt
         nsteps  = round((T - t_val)/dt)
         t       = Constant(t_val)
         self.nu = time_order
@@ -156,7 +158,7 @@ class SolverBDF(SolverBase):
         alpha     = self.alpha
         self.c_ex = self.c_0(x, t)
 
-        # Functional setting 
+        # Functional setting
         self._BuildFunctionSpaces(l)
         self._BuildFunctions()
 
@@ -177,7 +179,7 @@ class SolverBDF(SolverBase):
             self.u_old[-1-i].assign(u_tmp)
         self._SetInitialCondition(self.c_ex)
 
-        # Forms ansd solver
+        # Forms and solver
         self._BuildVariationalForms(dt)
         self._BuildNonlinearSolver(tol, maxIt)
 
@@ -200,7 +202,7 @@ class SolverBDF(SolverBase):
                 # Print convergence iterations
                 E_c, E_grad, u_h, c_h = self._ConvergenceTestPostprocessing(t_val)
 
-                # Save the solution(only if the output directory is not None)
+                # Save the solution (only if the output directory is not None)
                 exporter.save(c_h, t_val)
 
                 # Update old solutions

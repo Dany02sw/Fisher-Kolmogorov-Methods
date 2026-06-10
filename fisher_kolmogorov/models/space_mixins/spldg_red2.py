@@ -1,5 +1,3 @@
-from fisher_kolmogorov.models.solver_bdf import SolverBDF
-
 from dolfin import *
 import ufl
 
@@ -7,13 +5,15 @@ from fisher_kolmogorov.utilities.enum_utilities      import SpaceMethod
 from fisher_kolmogorov.utilities.transform_utilities import Sigmoid
 from fisher_kolmogorov.utilities.spldg_utilities     import div_LDG, grad_LDG, inner_LDG
 
-class SolverSpLdgBDFReduced2(SolverBDF):
-    def __init__(self, mesh, D, alpha, c_0, eps, eta_0, theta, smoothing=0.0):
-        super().__init__(mesh, D, alpha, c_0, transform=Sigmoid(eps=smoothing))
-        self.eps     = eps     if isinstance(eps,     ufl.core.expr.Expr) else Constant(eps)
-        self.eta_0   = eta_0   if isinstance(eta_0,   ufl.core.expr.Expr) else Constant(eta_0)
-        self.theta   = theta   if isinstance(theta,   ufl.core.expr.Expr) else Constant(theta)
-        self.SM      = SpaceMethod.SPLDG
+class SpaceMixinSpLdgReduced:
+    """Sparse LDG reduced formulation space discretization mixin (2-component mixed space)."""
+
+    def _init_space(self, eps, eta_0, theta, smoothing=0.0):
+        self.eps   = eps   if isinstance(eps,   ufl.core.expr.Expr) else Constant(eps)
+        self.eta_0 = eta_0 if isinstance(eta_0, ufl.core.expr.Expr) else Constant(eta_0)
+        self.theta = theta if isinstance(theta, ufl.core.expr.Expr) else Constant(theta)
+        self.SM    = SpaceMethod.SPLDG
+        self.T     = Sigmoid(eps=smoothing)
 
     def _BuildFunctionSpaces(self, l=1):
         l = int(l)
@@ -24,9 +24,9 @@ class SolverSpLdgBDFReduced2(SolverBDF):
         element_sigma = self.R.ufl_element()
         mixed_element = MixedElement([element_c, element_sigma])
         self.WR       = FunctionSpace(self.mesh, mixed_element)
-    
+
     def _BuildSpatialForm(self):
-        
+
         # Data
         D     = self.D
         alpha = self.alpha
@@ -53,18 +53,18 @@ class SolverSpLdgBDFReduced2(SolverBDF):
             # No time derivative involved in these equations, so we use the current time here
             F_sigma = inner(D*self.T.s2(self.T(w))*sigma, phi)*dx + grad_LDG(w, D.T*phi, n, gamma, dx, dS)
 
-            # Here there is the time derivative, so we use time-disretization dependent components
+            # Here there is the time derivative, so we use time-discretization dependent components
             F_w = self.eps*inner_LDG(w_t, psi, n, gamma, h_avg, D, dx, dS, alpha) \
                 + div_LDG(D*sigma_t, psi, n, gamma, dx, dS) \
                 + inner(gN, n)*psi*ds \
                 + inner((1.0/h_avg)*jump(w_t, n), jump(psi, n))*dS \
                 - inner(alpha*transf_time*(1.0 - transf_time), psi)*dx \
                 - inner(Force, psi)*dx
-            
+
             return F_sigma + F_w, w, psi
 
         return F_space
-    
+
     def _SetInitialCondition(self, c_0):
         assign(self.U.sub(0), project(self.T.s1(c_0), self.W))
         assign(self.U.sub(1), project(-grad(c_0),     self.R))
@@ -89,21 +89,21 @@ class SolverSpLdgBDFReduced2(SolverBDF):
         print(f"{'─'*80}\n")
 
         return c_h, w_h
-    
+
     def _ConvergenceTestPostprocessing(self, t_val):
         # Extract solution
         (w_h, sigma_h) = self.U.split(deepcopy=True)
         c_h            = project(self.T(w_h), self.W)
 
         # Compute errors
-        E_c = sqrt(assemble((self.c_ex - self.T(w_h))*(self.c_ex - self.T(w_h))*self.dx))
+        E_c     = sqrt(assemble((self.c_ex - self.T(w_h))*(self.c_ex - self.T(w_h))*self.dx))
         E_sigma = sqrt(assemble(inner(grad(self.c_ex) + sigma_h, grad(self.c_ex) + sigma_h)*self.dx))
 
         # Compute min and max values
-        c_min = c_h.vector().min()
-        c_max = c_h.vector().max()
-        sigma_max = sigma_h.vector().max()
+        c_min     = c_h.vector().min()
+        c_max     = c_h.vector().max()
         sigma_min = sigma_h.vector().min()
+        sigma_max = sigma_h.vector().max()
 
         # Print the bounds and the errors for both the variables
         print(f"\n{'─'*80}")

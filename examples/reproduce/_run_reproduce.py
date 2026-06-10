@@ -150,7 +150,7 @@ def _capture_and_tee(log_path: Path, tag: str):
 # Public launcher
 # ---------------------------------------------------------------------------
 
-def launch_reproduce(solver_class, model_params, conv_type: ConvType,
+def launch_reproduce(solver_class, conv_type: ConvType,
                      test_type: TestType, l: Optional[int] = None,
                      nu: Optional[int] = None, study_name : Optional[str] = None,
                      tol: Optional[float] = TOL, max_it: Optional[int] = MAX_IT,
@@ -167,8 +167,6 @@ def launch_reproduce(solver_class, model_params, conv_type: ConvType,
     ----------
     solver_class  : type
         Concrete solver class (must be a subclass of one of the 8 solvers).
-    model_params  : ModelParams
-        Parameter dataclass instance matching the solver.
     conv_type     : ConvType
         Study to run: SPATIAL, POLYNOMIAL, or TEMPORAL.
     test_type     : TestType
@@ -201,7 +199,6 @@ def launch_reproduce(solver_class, model_params, conv_type: ConvType,
         with unittest.mock.patch("matplotlib.pyplot.show"):
             launch(
                 solver_class  = solver_class,
-                model_params  = model_params,
                 conv_type     = conv_type,
                 test_type     = test_type,
                 tol           = tol,

@@ -9,20 +9,14 @@ completes without raising an exception.
 import pytest
 from dolfin import *
 
-from fisher_kolmogorov.models.solver_dg_bdf         import SolverDgBDF
-from fisher_kolmogorov.models.solver_dg_theta       import SolverDgTheta
-from fisher_kolmogorov.models.solver_ldg_bdf        import SolverLdgBDF
-from fisher_kolmogorov.models.solver_ldg_theta      import SolverLdgTheta
-from fisher_kolmogorov.models.solver_ppdg_bdf       import SolverPpDgBDF
-from fisher_kolmogorov.models.solver_ppdg_theta     import SolverPpDgTheta
-from fisher_kolmogorov.models.solver_spldg_bdf      import SolverSpLdgBDF
-from fisher_kolmogorov.models.solver_spldg_bdf_red2 import SolverSpLdgBDFReduced2
-from fisher_kolmogorov.models.solver_spldg_theta    import SolverSpLdgTheta
-from fisher_kolmogorov.configs.model_configs        import DgParams, LdgParams, PpDgParams, SpLdgParams
-from fisher_kolmogorov.utilities.enum_utilities     import PolyDegree, BdfOrder, ThetaMethod
+from fisher_kolmogorov.models.solver_factory    import make_solver_class
+from fisher_kolmogorov.configs.model_configs    import DgParams, LdgParams, PpDgParams, SpLdgParams
+from fisher_kolmogorov.utilities.enum_utilities import (
+    PolyDegree, BdfOrder, ThetaMethod, SpaceMethod, TimeMethod,
+)
 
 
-# Shared fixtures _________________________________________________________________________________________________________________________ 
+# Shared fixtures _________________________________________________________________________________________________________________________
 @pytest.fixture(scope="module")
 def minimal_mesh():
     return UnitSquareMesh(4, 4)
@@ -39,21 +33,21 @@ def pde_data():
     return D, alpha, c_0
 
 
-# Helpers __________________________________________________________________________________________________________________________________ 
-def _run_one_step_bdf(solver_class, mesh, D, alpha, c_0, model_params):
-    solver = solver_class(mesh, D, alpha, c_0, **model_params.to_kwargs())
+# Helpers __________________________________________________________________________________________________________________________________
+def _run_one_step_bdf(solver_class, mesh, D, alpha, c_0):
+    solver = solver_class(mesh, D, alpha, c_0)
     solver.ConvergenceTest(
         t0=0.0, dt=1e-2, T=1e-2,
-        nu=BdfOrder.BDF1, l=PolyDegree.P1,
+        time_order=BdfOrder.BDF1, l=PolyDegree.P1,
         tol=1e-6, maxIt=50,
     )
 
 
-def _run_one_step_theta(solver_class, mesh, D, alpha, c_0, model_params):
-    solver = solver_class(mesh, D, alpha, c_0, **model_params.to_kwargs())
+def _run_one_step_theta(solver_class, mesh, D, alpha, c_0):
+    solver = solver_class(mesh, D, alpha, c_0)
     solver.ConvergenceTest(
         t0=0.0, dt=1e-2, T=1e-2,
-        tht=ThetaMethod.CN, l=PolyDegree.P1,
+        time_order=ThetaMethod.CN, l=PolyDegree.P1,
         tol=1e-6, maxIt=50,
     )
 
@@ -61,47 +55,56 @@ def _run_one_step_theta(solver_class, mesh, D, alpha, c_0, model_params):
 # Tests smoke on DG methods ______________________________________________________________________________________________________________
 def test_dg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_bdf(SolverDgBDF, minimal_mesh, D, alpha, c_0, DgParams())
+    solver_class = make_solver_class(SpaceMethod.DG, TimeMethod.BDF, DgParams())
+    _run_one_step_bdf(solver_class, minimal_mesh, D, alpha, c_0)
 
 
 def test_dg_theta_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_theta(SolverDgTheta, minimal_mesh, D, alpha, c_0, DgParams())
+    solver_class = make_solver_class(SpaceMethod.DG, TimeMethod.THETA, DgParams())
+    _run_one_step_theta(solver_class, minimal_mesh, D, alpha, c_0)
 
 
 # Tests smoke on LDG methods ______________________________________________________________________________________________________________
 def test_ldg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_bdf(SolverLdgBDF, minimal_mesh, D, alpha, c_0, LdgParams())
+    solver_class = make_solver_class(SpaceMethod.LDG, TimeMethod.BDF, LdgParams())
+    _run_one_step_bdf(solver_class, minimal_mesh, D, alpha, c_0)
 
 
 def test_ldg_theta_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_theta(SolverLdgTheta, minimal_mesh, D, alpha, c_0, LdgParams())
+    solver_class = make_solver_class(SpaceMethod.LDG, TimeMethod.THETA, LdgParams())
+    _run_one_step_theta(solver_class, minimal_mesh, D, alpha, c_0)
 
 
-# Tests smoke on PP-DG methods ____________________________________________________________________________________________________________  
+# Tests smoke on PP-DG methods ____________________________________________________________________________________________________________
 def test_ppdg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_bdf(SolverPpDgBDF, minimal_mesh, D, alpha, c_0, PpDgParams())
+    solver_class = make_solver_class(SpaceMethod.PPDG, TimeMethod.BDF, PpDgParams())
+    _run_one_step_bdf(solver_class, minimal_mesh, D, alpha, c_0)
 
 
 def test_ppdg_theta_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_theta(SolverPpDgTheta, minimal_mesh, D, alpha, c_0, PpDgParams())
+    solver_class = make_solver_class(SpaceMethod.PPDG, TimeMethod.THETA, PpDgParams())
+    _run_one_step_theta(solver_class, minimal_mesh, D, alpha, c_0)
 
 
-# Tests smoke on SP-LDG methods ___________________________________________________________________________________________________________ 
+# Tests smoke on SP-LDG methods ___________________________________________________________________________________________________________
 def test_spldg_bdf_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_bdf(SolverSpLdgBDF, minimal_mesh, D, alpha, c_0, SpLdgParams())
+    solver_class = make_solver_class(SpaceMethod.SPLDG, TimeMethod.BDF, SpLdgParams())
+    _run_one_step_bdf(solver_class, minimal_mesh, D, alpha, c_0)
 
 
 def test_spldg_theta_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_theta(SolverSpLdgTheta, minimal_mesh, D, alpha, c_0, SpLdgParams())
+    solver_class = make_solver_class(SpaceMethod.SPLDG, TimeMethod.THETA, SpLdgParams())
+    _run_one_step_theta(solver_class, minimal_mesh, D, alpha, c_0)
 
 
 def test_spldg_bdf_red2_smoke(minimal_mesh, pde_data):
     D, alpha, c_0 = pde_data
-    _run_one_step_bdf(SolverSpLdgBDFReduced2, minimal_mesh, D, alpha, c_0, SpLdgParams())
+    solver_class = make_solver_class(SpaceMethod.SPLDG, TimeMethod.BDF, SpLdgParams(), full=False)
+    _run_one_step_bdf(solver_class, minimal_mesh, D, alpha, c_0)

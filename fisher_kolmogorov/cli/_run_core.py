@@ -4,7 +4,7 @@ and the examples/_run.py script.
 
 Public API
 ----------
-launch(solver_class, model_params, conv_type, test_type, ...)
+launch(solver_class, conv_type, test_type, ...)
     Run a single convergence study.
 
 FACTORY_REGISTRY
@@ -14,8 +14,7 @@ RUNNER_MAP
     Maps ConvType to (runner_callable, subtitle_string).
 """
 
-from fisher_kolmogorov.models.solver_bdf        import SolverBDF
-from fisher_kolmogorov.runners                  import (
+from fisher_kolmogorov.runners import (
     run_spatial_convergence,
     run_polynomial_convergence,
     run_temporal_convergence,
@@ -34,20 +33,15 @@ from fisher_kolmogorov.configs.test_configs.wave import (
     make_wave_temporal,
 )
 
-# (is_bdf, conv_type, test_type) -> factory callable
+# (conv_type, test_type) -> factory callable
+# All time methods share the same convergence test factories
 FACTORY_REGISTRY = {
-    (True,  ConvType.SPATIAL,    TestType.COSINE): make_cosine_spatial,
-    (False, ConvType.SPATIAL,    TestType.COSINE): make_cosine_spatial,
-    (True,  ConvType.POLYNOMIAL, TestType.COSINE): make_cosine_polynomial,
-    (False, ConvType.POLYNOMIAL, TestType.COSINE): make_cosine_polynomial,
-    (True,  ConvType.TEMPORAL,   TestType.COSINE): make_cosine_temporal,
-    (False, ConvType.TEMPORAL,   TestType.COSINE): make_cosine_temporal,
-    (True,  ConvType.SPATIAL,    TestType.WAVE):   make_wave_spatial,
-    (False, ConvType.SPATIAL,    TestType.WAVE):   make_wave_spatial,
-    (True,  ConvType.POLYNOMIAL, TestType.WAVE):   make_wave_polynomial,
-    (False, ConvType.POLYNOMIAL, TestType.WAVE):   make_wave_polynomial,
-    (True,  ConvType.TEMPORAL,   TestType.WAVE):   make_wave_temporal,
-    (False, ConvType.TEMPORAL,   TestType.WAVE):   make_wave_temporal,
+    (ConvType.SPATIAL,    TestType.COSINE): make_cosine_spatial,
+    (ConvType.POLYNOMIAL, TestType.COSINE): make_cosine_polynomial,
+    (ConvType.TEMPORAL,   TestType.COSINE): make_cosine_temporal,
+    (ConvType.SPATIAL,    TestType.WAVE):   make_wave_spatial,
+    (ConvType.POLYNOMIAL, TestType.WAVE):   make_wave_polynomial,
+    (ConvType.TEMPORAL,   TestType.WAVE):   make_wave_temporal,
 }
 
 RUNNER_MAP = {
@@ -57,7 +51,7 @@ RUNNER_MAP = {
 }
 
 
-def launch(solver_class, model_params, conv_type, test_type,
+def launch(solver_class, conv_type, test_type,
            tol=1e-11, max_it=200, l=None, nu=None,
            factory_kwargs: dict = None, output_dir=None, **solver_kwargs):
     """
@@ -66,9 +60,7 @@ def launch(solver_class, model_params, conv_type, test_type,
     Parameters
     ----------
     solver_class    : type
-        One of the concrete solver classes.
-    model_params    : ModelParams
-        Matching parameter dataclass instance (e.g. LdgParams(C11=1.0)).
+        One of the concrete solver classes (or a class built by make_solver_class).
     conv_type       : ConvType
         Study to run: SPATIAL, POLYNOMIAL, or TEMPORAL.
     test_type       : TestType
@@ -85,8 +77,7 @@ def launch(solver_class, model_params, conv_type, test_type,
     nu              : int, optional
         BDF order integer (e.g. 3 for BDF3); converted to BdfOrder and
         forwarded to the factory as ``nu_or_tht`` for all study types.
-        Theta-method solvers (``is_bdf=False``) never pass ``nu``, so this
-        stays None and the factory falls back to its default ThetaMethod.
+        If None, the factory falls back to its default time method.
     factory_kwargs  : dict, optional
         Additional keyword arguments forwarded directly to the factory,
         overriding any value derived from ``l`` or ``nu``. Used by the CLI
@@ -98,8 +89,7 @@ def launch(solver_class, model_params, conv_type, test_type,
     **solver_kwargs
         Additional keyword arguments passed directly to the runner.
     """
-    is_bdf  = issubclass(solver_class, SolverBDF)
-    factory = FACTORY_REGISTRY[(is_bdf, conv_type, test_type)]
+    factory = FACTORY_REGISTRY[(conv_type, test_type)]
 
     resolved = {}
     if nu is not None:
@@ -120,7 +110,6 @@ def launch(solver_class, model_params, conv_type, test_type,
     runner_kwargs = dict(
         solver_class = solver_class,
         config       = config,
-        model_params = model_params,
         tol          = tol,
         max_it       = max_it,
         **solver_kwargs,

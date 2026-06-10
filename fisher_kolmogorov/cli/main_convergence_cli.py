@@ -10,31 +10,19 @@ Run ``fk-convergence --help`` for the full option list.
 """
 
 import argparse
-import importlib
 
 from pathlib import Path
 
-from fisher_kolmogorov.utilities.enum_utilities import (
-    ConvType, TestType, PenaltyType, MeshStructure, PolyDegree, BdfOrder, ThetaMethod,
+from fisher_kolmogorov.models.solver_factory     import make_solver_class
+from fisher_kolmogorov.utilities.enum_utilities  import (
+    ConvType, TestType, TimeMethod,
+    PenaltyType, MeshStructure, PolyDegree, BdfOrder, ThetaMethod,
 )
+
 from fisher_kolmogorov.configs.test_configs.cosine import make_c_exact_temporal_scaled
 from fisher_kolmogorov.cli._run_core               import launch
+from fisher_kolmogorov.cli._registries             import _SOLVER_REGISTRY, _PARAMS_DEFAULTS, _SCHEME_MAP
 
-# Solver registry _________________________________________________________________________________________________________________________
-_SOLVER_REGISTRY = {
-    "dg_bdf"           : ("fisher_kolmogorov.models.solver_dg_bdf",           "SolverDgBDF"),
-    "dg_theta"         : ("fisher_kolmogorov.models.solver_dg_theta",         "SolverDgTheta"),
-    "ldg_bdf"          : ("fisher_kolmogorov.models.solver_ldg_bdf",          "SolverLdgBDF"),
-    "ldg_theta"        : ("fisher_kolmogorov.models.solver_ldg_theta",        "SolverLdgTheta"),
-    "ppdg_bdf"         : ("fisher_kolmogorov.models.solver_ppdg_bdf",         "SolverPpDgBDF"),
-    "ppdg_theta"       : ("fisher_kolmogorov.models.solver_ppdg_theta",       "SolverPpDgTheta"),
-    "spldg_bdf"        : ("fisher_kolmogorov.models.solver_spldg_bdf",        "SolverSpLdgBDF"),
-    "spldg_theta"      : ("fisher_kolmogorov.models.solver_spldg_theta",      "SolverSpLdgTheta"),
-    "spldg_bdf_red2"   : ("fisher_kolmogorov.models.solver_spldg_bdf_red2",   "SolverSpLdgBDFReduced2"),
-    "spldg_theta_red2" : ("fisher_kolmogorov.models.solver_spldg_theta_red2", "SolverSpLdgThetaReduced2"),
-}
-
-_SCHEME_MAP    = {**{f"bdf{o.value}": o for o in BdfOrder}, "ie": ThetaMethod.IE, "cn": ThetaMethod.CN, "ee": ThetaMethod.EE}
 _TEST_TYPE_MAP = {t.name.lower(): t for t in TestType}
 _CONV_TYPE_MAP = {c.name.lower(): c for c in ConvType}
 _STRUCT_MAP    = {s.name.lower(): s for s in MeshStructure}
@@ -94,19 +82,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     return parser
 
-# Helpers _________________________________________________________________________________________________________________________________
-def _build_model_params(solver_key: str, args: argparse.Namespace):
-    """Instantiate the correct ModelParams subclass from CLI args."""
-    from fisher_kolmogorov.configs.model_configs import DgParams, LdgParams, SpLdgParams, PpDgParams
 
-    DEFAULTS = {
-        "dg_bdf"         : DgParams,    "dg_theta"         : DgParams,
-        "ldg_bdf"        : LdgParams,   "ldg_theta"        : LdgParams,
-        "ppdg_bdf"       : PpDgParams,  "ppdg_theta"       : PpDgParams,
-        "spldg_bdf"      : SpLdgParams, "spldg_theta"      : SpLdgParams,
-        "spldg_bdf_red2" : SpLdgParams, "spldg_theta_red2" : SpLdgParams,
-    }
-    inst = DEFAULTS[solver_key]()
+# Helpers _________________________________________________________________________________________________________________________________
+def _build_model_params(solver_key: str, args: argparse.Namespace) -> object:
+    """Instantiate the correct ModelParams subclass from CLI args."""
+    inst = _PARAMS_DEFAULTS[solver_key]()
 
     overrides = {
         "eta_0"    : args.eta0,
@@ -174,17 +154,20 @@ def main():
     conv_type = _CONV_TYPE_MAP[args.conv]
     test_type = _TEST_TYPE_MAP[args.test]
 
-    mod_path, cls_name = _SOLVER_REGISTRY[args.solver]
-    solver_class       = getattr(importlib.import_module(mod_path), cls_name)
-    model_params       = _build_model_params(args.solver, args)
+    space, time, full = _SOLVER_REGISTRY[args.solver]
+    model_params      = _build_model_params(args.solver, args)
+    linearize         = args.linearize and time is TimeMethod.BDF
 
-    solver_kwargs = {}
-    if args.solver in ("dg_bdf", "ldg_bdf") and args.linearize:
-        solver_kwargs["Linearize"] = True
+    solver_class = make_solver_class(
+        space     = space,
+        time      = time,
+        params    = model_params,
+        linearize = linearize,
+        full      = full,
+    )
 
     launch(
         solver_class   = solver_class,
-        model_params   = model_params,
         conv_type      = conv_type,
         test_type      = test_type,
         tol            = args.tol,
@@ -192,7 +175,6 @@ def main():
         factory_kwargs = _build_factory_kwargs(args, conv_type),
         output_dir     = Path(args.output_dir) if args.output_dir else None,
         save_plot      = args.save_plot,
-        **solver_kwargs,
     )
 
 

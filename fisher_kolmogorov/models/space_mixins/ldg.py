@@ -1,18 +1,18 @@
-from fisher_kolmogorov.models.solver_bdf import SolverBDF
-
 from dolfin import *
 import ufl
 
 from fisher_kolmogorov.utilities.enum_utilities      import SpaceMethod
 from fisher_kolmogorov.utilities.transform_utilities import Identity
 
-class SolverLdgBDF(SolverBDF):
-    def __init__(self, mesh, D, alpha, c_0, C11, C12, Linearize=False):
-        super().__init__(mesh, D, alpha, c_0, transform=Identity())
-        self.C11   = C11   if isinstance(C11,   ufl.core.expr.Expr) else Constant(C11)
-        self.C12   = C12   if isinstance(C12,   ufl.core.expr.Expr) else Constant(C12)
-        self.SM    = SpaceMethod.LDG
-        self.lin   = Linearize
+class SpaceMixinLdg:
+    """Local DG (LDG) space discretization mixin."""
+
+    def _init_space(self, C11, C12, linearize=False):
+        self.C11 = C11 if isinstance(C11, ufl.core.expr.Expr) else Constant(C11)
+        self.C12 = C12 if isinstance(C12, ufl.core.expr.Expr) else Constant(C12)
+        self.SM  = SpaceMethod.LDG
+        self.lin = linearize
+        self.T   = Identity()
 
     def _BuildFunctionSpaces(self, l=1):
         l = int(l)
@@ -22,7 +22,7 @@ class SolverLdgBDF(SolverBDF):
         element_q     = self.R.ufl_element()
         mixed_element = MixedElement([element_c, element_q])
         self.WR       = FunctionSpace(self.mesh, mixed_element)
-    
+
     def _BuildSpatialForm(self):
         # Data
         D     = self.D
@@ -30,7 +30,7 @@ class SolverLdgBDF(SolverBDF):
 
         # Geometry
         h_avg = (self.mesh.hmax() + self.mesh.hmin()) / 2.0
-        n     = FacetNormal(self.mesh)  
+        n     = FacetNormal(self.mesh)
         C11   = self.C11
         C12   = self.C12*n('+')
 
@@ -54,7 +54,7 @@ class SolverLdgBDF(SolverBDF):
                 - inner(avg(q_t) - (C11/h_avg)*jump(c_t, n) - C12*jump(q_t, n), jump(v, n))*dS \
                 - inner(Force, v)*dx \
                 - inner(gN, n)*v*ds
-            
+
             if self.lin:
                 from fisher_kolmogorov.utilities.explicit_extrapolations import EXPLICIT_EXTRAPOLATIONS # local import
                 Fc += - alpha*EXPLICIT_EXTRAPOLATIONS[self.nu](self.u_old)*(1.0 - c_t)*v*dx
@@ -64,7 +64,7 @@ class SolverLdgBDF(SolverBDF):
             return Fq + Fc, c, v
 
         return F_space
-    
+
     def _SetInitialCondition(self, c_0):
         assign(self.U.sub(0), project(c_0, self.W))
         assign(self.U.sub(1), project(dot(self.D, grad(c_0)), self.R))
@@ -88,14 +88,14 @@ class SolverLdgBDF(SolverBDF):
         print(f"{'─'*80}\n")
 
         return c_h, c_h
-    
+
     def _ConvergenceTestPostprocessing(self, t_val):
         # Extract solution
         (c_h, q_h) = self.U.split(deepcopy=True)
 
         # Compute errors
         E_c = sqrt(assemble((self.c_ex - c_h)*(self.c_ex - c_h)*self.dx))
-        E_q = sqrt(assemble(inner(dot(self.D, grad(self.c_ex)) - q_h, dot(self.D, grad(self.c_ex)) - q_h )*self.dx))
+        E_q = sqrt(assemble(inner(dot(self.D, grad(self.c_ex)) - q_h, dot(self.D, grad(self.c_ex)) - q_h)*self.dx))
 
         # Compute min and max values
         c_min = c_h.vector().min()

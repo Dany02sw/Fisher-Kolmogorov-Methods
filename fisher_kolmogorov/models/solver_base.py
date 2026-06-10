@@ -4,34 +4,46 @@ import ufl
 set_log_active(False)
 parameters["ghost_mode"] = "shared_facet"
 
+
 class SolverBase:
-    def __init__(self, mesh, D, alpha, c_0, transform):
-        self.mesh      = mesh
-        self.dx        = Measure("dx", domain=mesh)
-        self.dS        = Measure("dS", domain=mesh)
-        self.ds        = Measure("ds", domain=mesh)
-        self.D         = as_tensor(D)
-        self.alpha     = alpha if isinstance(alpha, ufl.core.expr.Expr) else Constant(alpha)
-        self.c_0       = c_0  # This will be used as exact solution if run with ConvergenceTest
-        self.T         = transform
-        self.WR        = None # Just for clarity, it will be filled in the derived classes
-        self.U         = None
-        self.SM        = None
-        self.TM        = None
-    
+    """Base class for all solvers.
+
+    Holds mesh data, problem coefficients, and shared infrastructure
+    (measures, nonlinear solver setup, input validation). Spatial and
+    temporal discretizations are contributed by mixin classes assembled
+    by make_solver_class() in solver_factory.py.
+
+    Note: self.T (the variable transform) is NOT set here; it is the
+    responsibility of the space mixin's _init_space() method.
+    """
+
+    def __init__(self, mesh, D, alpha, c_0):
+        self.mesh  = mesh
+        self.dx    = Measure("dx", domain=mesh)
+        self.dS    = Measure("dS", domain=mesh)
+        self.ds    = Measure("ds", domain=mesh)
+        self.D     = as_tensor(D)
+        self.alpha = alpha if isinstance(alpha, ufl.core.expr.Expr) else Constant(alpha)
+        self.c_0   = c_0  # This will be used as exact solution if run with ConvergenceTest
+        self.T     = None # Set by the space mixin's _init_space()
+        self.WR    = None # Set by the space mixin's _BuildFunctionSpaces()
+        self.U     = None # Set by the time mixin's _BuildFunctions()
+        self.SM    = None # Set by the space mixin's _init_space()
+        self.TM    = None # Set by the time mixin's _init_time()
+
     def _BuildFunctionSpaces(self, l):
         l      = int(l)
         self.W = FunctionSpace(self.mesh, "DG", l)
-    
+
     def _BuildFunctions(self):
         raise NotImplementedError
-    
+
     def _BuildSpatialForm(self):
         raise NotImplementedError
 
     def _BuildTimeForm(self):
         raise NotImplementedError
-    
+
     def _BuildVariationalForms(self, tau):
         raise NotImplementedError
 
@@ -41,10 +53,10 @@ class SolverBase:
 
     def _SetInitialCondition(self):
         raise NotImplementedError
-    
+
     def _UpdateOldState(self):
         raise NotImplementedError
-    
+
     def _BuildNonlinearSolver(self, tol=1e-8, maxIt=200):
         # Jacobian
         dU = TrialFunction(self.WR)
@@ -63,7 +75,7 @@ class SolverBase:
         prm['snes_solver']['maximum_iterations'] = maxIt
         prm['snes_solver']['linear_solver']      = 'lu'
         prm['snes_solver']['preconditioner']     = 'none'
-    
+
     def _ValidateInput(self, t0, dt, T, l):
         if dt <= 0.0:
             raise ValueError(f"Time step dt must be positive, got {dt}")
@@ -71,24 +83,15 @@ class SolverBase:
             raise ValueError(f"Final time T ({T}) must be greater than initial time t0 ({t0})")
         if not isinstance(l, int) or l < 0:
             raise ValueError(f"Polynomial degree l must be a non-negative integer, got {l}")
-    
-    def _PrintSolverInfo(self):
-        raise NotImplementedError
 
-    def _PrintTimeInfo(self):
-        raise NotImplementedError
-
-    def _PrintSpaceInfo(self):
-        raise NotImplementedError
-    
     def _SolvePostprocessing(self, t_val):
         raise NotImplementedError
-    
+
     def _ConvergenceTestPostprocessing(self, t_val):
         raise NotImplementedError
-    
+
     def Solve(self):
         raise NotImplementedError
-    
+
     def ConvergenceTest(self):
-        raise NotImplementedError 
+        raise NotImplementedError

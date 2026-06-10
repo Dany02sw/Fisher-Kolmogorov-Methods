@@ -9,19 +9,17 @@ No convergence rate is checked; only monotone decrease is required.
 import pytest
 from dolfin import *
 
-from fisher_kolmogorov.models.solver_dg_bdf         import SolverDgBDF
-from fisher_kolmogorov.models.solver_ldg_bdf        import SolverLdgBDF
-from fisher_kolmogorov.models.solver_ppdg_bdf       import SolverPpDgBDF
-from fisher_kolmogorov.models.solver_spldg_bdf      import SolverSpLdgBDF
-from fisher_kolmogorov.models.solver_spldg_bdf_red2 import SolverSpLdgBDFReduced2
-from fisher_kolmogorov.configs.model_configs        import DgParams, LdgParams, PpDgParams, SpLdgParams
-from fisher_kolmogorov.utilities.enum_utilities     import PolyDegree, BdfOrder, MeshType, MeshStructure
-from fisher_kolmogorov.configs.test_configs.cosine  import COSINE_SPATIAL_BDF
+from fisher_kolmogorov.models.solver_factory    import make_solver_class
+from fisher_kolmogorov.configs.model_configs    import DgParams, LdgParams, PpDgParams, SpLdgParams
+from fisher_kolmogorov.utilities.enum_utilities import (
+    PolyDegree, BdfOrder, MeshType, MeshStructure, SpaceMethod, TimeMethod,
+)
+from fisher_kolmogorov.configs.test_configs.cosine import make_cosine_spatial
 
 
-# Helpers __________________________________________________________________________________________________________________________________ 
+# Helpers __________________________________________________________________________________________________________________________________
 def _convergence_params():
-    """Return a lightweight override of COSINE_SPATIAL_BDF for fast testing."""
+    """Return a lightweight override of a spatial convergence test on cosine for fast testing."""
     from fisher_kolmogorov.configs.test_configs import ConvergenceParams
     from dataclasses import replace
 
@@ -34,7 +32,7 @@ def _convergence_params():
         mesh_type      = MeshType.UNIT_SQUARE,
         mesh_structure = MeshStructure.STRUCTURED,
     )
-    return replace(COSINE_SPATIAL_BDF, spatial=fast_spatial)
+    return make_cosine_spatial(...)
 
 
 def _assert_monotone_decrease(errors: list, label: str):
@@ -45,15 +43,15 @@ def _assert_monotone_decrease(errors: list, label: str):
         )
 
 
-def _collect_errors(solver_class, model_params):
+def _collect_errors(solver_class):
     """Run spatial convergence and return the list of grad errors."""
     from fisher_kolmogorov.meshes.mesh_import import mesh_factory
 
-    config  = _convergence_params()
-    p       = config.spatial
-    d_ext   = Constant(config.d_ext)
-    D       = config.D_factory(d_ext, mesh=None)
-    alpha   = config.alpha
+    config = _convergence_params()
+    p      = config.spatial
+    d_ext  = Constant(config.d_ext)
+    D      = config.D_factory(d_ext, mesh=None)
+    alpha  = config.alpha
 
     errors_grad = []
     for n in p.N_ref:
@@ -63,10 +61,10 @@ def _collect_errors(solver_class, model_params):
             N=N,
             structure=p.mesh_structure,
         )
-        solver = solver_class(mesh, D, alpha, config.c_exact, **model_params.to_kwargs())
+        solver = solver_class(mesh, D, alpha, config.c_exact)
         _, E_grad, _ = solver.ConvergenceTest(
             t0=config.t0, dt=p.dt, T=p.T,
-            nu=p.nu_or_tht, l=p.l_space,
+            time_order=p.nu_or_tht, l=p.l_space,
             tol=1e-6, maxIt=50,
         )
         errors_grad.append(E_grad)
@@ -74,28 +72,27 @@ def _collect_errors(solver_class, model_params):
     return errors_grad
 
 
-# Tests __________________________________________________________________________________________________________________________________
-
+# Tests ___________________________________________________________________________________________________________________________________
 def test_dg_spatial_convergence():
-    errors = _collect_errors(SolverDgBDF, DgParams())
-    _assert_monotone_decrease(errors, "DG-BDF")
+    solver_class = make_solver_class(SpaceMethod.DG, TimeMethod.BDF, DgParams())
+    _assert_monotone_decrease(_collect_errors(solver_class), "DG-BDF")
 
 
 def test_ldg_spatial_convergence():
-    errors = _collect_errors(SolverLdgBDF, LdgParams())
-    _assert_monotone_decrease(errors, "LDG-BDF")
+    solver_class = make_solver_class(SpaceMethod.LDG, TimeMethod.BDF, LdgParams())
+    _assert_monotone_decrease(_collect_errors(solver_class), "LDG-BDF")
 
 
 def test_ppdg_spatial_convergence():
-    errors = _collect_errors(SolverPpDgBDF, PpDgParams())
-    _assert_monotone_decrease(errors, "PP-DG-BDF")
+    solver_class = make_solver_class(SpaceMethod.PPDG, TimeMethod.BDF, PpDgParams())
+    _assert_monotone_decrease(_collect_errors(solver_class), "PP-DG-BDF")
 
 
 def test_spldg_spatial_convergence():
-    errors = _collect_errors(SolverSpLdgBDF, SpLdgParams())
-    _assert_monotone_decrease(errors, "SP-LDG-BDF")
+    solver_class = make_solver_class(SpaceMethod.SPLDG, TimeMethod.BDF, SpLdgParams())
+    _assert_monotone_decrease(_collect_errors(solver_class), "SP-LDG-BDF")
 
 
 def test_spldg_red2_spatial_convergence():
-    errors = _collect_errors(SolverSpLdgBDFReduced2, SpLdgParams())
-    _assert_monotone_decrease(errors, "SP-LDG-BDF-REDUCED2")
+    solver_class = make_solver_class(SpaceMethod.SPLDG, TimeMethod.BDF, SpLdgParams(), full=False)
+    _assert_monotone_decrease(_collect_errors(solver_class), "SP-LDG-BDF-REDUCED2")
