@@ -16,7 +16,7 @@ from pathlib import Path
 from fisher_kolmogorov.models.solver_factory     import make_solver_class
 from fisher_kolmogorov.utilities.enum_utilities  import (
     ConvType, TestType, TimeMethod,
-    PenaltyType, MeshStructure, PolyDegree, BdfOrder, ThetaMethod,
+    PenaltyType, MeshStructure, PolyDegree,
 )
 
 from fisher_kolmogorov.configs.test_configs.cosine import make_c_exact_temporal_scaled
@@ -45,7 +45,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--tol",       type=float, default=1e-11, help="Nonlinear solver tolerance.")
     parser.add_argument("--max-it",    type=int,   default=200,   help="Max nonlinear solver iterations.")
     parser.add_argument("--save-plot",   action="store_true",     help="Save convergence plots to disk.")
-    parser.add_argument("--output-dir",  type=str, default=None,   help="Directory for XDMF solution export.")
+    parser.add_argument("--output-dir",  type=str, default=None,  help="Directory for XDMF solution export.")
 
     parser.add_argument("--N-ref",  type=int, nargs="+",
                         help="Mesh refinement exponents (mesh size = 2**n). Ignored if --N-list is provided.")

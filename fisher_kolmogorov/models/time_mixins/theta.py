@@ -1,6 +1,6 @@
 from dolfin import *
-from config import DEFAULT_RESULTS_DIR
 
+from fisher_kolmogorov.config import DEFAULT_RESULTS_DIR
 from fisher_kolmogorov.utilities.fenics_utilities import Normalize
 from fisher_kolmogorov.utilities.enum_utilities   import TimeMethod
 from fisher_kolmogorov.utilities.io_utilities     import OutputManager, make_output_manager

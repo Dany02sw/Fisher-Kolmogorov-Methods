@@ -29,6 +29,7 @@ class MeshType(Enum):
     UNIT_SQUARE  = auto()
     RECTANGLE    = auto()
     BRAIN_2D     = auto()
+    USER         = auto()
 
 class MeshStructure(Enum):
     STRUCTURED   = auto()

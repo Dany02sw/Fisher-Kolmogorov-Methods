@@ -4,9 +4,6 @@ Cosine · spatial convergence — all polynomial degrees.
 Runs l = 1 … MAX_L in sequence. Already-completed degrees are skipped
 automatically via checkpoint files in reproduce/.done/.
 
-To rerun a single degree without touching this script:
-    python3 examples/reproduce/py/cosine/spatial/_cosine_spatial_l<degree>.py
-
 Usage:
     python3 examples/reproduce/py/cosine/cosine_spatial_all.py
 """

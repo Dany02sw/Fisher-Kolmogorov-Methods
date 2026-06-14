@@ -3,12 +3,13 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 from datetime               import datetime
+from pathlib                import Path
 from matplotlib.collections import PolyCollection
+from typing                 import Union
 
-from config import MESHES_DIR
+from fisher_kolmogorov.meshes.mesh_import import mesh_factory
+from fisher_kolmogorov.plots._primitives  import save_plot
 
-from fisher_kolmogorov.meshes.mesh_import   import mesh_factory
-from fisher_kolmogorov.plots.plot_utilities import _save_plot
 
 # Dictionary for brain subdomains _________________________________________________________________________________________________________
 SUBDOMAIN_LABELS = {
@@ -16,8 +17,13 @@ SUBDOMAIN_LABELS = {
     2: "White Matter",
 }
 
+
 # Private helper function to color subdomains _____________________________________________________________________________________________
-def _plot_mesh_with_subdomains(ax: plt.Axes, mesh, subdomains) -> None:
+def _plot_mesh_with_subdomains(
+    ax          : plt.Axes,
+    mesh,
+    subdomains
+) -> None:
     """
     Renders *mesh* on *ax* coloring each triangular cell by its subdomain tag.
 
@@ -82,8 +88,15 @@ def _plot_mesh_with_subdomains(ax: plt.Axes, mesh, subdomains) -> None:
         title_fontsize=8,
     )
 
+
 # Function to plot general meshes _________________________________________________________________________________________________________
-def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), name="mesh_grid", save=False):
+def plot_mesh_grid(
+    mesh_configs     : list,
+    figsize_per_mesh : tuple            = (5, 5),
+    name             : str              = "mesh_grid",
+    save             : bool             = False,
+    save_dir         : Union[Path, str] = None,
+):
     """
     Plots multiple meshes in a single row of subplots, annotating each with
     h_min, h_max, h_avg and N_ele.
@@ -111,8 +124,13 @@ def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), name="mesh_grid"
     name             : str
         Base filename used when saving.
     save             : bool
-        If True, saves the figure to Plots/.
+        If True, saves the figure to ``save_dir``.
+    save_dir         : Path or str, optional
+        Directory where the figure is saved. Required when ``save=True``.
     """
+    if save and save_dir is None:
+        raise ValueError("save_dir must be provided when save=True")
+
     n = len(mesh_configs)
     if n == 0:
         raise ValueError("mesh_configs must contain at least one entry.")
@@ -162,8 +180,8 @@ def plot_mesh_grid(mesh_configs: list, figsize_per_mesh=(5, 5), name="mesh_grid"
 
     if save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        _save_plot(
-            MESHES_DIR / f"{name}_{timestamp}.png",
+        save_plot(
+            Path(save_dir) / f"{name}_{timestamp}.png",
             "Mesh grid plot",
         )
 

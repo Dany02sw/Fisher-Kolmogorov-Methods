@@ -1,5 +1,5 @@
 from fisher_kolmogorov.utilities.enum_utilities import SpaceMethod, BrainSection
-from config import SAGITTAL_DIR, CORONAL_DIR, HORIZONTAL_DIR
+from fisher_kolmogorov.config import SAGITTAL_DIR, CORONAL_DIR, HORIZONTAL_DIR
 
 # Dictionary for error labels 
 ERROR_LABELS_PRINT = {

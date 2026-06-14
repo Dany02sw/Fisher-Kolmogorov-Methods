@@ -10,13 +10,13 @@ Usage:
     python examples/reproduce/py/wave/wave_polynomial_comparison.py
 """
 
+from fisher_kolmogorov.config import WAVE_DIR
 from fisher_kolmogorov.models.solver_factory    import make_solver_class
 from fisher_kolmogorov.configs.model_configs    import DgParams, LdgParams, PpDgParams, SpLdgParams
 from fisher_kolmogorov.utilities.enum_utilities import (
     ConvType, TestType, PolyDegree, BdfOrder, SpaceMethod, TimeMethod, PenaltyType,
 )
 from examples.reproduce._run_reproduce import launch_reproduce, clear_done
-from config import WAVE_DIR
 
 _SOLVERS = [
     (SpaceMethod.DG,    TimeMethod.BDF, DgParams(eta_0=10.0, gamma=PenaltyType.SIP),         False, False),

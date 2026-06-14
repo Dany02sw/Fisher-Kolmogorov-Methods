@@ -12,7 +12,7 @@ from dolfin import *
 from fisher_kolmogorov.models.solver_factory    import make_solver_class
 from fisher_kolmogorov.configs.model_configs    import DgParams, LdgParams, PpDgParams, SpLdgParams
 from fisher_kolmogorov.utilities.enum_utilities import (
-    PolyDegree, BdfOrder, MeshType, MeshStructure, SpaceMethod, TimeMethod,
+    PolyDegree, MeshStructure, SpaceMethod, TimeMethod,
 )
 from fisher_kolmogorov.configs.test_configs.cosine import make_cosine_spatial
 
@@ -20,19 +20,7 @@ from fisher_kolmogorov.configs.test_configs.cosine import make_cosine_spatial
 # Helpers __________________________________________________________________________________________________________________________________
 def _convergence_params():
     """Return a lightweight override of a spatial convergence test on cosine for fast testing."""
-    from fisher_kolmogorov.configs.test_configs import ConvergenceParams
-    from dataclasses import replace
-
-    fast_spatial = ConvergenceParams(
-        N_ref          = [2, 3, 4],
-        l_space        = PolyDegree.P1,
-        T              = 1e-2,
-        dt             = 1e-2,
-        nu_or_tht      = BdfOrder.BDF1,
-        mesh_type      = MeshType.UNIT_SQUARE,
-        mesh_structure = MeshStructure.STRUCTURED,
-    )
-    return make_cosine_spatial(...)
+    return make_cosine_spatial(l_space=PolyDegree.P1, mesh_structure=MeshStructure.STRUCTURED)
 
 
 def _assert_monotone_decrease(errors: list, label: str):

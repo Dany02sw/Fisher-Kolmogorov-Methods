@@ -1,6 +1,7 @@
 from dolfin  import *
 from mshr    import *
 from pathlib import Path
+from typing  import Union, Optional
 from dolfin  import plot as dolfin_plot
 
 import matplotlib.pyplot as plt
@@ -8,8 +9,13 @@ import matplotlib.pyplot as plt
 from fisher_kolmogorov.utilities.enum_utilities import BrainSection, MeshStructure, MeshType
 
 
-# ── Print utility ──────────────────────────────────────────────────────────────
-def _print_mesh_info(mesh):
+# Print utility ___________________________________________________________________________________________________________________________________________________
+def _print_mesh_info(
+        mesh : Mesh
+    ) -> None:
+    """
+    Simple helper method to print useful quantities about the mesh.
+    """
     topology  = mesh.topology()
     geometry  = mesh.geometry()
     dim       = topology.dim()
@@ -59,8 +65,15 @@ def _print_mesh_info(mesh):
     print()
 
 
-# ── Plot utility ──────────────────────────────────────────────────────────────
-def _plot_mesh(mesh, title="Mesh", figsize=(10, 8)):
+# Plot utility ___________________________________________________________________________________________________________________________________________________
+def _plot_mesh(
+        mesh    : Mesh,
+        title   : str   = "Mesh",
+        figsize : tuple = (10, 8) 
+    ) -> None:
+    """
+    Helper function to plot the mesh at the beginning of the simulation if specified.
+    """
     plt.figure(figsize=figsize)
     dolfin_plot(mesh, title=title)
     plt.xlabel("X")
@@ -69,7 +82,7 @@ def _plot_mesh(mesh, title="Mesh", figsize=(10, 8)):
     plt.show()
 
 
-# ── Specific mesh constructors ─────────────────────────────────────────────────
+# Specific mesh constructors _____________________________________________________________________________________________________________________________________
 def create_unit_square_mesh(
     N         : int,
     structure : MeshStructure = MeshStructure.STRUCTURED,
@@ -142,7 +155,7 @@ def create_brain_mesh_2d(
     plane : BrainSection = BrainSection.SAGITTAL,
 ) -> tuple:
     """
-    Load a 2-D brain mesh from an XDMF file.
+    Load a 2-D brain mesh from an XDMF file bundled with the package.
 
     Parameters
     ----------
@@ -157,13 +170,13 @@ def create_brain_mesh_2d(
     """
     script_dir = Path(__file__).parent.resolve()
     mesh_dict = {
-        BrainSection.SAGITTAL  : ("sagittal",   "test-sagittal.xdmf",   "sagittal.msh"),
-        BrainSection.CORONAL   : ("coronal",    "test-coronal.xdmf",    "coronal.msh"),
-        BrainSection.HORIZONTAL: ("horizontal", "test-horizontal.xdmf", "horizontal.msh"),
+        BrainSection.SAGITTAL  : ("sagittal",   "test-sagittal.xdmf",   "test-sagittal.msh"),
+        BrainSection.CORONAL   : ("coronal",    "test-coronal.xdmf",    "test-coronal.msh"),
+        BrainSection.HORIZONTAL: ("horizontal", "test-horizontal.xdmf", "test-horizontal.msh"),
     }
     if plane not in mesh_dict:
         raise ValueError(f"Unknown brain plane: {plane}")
-    
+
     mesh_name, xdmf_filename, msh_filename = mesh_dict[plane]
 
     mesh_src_dir = script_dir / "brain_meshes" / "mesh_src"
@@ -174,24 +187,84 @@ def create_brain_mesh_2d(
     # Fallback: if xdmf is missing, try to convert from msh
     if not xdmf_path.exists():
         if not msh_path.exists():
-            generator_path = script_dir / "brain_meshes" / "mesh_generator" / "mesh_generator_2D.py"
             raise FileNotFoundError(
                 f"No mesh found for '{mesh_name}'.\n"
                 f"  Expected XDMF : {xdmf_path}\n"
                 f"  Expected MSH  : {msh_path}\n"
-                f"Run the mesh generator first:\n"
-                f"  python {generator_path}"
+                f"The package installation may be incomplete; try reinstalling."
             )
         print(f"[INFO] XDMF not found, converting from MSH: {msh_path.name}...")
         from fisher_kolmogorov.meshes.brain_meshes.converter.gmsh_to_fenics import msh_to_xdmf  # local import to avoid circular deps
         msh_to_xdmf(msh_path, mesh_src_dir)
 
+    return _load_xdmf_mesh(xdmf_path, mesh_name)
+
+
+def create_user_mesh(
+    msh_path : Union[Path, str],
+) -> tuple:
+    """
+    Load a user-supplied mesh, converting from .msh to .xdmf if needed.
+
+    The converted .xdmf and .h5 files are written to ``fk-xdmf/`` in the
+    current working directory, which is created automatically if absent.
+    Conversion is always performed (no caching), so stale files are never
+    loaded silently.
+
+    Parameters
+    ----------
+    msh_path : Path or str
+        Path to the input .msh file.
+
+    Returns
+    -------
+    mesh       : Mesh
+    subdomains : MeshFunction or None
+        Subdomains if present in the file, None otherwise.
+    """
+    msh_path  = Path(msh_path)
+    if not msh_path.exists():
+        raise FileNotFoundError(f"Mesh file not found: {msh_path}")
+
+    output_dir = Path.cwd() / "fk-xdmf"
+    output_dir.mkdir(exist_ok=True)
+
+    from fisher_kolmogorov.meshes.brain_meshes.converter.gmsh_to_fenics import msh_to_xdmf  # local import to avoid circular deps
+    xdmf_path = msh_to_xdmf(msh_path, output_dir)
+
+    return _load_xdmf_mesh(xdmf_path, msh_path.stem)
+
+
+# Helper XDMF loader (shared by BRAIN_2D and USER) ______________________________________________________________________________________________________________
+def _load_xdmf_mesh(
+        xdmf_path: Path,
+        mesh_name: str
+    ) -> tuple:
+    """
+    Read a mesh and its subdomains from an XDMF file.
+
+    Parameters
+    ----------
+    xdmf_path : Path
+        Path to the .xdmf file.
+    mesh_name : str
+        Name assigned to the loaded mesh object.
+
+    Returns
+    -------
+    mesh       : Mesh
+    subdomains : MeshFunction or None
+    """
     mesh = Mesh()
     try:
         with XDMFFile(str(xdmf_path)) as infile:
             infile.read(mesh)
             subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
-            infile.read(subdomains, "subdomains")
+            try:
+                infile.read(subdomains, "subdomains")
+            except Exception:
+                # Subdomains are optional for user-supplied meshes
+                subdomains = None
         mesh.rename(mesh_name, mesh_name)
     except Exception as e:
         raise RuntimeError(f"Error loading mesh '{mesh_name}': {e}")
@@ -199,15 +272,16 @@ def create_brain_mesh_2d(
     return mesh, subdomains
 
 
-# ── Mesh factory ───────────────────────────────────────────────────────────────
+# Core function: Mesh factory _____________________________________________________________________________________________________________________________________
 def mesh_factory(
-    mesh_type   : MeshType,
-    N           : int            = None,
-    structure   : MeshStructure  = MeshStructure.STRUCTURED,
-    P1          : Point          = None,
-    P2          : Point          = None,
-    brain_plane : BrainSection   = BrainSection.SAGITTAL,
-    show_plot   : bool           = False,
+    mesh_type      : MeshType,
+    N              : int              = None,
+    structure      : MeshStructure    = MeshStructure.STRUCTURED,
+    P1             : Point            = None,
+    P2             : Point            = None,
+    brain_plane    : BrainSection     = BrainSection.SAGITTAL,
+    user_mesh_path : Union[Path, str] = None,
+    show_plot      : bool             = False,
 ) -> tuple:
     """
     Unified factory that creates a mesh by dispatching to the appropriate
@@ -217,26 +291,29 @@ def mesh_factory(
 
     Parameters
     ----------
-    mesh_type   : MeshType
+    mesh_type      : MeshType
         Which mesh to build.
-    N           : int, optional
-        Refinement parameter (ignored for BRAIN_2D).
-    structure   : MeshStructure
-        STRUCTURED or UNSTRUCTURED (ignored for BRAIN_2D).
-    P1          : Point, optional
+    N              : int, optional
+        Refinement parameter (ignored for BRAIN_2D and USER).
+    structure      : MeshStructure
+        STRUCTURED or UNSTRUCTURED (ignored for BRAIN_2D and USER).
+    P1             : Point, optional
         Lower-left corner, required for RECTANGLE.
-    P2          : Point, optional
+    P2             : Point, optional
         Upper-right corner, required for RECTANGLE.
-    brain_plane : BrainSection
+    brain_plane    : BrainSection
         Anatomical section, used only for BRAIN_2D.
-    show_plot   : bool
+    user_mesh_path : Path or str, optional
+        Path to a .msh file, required for USER.
+    show_plot      : bool
         If True, display the mesh after creation.
 
     Returns
     -------
     mesh       : Mesh
     subdomains : MeshFunction or None
-        Subdomains are returned only for BRAIN_2D; None otherwise.
+        Subdomains are returned for BRAIN_2D and USER (when present);
+        None otherwise.
     """
     subdomains = None
 
@@ -250,6 +327,11 @@ def mesh_factory(
 
     elif mesh_type == MeshType.BRAIN_2D:
         mesh, subdomains = create_brain_mesh_2d(plane=brain_plane)
+
+    elif mesh_type == MeshType.USER:
+        if user_mesh_path is None:
+            raise ValueError("user_mesh_path must be provided for MeshType.USER")
+        mesh, subdomains = create_user_mesh(msh_path=user_mesh_path)
 
     else:
         raise ValueError(f"Unknown MeshType: {mesh_type}")

@@ -26,7 +26,7 @@ from fisher_kolmogorov.utilities.enum_utilities  import ConvType, TestType
 
 
 # ---------------------------------------------------------------------------
-# Paper-fixed run parameters
+# Default run parameters
 # ---------------------------------------------------------------------------
 
 #: Nonlinear solver tolerance used in all reproduce runs.
@@ -39,7 +39,7 @@ MAX_IT = 200
 # Directory layout
 # ---------------------------------------------------------------------------
 
-from config import REPRODUCE_DIR
+from fisher_kolmogorov.config import REPRODUCE_DIR
 
 # ---------------------------------------------------------------------------
 # Checkpoint helpers

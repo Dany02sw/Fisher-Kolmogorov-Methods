@@ -1,11 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pathlib  import Path
 from datetime import datetime
 
-from config                                          import get_convergence_dir
-from fisher_kolmogorov.utilities.enum_utilities      import SpaceMethod, TimeMethod, BdfOrder, PolyDegree, ThetaMethod
+from fisher_kolmogorov.config                         import get_convergence_dir
+from fisher_kolmogorov.utilities.enum_utilities       import SpaceMethod, TimeMethod, BdfOrder, PolyDegree, ThetaMethod
 from fisher_kolmogorov.utilities.dictionary_utilities import ERROR_LABELS_PLOT, NORM_LABELS
 
 from fisher_kolmogorov.plots._primitives import save_plot
