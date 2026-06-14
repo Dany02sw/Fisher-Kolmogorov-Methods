@@ -5,6 +5,8 @@ Usage
 -----
     fk-convert --input path/to/mesh.msh
     fk-convert --input path/to/mesh.msh --output-dir fk-xdmf/
+
+Run ``fk-convert --help`` for the full option list.
 """
 
 import argparse

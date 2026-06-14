@@ -5,39 +5,39 @@ TIME  = TimeMethod.BDF
 SPACE = SpaceMethod.SPLDG
 
 # Plot selector ___________________________________________________________________________________________________________________________
-PLOT          = ConvType.TEMPORAL
-STUDY         = StudyType.CONVERGENCE
+PLOT          = ConvType.SPATIAL
+STUDY         = StudyType.SATURATION
 SpaceSatOrder = PolyDegree.P2
-COMBINED      = False
+COMBINED      = True
 SAVE          = True
 
 # Dynamic config import ___________________________________________________________________________________________________________________
 if SPACE == SpaceMethod.SPLDG:
     if TIME == TimeMethod.BDF:
-        from fisher_kolmogorov.plots.models_config.spldg_bdf   import *
+        from examples.plots.models_config.spldg_bdf   import *
     elif TIME == TimeMethod.THETA:
-        from fisher_kolmogorov.plots.models_config.spldg_theta import *
+        from examples.plots.models_config.spldg_theta import *
     else:
         raise ValueError(f"Unsupported time method '{TIME}' for SPLDG.")
 elif SPACE == SpaceMethod.PPDG:
     if TIME == TimeMethod.BDF:
-        from fisher_kolmogorov.plots.models_config.ppdg_bdf    import *
+        from examples.plots.models_config.ppdg_bdf    import *
     elif TIME == TimeMethod.THETA:
-        from fisher_kolmogorov.plots.models_config.ppdg_theta  import *
+        from examples.plots.models_config.ppdg_theta  import *
     else:
         raise ValueError(f"Unsupported time method '{TIME}' for PPDG.")
 elif SPACE == SpaceMethod.LDG:
     if TIME == TimeMethod.BDF:
-        from fisher_kolmogorov.plots.models_config.ldg_bdf    import *
+        from examples.plots.models_config.ldg_bdf    import *
     elif TIME == TimeMethod.THETA:
-        from fisher_kolmogorov.plots.models_config.ldg_theta  import *
+        from examples.plots.models_config.ldg_theta  import *
     else:
         raise ValueError(f"Unsupported time method '{TIME}' for LDG.")
 elif SPACE == SpaceMethod.DG:
     if TIME == TimeMethod.BDF:
-        from fisher_kolmogorov.plots.models_config.dg_bdf    import *
+        from examples.plots.models_config.dg_bdf    import *
     elif TIME == TimeMethod.THETA:
-        from fisher_kolmogorov.plots.models_config.dg_theta  import *
+        from examples.plots.models_config.dg_theta  import *
     else:
         raise ValueError(f"Unsupported time method '{TIME}' for DG.")
 else:

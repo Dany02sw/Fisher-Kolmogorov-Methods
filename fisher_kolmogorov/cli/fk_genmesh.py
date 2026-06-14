@@ -8,6 +8,8 @@ Usage
 
 All meshing parameters have sensible defaults; most users only need
 --stl and --section.
+
+Run ``fk-genmesh --help`` for the full option list.
 """
 
 import argparse

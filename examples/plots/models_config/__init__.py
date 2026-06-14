@@ -1,10 +1,8 @@
+from examples.plots.models_config import dg_bdf, dg_theta, ldg_bdf, ldg_theta, ppdg_bdf, ppdg_theta, spldg_bdf
 from fisher_kolmogorov.utilities.enum_utilities import SpaceMethod, TimeMethod
 
-from fisher_kolmogorov.plots.models_config import (
-    dg_bdf, dg_theta,
-    ldg_bdf, ldg_theta,
-    spldg_bdf, spldg_theta,
-    ppdg_bdf, ppdg_theta,
+from examples.plots.models_config import (
+    spldg_theta,
 )
 
 CONFIG_REGISTRY = {

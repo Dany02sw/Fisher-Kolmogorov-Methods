@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing      import Union
-from dolfin      import *
+from pathlib     import Path
+from typing      import Union, Callable
 
-from fisher_kolmogorov.utilities.enum_utilities import PolyDegree, BdfOrder, ThetaMethod, MeshType, MeshStructure, BrainSection
+from dolfin import *
 
-# Class for storing hyperparameters ________________________________________________________________________________________________________
+from fisher_kolmogorov.utilities.enum_utilities import (
+    PolyDegree, BdfOrder, ThetaMethod, MeshType, MeshStructure, BrainSection,
+)
+
+
+# Convergence study hyperparameters ____________________________________________________________________________________
 @dataclass
 class ConvergenceParams:
     """
@@ -29,8 +34,8 @@ class ConvergenceParams:
     T             : float      = 1e-1
     dt            : float      = 1e-2
     nu_or_tht     : Union[BdfOrder, ThetaMethod] = BdfOrder.BDF1
-    dt_list       : list                         = field(default_factory=lambda: [0.5, 0.25, 0.125])
-    l_list        : list                         = field(default_factory=lambda: [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3])
+    dt_list       : list       = field(default_factory=lambda: [0.5, 0.25, 0.125])
+    l_list        : list       = field(default_factory=lambda: [PolyDegree.P1, PolyDegree.P2, PolyDegree.P3])
     N_fixed       : int           = 8
     mesh_type     : MeshType      = MeshType.UNIT_SQUARE
     mesh_structure: MeshStructure = MeshStructure.UNSTRUCTURED
@@ -93,12 +98,77 @@ class SimulationParams:
     max_it    : int                          = 500
 
 
-# Class for a configuration of a brain simulation __________________________________________________________________________________________
+# Brain simulation physical configuration ______________________________________________________________________________
 @dataclass
 class BrainConfig:
-    alpha_grey  : float = 0.5
-    alpha_white : float = 1.0
-    d_ext       : float = 8e-3
-    d_axn       : float = 8e-2
-    a           : tuple = (1.0, 1.0)
+    """
+    Physical parameters for a forward brain simulation.
+
+    Attributes:
+        alpha_grey  : reaction coefficient in grey matter
+        alpha_white : reaction coefficient in white matter
+        d_ext       : isotropic diffusion coefficient
+        d_axn       : axonal diffusion coefficient (along fibre direction)
+        a           : fibre direction vector (2-tuple)
+        plane       : brain section to simulate
+    """
+    alpha_grey  : float        = 0.5
+    alpha_white : float        = 1.0
+    d_ext       : float        = 8e-3
+    d_axn       : float        = 8e-2
+    a           : tuple        = (1.0, 1.0)
     plane       : BrainSection = BrainSection.SAGITTAL
+
+
+# Generic forward simulation configuration _____________________________________________________________________________
+@dataclass
+class RunConfig:
+    """
+    Configuration for a generic forward simulation on a user-supplied mesh.
+
+    Two mutually exclusive usage modes:
+
+    **Simple** — scalar/constant PDE coefficients, mesh loaded from a .msh file:
+        Pass ``mesh_type=MeshType.USER`` and ``user_mesh_path``.
+        The factory converts the .msh to XDMF automatically.
+
+    **Advanced** — spatially varying coefficients (e.g. subdomain-dependent):
+        Load the mesh manually in ``fk_config.py``, build ``alpha`` and ``D``
+        as UFL expressions, then pass ``mesh`` directly.
+        ``mesh_type`` and ``user_mesh_path`` are ignored in this case.
+
+    Attributes:
+        mesh_type      : MeshType.USER (simple mode) or ignored (advanced mode)
+        user_mesh_path : path to the .msh file (simple mode only)
+        mesh           : pre-built dolfin Mesh (advanced mode only)
+        alpha          : UFL reaction coefficient
+        D              : UFL diffusion tensor
+        c_0            : callable (x, t) -> UFL initial condition expression
+        name           : label used in print headers
+    """
+    alpha          : object                  = None
+    D              : object                  = None
+    c_0            : Callable                = None
+    mesh_type      : MeshType                = MeshType.USER
+    user_mesh_path : Union[Path, str, None]  = None
+    mesh           : object                  = None   # dolfin Mesh, advanced mode
+    name           : str                     = "User simulation"
+
+    def __post_init__(self):
+        advanced = self.mesh is not None
+        simple   = self.user_mesh_path is not None
+
+        if not advanced and not simple:
+            raise ValueError(
+                "Provide either 'mesh' (advanced mode) or 'user_mesh_path' (simple mode)."
+            )
+        if advanced and simple:
+            raise ValueError(
+                "'mesh' and 'user_mesh_path' are mutually exclusive."
+            )
+        if self.alpha is None:
+            raise ValueError("'alpha' must be provided.")
+        if self.D is None:
+            raise ValueError("'D' must be provided.")
+        if self.c_0 is None:
+            raise ValueError("'c_0' must be provided.")

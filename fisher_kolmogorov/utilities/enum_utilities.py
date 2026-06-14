@@ -66,3 +66,13 @@ class PenaltyType(float, Enum):
 class StudyType(Enum):
     CONVERGENCE = auto()
     SATURATION  = auto()
+
+class ErrorComponent(Enum):
+    """Which error panel(s) to draw for a subplot.
+
+    BASE and GRAD each occupy one axis in the layout.
+    BOTH expands to two adjacent axes (primal left, gradient right).
+    """
+    BASE = "c"
+    GRAD = "grad"
+    BOTH = "both"
