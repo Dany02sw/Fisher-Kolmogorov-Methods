@@ -69,7 +69,6 @@ _PLOT_REGISTRY = {
 
 
 # Argument parsing _______________________________________________________________________________________________________________________________
-
 def _parse_args(argv=None):
     parser = argparse.ArgumentParser(
         prog="fk-plot",
@@ -134,7 +133,6 @@ def _resolve_enum(enum_cls, name, label):
 
 
 # Standard dispatch ______________________________________________________________________________________________________________________________
-
 def _run_standard(args):
     """Execute the standard (non-custom) plot mode from CLI flags."""
     for flag, label in [("space", "--space"), ("time", "--time"), ("plot", "--plot")]:

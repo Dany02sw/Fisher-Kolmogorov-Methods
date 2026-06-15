@@ -1,7 +1,7 @@
 from abc    import ABC, abstractmethod
 from dolfin import exp, ln, Constant
 
-# Abstractclass for tranformations
+# Abstract class for tranformations
 class Transformation(ABC):
     @abstractmethod
     def __call__(self, w): ...

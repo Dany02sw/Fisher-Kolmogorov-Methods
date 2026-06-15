@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from pathlib  import Path
 
-from fisher_kolmogorov.utilities.enum_utilities       import ConvType, TimeMethod, PolyDegree
+from typing import List, Tuple
+
+from fisher_kolmogorov.utilities.enum_utilities       import ConvType, StudyType, TimeMethod, PolyDegree
 from fisher_kolmogorov.utilities.dictionary_utilities import ERROR_LABELS_PLOT, NORM_LABELS
 from fisher_kolmogorov.plots._primitives              import save_plot
 from fisher_kolmogorov.plots._axes                    import finalize_ax
@@ -19,9 +21,9 @@ from fisher_kolmogorov.plots.plot_utilities              import POLY_COLORS, TIM
 from fisher_kolmogorov.configs.plot_configs.subplot_spec import SubplotSpec, PlotSpec, ErrorComponent
 
 
-# Layout helpers __________________________________________________________________________________________________________________________________
+# Layout helpers __________________________________________________________________
 
-def _expand_axes(subplots: list, axes_flat) -> list[tuple]:
+def _expand_axes(subplots: list, axes_flat) -> List[Tuple]:
     """Map each SubplotSpec to its one or two matplotlib Axes.
 
     Returns a list of (spec, ax_primary, ax_secondary_or_None) tuples.
@@ -70,7 +72,7 @@ def _build_figure(spec: PlotSpec):
     return fig, axes_flat
 
 
-# Per-study renderers _____________________________________________________________________________________________________________________________
+# Per-study renderers _____________________________________________________________
 
 def _render_spatial(spec: SubplotSpec, ax_c, ax_g):
     """Draw spatial convergence curves onto ax_c and/or ax_g."""
@@ -85,7 +87,7 @@ def _render_spatial(spec: SubplotSpec, ax_c, ax_g):
     out_ax_c  = ax_c                 if spec.error is not ErrorComponent.GRAD else None
     out_ax_g  = ax_g                 if spec.error is not ErrorComponent.BASE else None
 
-    # When error=GRAD the single axis is ax_c (the only one allocated); redirect it
+    # When error=GRAD the single allocated axis is ax_c; redirect it to the grad slot
     if spec.error is ErrorComponent.GRAD:
         out_ax_g = ax_c
 
@@ -115,12 +117,11 @@ def _render_polynomial(spec: SubplotSpec, ax_c, ax_g):
     eg = data.errs_grad_poly if spec.error is not ErrorComponent.BASE else []
 
     # Polynomial plots combine both errors on a single axis by convention
-    ax = ax_c
-    plot_poly_curves(ax, l_ints, ec, eg, label_c, label_grad, h)
+    plot_poly_curves(ax_c, l_ints, ec, eg, label_c, label_grad, h)
 
     all_e = np.concatenate([np.array(ec, dtype=float), np.array(eg, dtype=float)])
     finalize_ax(
-        ax, all_e,
+        ax_c, all_e,
         norm_label = f"{norm_label_c}  /  {norm_label_grad}",
         title      = fr"Errors ${label_c}$ and ${label_grad}$",
         xlabel     = r"$\ell$",
@@ -144,8 +145,7 @@ def _render_temporal(spec: SubplotSpec, ax_c, ax_g):
     errs_grad = (data.errs_grad_bdf if is_bdf else data.errs_grad_theta) \
                 if spec.error is not ErrorComponent.BASE else {}
 
-    # When error=GRAD the single axis is ax_c; redirect so plot_time_curves
-    # receives it in the ax_grad slot and ax_c=None
+    # When error=GRAD the single allocated axis is ax_c; redirect to grad slot
     if spec.error is ErrorComponent.GRAD:
         plot_time_curves(None, ax_c, dt_arr, {}, errs_grad,
                          spec.time_method, color_map,
@@ -199,7 +199,7 @@ def _render_spatial_saturation(spec: SubplotSpec, ax_c, ax_g):
     method_tag = "BDF" if spec.time_method is TimeMethod.BDF else "Theta"
 
     if spec.degrees is not None:
-        # Combined two-degree saturation — caller must provide matching axes
+        # Combined multi-degree saturation — caller must provide matching axes
         for idx, l in enumerate(spec.degrees):
             ec    = data.errs_c_space_sat_by_degree[l]
             eg    = data.errs_grad_space_sat_by_degree[l]
@@ -220,11 +220,10 @@ def _render_spatial_saturation(spec: SubplotSpec, ax_c, ax_g):
             )
         return
 
-    l         = spec.poly_degree if spec.poly_degree is not None else PolyDegree.P2
-    ec        = data.errs_c_space_sat_by_degree[l]
-    eg        = data.errs_grad_space_sat_by_degree[l]
+    l  = spec.poly_degree if spec.poly_degree is not None else PolyDegree.P2
+    ec = data.errs_c_space_sat_by_degree[l]
+    eg = data.errs_grad_space_sat_by_degree[l]
 
-    # Redirect the single axis to the correct panel when not BOTH
     out_ax_c = ax_c if spec.error is not ErrorComponent.GRAD else None
     out_ax_g = ax_g if spec.error is not ErrorComponent.BASE else None
     if spec.error is ErrorComponent.GRAD:
@@ -269,8 +268,8 @@ def _render_polynomial_saturation(spec: SubplotSpec, ax_c, ax_g):
     )
 
     for ax, errs, norm_label, label in (
-        (out_ax_c, data.errs_c_poly_sat,   norm_label_c,    label_c),
-        (out_ax_g, data.errs_grad_poly_sat, norm_label_grad, label_grad),
+        (out_ax_c, data.errs_c_poly_sat,    norm_label_c,    label_c),
+        (out_ax_g, data.errs_grad_poly_sat,  norm_label_grad, label_grad),
     ):
         if ax is None:
             continue
@@ -285,7 +284,7 @@ def _render_polynomial_saturation(spec: SubplotSpec, ax_c, ax_g):
         )
 
 
-# Finalize helpers ________________________________________________________________________________________________________________________________
+# Finalize helpers ________________________________________________________________
 
 def _finalize_spatial_axes(spec, ax_c, ax_g, hs,
                            errs_c, errs_grad,
@@ -343,7 +342,7 @@ def _finalize_sat_ax_pair(ax_c, ax_g, ec, eg, hs,
         )
 
 
-# Renderer dispatch table _________________________________________________________________________________________________________________________
+# Renderer dispatch tables ________________________________________________________
 
 _CONVERGENCE_RENDERERS = {
     ConvType.SPATIAL:    _render_spatial,
@@ -357,7 +356,7 @@ _SATURATION_RENDERERS = {
 }
 
 
-# Public API ______________________________________________________________________________________________________________________________________
+# Public API ______________________________________________________________________
 
 def plot_custom(spec: PlotSpec):
     """Render an arbitrary figure from a PlotSpec.
@@ -376,15 +375,16 @@ def plot_custom(spec: PlotSpec):
     mapped         = _expand_axes(spec.subplots, axes_flat)
 
     for subplot_spec, ax_c, ax_g in mapped:
-        renderers = _SATURATION_RENDERERS if subplot_spec.saturation else _CONVERGENCE_RENDERERS
+        is_saturation = subplot_spec.study_type is StudyType.SATURATION
+        renderers     = _SATURATION_RENDERERS if is_saturation else _CONVERGENCE_RENDERERS
 
-        if subplot_spec.study not in renderers:
+        if subplot_spec.conv_type not in renderers:
             raise ValueError(
-                f"Unsupported study '{subplot_spec.study}' "
-                f"for saturation={subplot_spec.saturation}."
+                f"Unsupported conv_type '{subplot_spec.conv_type}' "
+                f"for study_type={subplot_spec.study_type}."
             )
 
-        renderers[subplot_spec.study](subplot_spec, ax_c, ax_g)
+        renderers[subplot_spec.conv_type](subplot_spec, ax_c, ax_g)
 
     plt.tight_layout()
 
@@ -392,13 +392,13 @@ def plot_custom(spec: PlotSpec):
         if spec.output_path is not None:
             path = spec.output_path
         else:
-            first     = spec.subplots[0]
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-            sat_tag   = "sat_" if first.saturation else ""
-            path      = (
+            first      = spec.subplots[0]
+            timestamp  = datetime.now().strftime("%Y%m%d_%H%M")
+            study_tag  = "sat_" if first.study_type is StudyType.SATURATION else ""
+            path       = (
                 Path.cwd()
                 / f"{first.space_method.name}{first.time_method.name}"
-                  f"_custom_{sat_tag}{timestamp}.png"
+                  f"_custom_{study_tag}{timestamp}.png"
             )
         save_plot(path, "Custom convergence plot")
 

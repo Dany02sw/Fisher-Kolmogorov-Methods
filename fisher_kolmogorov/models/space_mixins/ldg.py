@@ -55,7 +55,7 @@ class SpaceMixinLdg:
                 - inner(Force, v)*dx \
                 - inner(gN, n)*v*ds
 
-            if self.lin:
+            if self.lin and hasattr(self, 'nu'):
                 from fisher_kolmogorov.utilities.explicit_extrapolations import EXPLICIT_EXTRAPOLATIONS # local import
                 Fc += - alpha*EXPLICIT_EXTRAPOLATIONS[self.nu](self.u_old)*(1.0 - c_t)*v*dx
             else:
