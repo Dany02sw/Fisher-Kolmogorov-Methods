@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 
 from datetime import datetime
 from pathlib  import Path
-
-from typing import List, Tuple
+from typing   import List, Tuple, Optional
 
 from fisher_kolmogorov.utilities.enum_utilities       import ConvType, StudyType, TimeMethod, PolyDegree
 from fisher_kolmogorov.utilities.dictionary_utilities import ERROR_LABELS_PLOT, NORM_LABELS
@@ -72,6 +71,13 @@ def _build_figure(spec: PlotSpec):
     return fig, axes_flat
 
 
+def _filter_dict(d: dict, keys: Optional[list]) -> dict:
+    """Return a subset of d restricted to keys, or d itself if keys is None."""
+    if keys is None:
+        return d
+    return {k: v for k, v in d.items() if k in keys}
+
+
 # Per-study renderers _____________________________________________________________
 
 def _render_spatial(spec: SubplotSpec, ax_c, ax_g):
@@ -81,11 +87,19 @@ def _render_spatial(spec: SubplotSpec, ax_c, ax_g):
     norm_label_c, norm_label_grad = NORM_LABELS[spec.space_method]
     hs = np.array(data.hs, dtype=float)
 
+    # Filter to a single degree when requested, otherwise use all degrees
+    if spec.poly_degree is not None:
+        all_errs_c    = {spec.poly_degree: data.errs_c_space[spec.poly_degree]}
+        all_errs_grad = {spec.poly_degree: data.errs_grad_space[spec.poly_degree]}
+    else:
+        all_errs_c    = data.errs_c_space
+        all_errs_grad = data.errs_grad_space
+
     # Pass None for the unwanted panel; plot_spatial_curves skips None axes
-    errs_c    = data.errs_c_space    if spec.error is not ErrorComponent.GRAD else {}
-    errs_grad = data.errs_grad_space if spec.error is not ErrorComponent.BASE else {}
-    out_ax_c  = ax_c                 if spec.error is not ErrorComponent.GRAD else None
-    out_ax_g  = ax_g                 if spec.error is not ErrorComponent.BASE else None
+    errs_c    = all_errs_c    if spec.error is not ErrorComponent.GRAD else {}
+    errs_grad = all_errs_grad if spec.error is not ErrorComponent.BASE else {}
+    out_ax_c  = ax_c          if spec.error is not ErrorComponent.GRAD else None
+    out_ax_g  = ax_g          if spec.error is not ErrorComponent.BASE else None
 
     # When error=GRAD the single allocated axis is ax_c; redirect it to the grad slot
     if spec.error is ErrorComponent.GRAD:
@@ -109,8 +123,8 @@ def _render_polynomial(spec: SubplotSpec, ax_c, ax_g):
     label_c, label_grad           = ERROR_LABELS_PLOT[spec.space_method]
     norm_label_c, norm_label_grad = NORM_LABELS[spec.space_method]
 
-    h      = spec.fixed_h if spec.fixed_h is not None else data.PolyConvH
-    l_list = data.PolyConvLList
+    h      = spec.fixed_h if spec.fixed_h is not None else data.poly_conv_h
+    l_list = data.poly_conv_degrees
     l_ints = [int(l) for l in l_list]
 
     ec = data.errs_c_poly    if spec.error is not ErrorComponent.GRAD else []
@@ -130,7 +144,10 @@ def _render_polynomial(spec: SubplotSpec, ax_c, ax_g):
 
 
 def _render_temporal(spec: SubplotSpec, ax_c, ax_g):
-    """Draw temporal convergence curves onto ax_c and/or ax_g."""
+    """Draw temporal convergence curves onto ax_c and/or ax_g.
+
+    Filters to spec.time_keys if provided; otherwise plots all available orders.
+    """
     data                          = spec.data
     label_c, label_grad           = ERROR_LABELS_PLOT[spec.space_method]
     norm_label_c, norm_label_grad = NORM_LABELS[spec.space_method]
@@ -140,10 +157,12 @@ def _render_temporal(spec: SubplotSpec, ax_c, ax_g):
     dt_arr     = np.array(data.dt, dtype=float)
     color_map  = TIME_COLORS[spec.time_method]
 
-    errs_c    = (data.errs_c_bdf    if is_bdf else data.errs_c_theta)    \
-                if spec.error is not ErrorComponent.GRAD else {}
-    errs_grad = (data.errs_grad_bdf if is_bdf else data.errs_grad_theta) \
-                if spec.error is not ErrorComponent.BASE else {}
+    raw_c    = data.errs_c_bdf    if is_bdf else data.errs_c_theta
+    raw_grad = data.errs_grad_bdf if is_bdf else data.errs_grad_theta
+
+    # Filter to requested time keys when provided
+    errs_c    = _filter_dict(raw_c,    spec.time_keys) if spec.error is not ErrorComponent.GRAD else {}
+    errs_grad = _filter_dict(raw_grad, spec.time_keys) if spec.error is not ErrorComponent.BASE else {}
 
     # When error=GRAD the single allocated axis is ax_c; redirect to grad slot
     if spec.error is ErrorComponent.GRAD:
@@ -189,20 +208,24 @@ def _render_temporal(spec: SubplotSpec, ax_c, ax_g):
 
 
 def _render_spatial_saturation(spec: SubplotSpec, ax_c, ax_g):
-    """Draw spatial saturation curves onto ax_c and/or ax_g."""
+    """Draw spatial saturation curves onto ax_c and/or ax_g.
+
+    Filters by spec.poly_degree (single degree) or spec.degrees (multi-degree),
+    and by spec.time_keys within each degree block.
+    """
     data                          = spec.data
     label_c, label_grad           = ERROR_LABELS_PLOT[spec.space_method]
     norm_label_c, norm_label_grad = NORM_LABELS[spec.space_method]
 
-    hs         = np.array(data.SpaceSatHs, dtype=float)
+    hs         = np.array(data.space_sat_hs, dtype=float)
     color_map  = TIME_COLORS[spec.time_method]
     method_tag = "BDF" if spec.time_method is TimeMethod.BDF else "Theta"
 
     if spec.degrees is not None:
         # Combined multi-degree saturation — caller must provide matching axes
         for idx, l in enumerate(spec.degrees):
-            ec    = data.errs_c_space_sat_by_degree[l]
-            eg    = data.errs_grad_space_sat_by_degree[l]
+            ec    = _filter_dict(data.errs_c_space_sat[l],    spec.time_keys)
+            eg    = _filter_dict(data.errs_grad_space_sat[l], spec.time_keys)
             _ax_c = ax_c[idx] if hasattr(ax_c, "__len__") else ax_c
             _ax_g = ax_g[idx] if hasattr(ax_g, "__len__") else ax_g
             plot_saturation_curves_loglog(
@@ -221,8 +244,8 @@ def _render_spatial_saturation(spec: SubplotSpec, ax_c, ax_g):
         return
 
     l  = spec.poly_degree if spec.poly_degree is not None else PolyDegree.P2
-    ec = data.errs_c_space_sat_by_degree[l]
-    eg = data.errs_grad_space_sat_by_degree[l]
+    ec = _filter_dict(data.errs_c_space_sat[l],    spec.time_keys)
+    eg = _filter_dict(data.errs_grad_space_sat[l], spec.time_keys)
 
     out_ax_c = ax_c if spec.error is not ErrorComponent.GRAD else None
     out_ax_g = ax_g if spec.error is not ErrorComponent.BASE else None
@@ -245,16 +268,23 @@ def _render_spatial_saturation(spec: SubplotSpec, ax_c, ax_g):
 
 
 def _render_polynomial_saturation(spec: SubplotSpec, ax_c, ax_g):
-    """Draw polynomial saturation curves onto ax_c and/or ax_g."""
+    """Draw polynomial saturation curves onto ax_c and/or ax_g.
+
+    Filters to spec.time_keys if provided; otherwise plots all available orders.
+    """
     data                          = spec.data
     label_c, label_grad           = ERROR_LABELS_PLOT[spec.space_method]
     norm_label_c, norm_label_grad = NORM_LABELS[spec.space_method]
 
-    h          = spec.fixed_h if spec.fixed_h is not None else data.PolySatH
-    l_list     = data.PolySatLList
+    h          = spec.fixed_h if spec.fixed_h is not None else data.poly_sat_h
+    l_list     = data.poly_sat_degrees
     l_ints     = [int(l) for l in l_list]
     color_map  = TIME_COLORS[spec.time_method]
     method_tag = "BDF" if spec.time_method is TimeMethod.BDF else "Theta"
+
+    # Filter to requested time keys when provided
+    errs_c_sat    = _filter_dict(data.errs_c_poly_sat,    spec.time_keys)
+    errs_grad_sat = _filter_dict(data.errs_grad_poly_sat, spec.time_keys)
 
     out_ax_c = ax_c if spec.error is not ErrorComponent.GRAD else None
     out_ax_g = ax_g if spec.error is not ErrorComponent.BASE else None
@@ -263,13 +293,13 @@ def _render_polynomial_saturation(spec: SubplotSpec, ax_c, ax_g):
 
     plot_saturation_curves_semilogy(
         out_ax_c, out_ax_g, l_ints,
-        data.errs_c_poly_sat, data.errs_grad_poly_sat,
+        errs_c_sat, errs_grad_sat,
         spec.time_method, color_map, h,
     )
 
     for ax, errs, norm_label, label in (
-        (out_ax_c, data.errs_c_poly_sat,    norm_label_c,    label_c),
-        (out_ax_g, data.errs_grad_poly_sat,  norm_label_grad, label_grad),
+        (out_ax_c, errs_c_sat,    norm_label_c,    label_c),
+        (out_ax_g, errs_grad_sat, norm_label_grad, label_grad),
     ):
         if ax is None:
             continue

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib     import Path
-from typing      import Optional
+from typing      import List, Optional
 
 from fisher_kolmogorov.utilities.enum_utilities import (
     ConvType, StudyType, SpaceMethod, TimeMethod, PolyDegree, ErrorComponent,
@@ -23,8 +23,12 @@ class SubplotSpec:
     space_method : SpaceMethod
     time_method  : TimeMethod
     study_type   : StudyType      — CONVERGENCE or SATURATION
-    poly_degree  : PolyDegree     — fixed degree for spatial saturation (single-degree)
-    degrees      : list           — two PolyDegree entries for combined spatial saturation
+    poly_degree  : PolyDegree     — single degree filter for spatial convergence
+                                    and spatial saturation (single-degree path)
+    degrees      : list           — multi-degree list for combined spatial saturation
+    time_keys    : list           — subset of BdfOrder or ThetaMethod keys to plot;
+                                    applies to temporal convergence and both saturation
+                                    renderers. If None, all available keys are plotted.
     fixed_h      : float          — fixed mesh size for polynomial studies
     fixed_dt     : float          — reserved for future temporal specs
     use_triangles: bool           — slope triangles (True) vs reference lines (False)
@@ -37,7 +41,8 @@ class SubplotSpec:
     time_method  : TimeMethod
     study_type   : StudyType            = StudyType.CONVERGENCE
     poly_degree  : Optional[PolyDegree] = None
-    degrees      : Optional[list]       = None
+    degrees      : Optional[List]       = None
+    time_keys    : Optional[List]       = None
     fixed_h      : Optional[float]      = None
     fixed_dt     : Optional[float]      = None
     use_triangles: bool                 = True
@@ -67,9 +72,9 @@ class PlotSpec:
 
     subplots    : list
     layout      : tuple
-    save        : bool             = False
-    output_path : Optional[Path]   = None
-    figsize     : Optional[tuple]  = None
+    save        : bool            = False
+    output_path : Optional[Path]  = None
+    figsize     : Optional[tuple] = None
 
     def n_physical_axes(self) -> int:
         """Total number of matplotlib axes after expanding BOTH specs."""

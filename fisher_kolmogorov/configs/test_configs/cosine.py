@@ -45,28 +45,13 @@ def make_c_exact_temporal_scaled(coeff: float):
     return _c_exact
 
 
-# Helper ______________________________________________________________________________________________________________________________________
-def _resolve_N(N_ref, N_list, default):
-    """
-    Resolve mesh size parameter.
-
-    N_list takes priority over N_ref. If neither is provided the default
-    is used. N_ref is stored as-is in ConvergenceParams (the runner builds
-    the actual mesh sizes as 2**n internally); N_list bypasses that step.
-    """
-    if N_list is not None:
-        return N_list
-    if N_ref is not None:
-        return N_ref
-    return default
-
 
 # Factories ___________________________________________________________________________________________________________________________________
 ###############################
 # Spatial convergence factory #
 ###############################
 def make_cosine_spatial(nu_or_tht=BdfOrder.BDF1, l_space=PolyDegree.P2,
-                        N_ref=None, N_list=None,
+                        N_ref=[2, 3, 4], N_list=None,
                         mesh_structure=MeshStructure.UNSTRUCTURED,
                         spatial_kwargs: dict = None,
                         config_kwargs: dict = None) -> TestConfig:
@@ -93,7 +78,8 @@ def make_cosine_spatial(nu_or_tht=BdfOrder.BDF1, l_space=PolyDegree.P2,
     config_kwargs  : overrides for any TestConfig field
     """
     base_spatial = dict(
-        N_ref          = _resolve_N(N_ref, N_list, [2, 3, 4]),
+        N_ref          = N_ref,
+        N_list         = N_list,
         l_space        = l_space,
         T              = 1e-1,
         dt             = 1e-2,

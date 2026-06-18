@@ -13,7 +13,7 @@ _PARAMS_CONFIG = {
 }
 _CONV_TYPE  = ConvType.SPATIAL  # SPATIAL | POLYNOMIAL | TEMPORAL
 _TEST_TYPE  = TestType.COSINE   # COSINE  | WAVE
-_LINEARIZE  = False
+_LINEARIZE  = True
 
 # Main ____________________________________________________________________________________________________________________________________
 if __name__ == "__main__":
@@ -22,11 +22,10 @@ if __name__ == "__main__":
         space     = SpaceMethod.DG,
         time      = TimeMethod.BDF,
         params    = params,
-        linearize = _LINEARIZE,
     )
     launch(
-        solver_class = solver_class,
-        model_params = params,
-        conv_type    = _CONV_TYPE,
-        test_type    = _TEST_TYPE,
+        solver_class   = solver_class,
+        conv_type      = _CONV_TYPE,
+        test_type      = _TEST_TYPE,
+        nu             = 4
     )

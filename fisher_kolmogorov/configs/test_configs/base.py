@@ -19,6 +19,7 @@ class ConvergenceParams:
 
     Attributes:
         N_ref         : exponents for mesh refinements, i.e. N = 2**n  (spatial)
+        N_list        : expplicit values of mesh refinements
         l_space       : polynomial degree used in the spatial study
         T             : final simulation time
         dt            : time step size (spatial / polynomial studies)
@@ -30,6 +31,7 @@ class ConvergenceParams:
         mesh_structure: structured vs unstructured
     """
     N_ref         : list       = field(default_factory=lambda: [2, 3, 4])
+    N_list        : list       = None
     l_space       : PolyDegree = PolyDegree.P3
     T             : float      = 1e-1
     dt            : float      = 1e-2

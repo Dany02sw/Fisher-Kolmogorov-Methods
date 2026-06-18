@@ -19,7 +19,6 @@ def run_polynomial_convergence(
     max_it       : int   = 200,
     save_plot    : bool  = False,
     output_dir   : Optional[Path] = None,
-    **solver_kwargs,
 ) -> None:
     """
     Run a polynomial-degree (p-refinement) convergence study.
@@ -42,9 +41,6 @@ def run_polynomial_convergence(
     output_dir   : Path or None
         If provided, solver solutions are written to XDMF files in this
         directory at every time step. Used for model comparison studies.
-    **solver_kwargs : dict
-        Additional solver-specific keyword arguments (e.g., ``Linearize``) 
-        passed directly to the ``solver_class`` constructor.    
     """
     p = config.polynomial
 
@@ -70,7 +66,6 @@ def run_polynomial_convergence(
 
             solver = solver_class(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
-                **solver_kwargs,
             )
             E_c, E_grad, h = solver.ConvergenceTest(
                 t0=config.t0, dt=p.dt, T=p.T,

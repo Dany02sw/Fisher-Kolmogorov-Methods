@@ -65,7 +65,6 @@ def make_solver_class(
     space     : SpaceMethod,
     time      : TimeMethod,
     params    : ModelParams,
-    linearize : bool = False,
     full      : bool = False,
 ) -> type:
     """Build and return a solver class for the given space/time combination.
@@ -82,9 +81,6 @@ def make_solver_class(
         Time discretization to use.
     params    : ModelParams
         Space-specific parameters (DgParams, LdgParams, PpDgParams, SpLdgParams).
-    linearize : bool
-        Linearize the reaction term via explicit extrapolation (BDF only).
-        Silently ignored when time=TimeMethod.THETA.
     full      : bool
         Use the full 4-component SpLDG formulation instead of the reduced
         2-component one. Only relevant when space=SpaceMethod.SPLDG.
@@ -99,20 +95,16 @@ def make_solver_class(
     if time not in _TIME_MIXINS:
         raise ValueError(f"Unknown time method: {time}")
 
-    # Warn and strip linearize when paired with Theta (not supported)
-    if time is TimeMethod.THETA and linearize:
+    space_mixin  = SpaceMixinSpLdg if (space is SpaceMethod.SPLDG and full) else _SPACE_MIXINS[space]
+    time_mixin   = _TIME_MIXINS[time]
+    space_kwargs = params.to_kwargs()
+
+    # linearize is only meaningful for BDF; warn and strip if paired with Theta
+    if time is TimeMethod.THETA and space_kwargs.get("linearize", False):
         warnings.warn(
             "'linearize=True' is not supported with TimeMethod.THETA and will be ignored.",
             UserWarning, stacklevel=2,
         )
-        linearize = False
-
-    space_mixin = SpaceMixinSpLdg if (space is SpaceMethod.SPLDG and full) else _SPACE_MIXINS[space]
-    time_mixin  = _TIME_MIXINS[time]
-
-    space_kwargs = params.to_kwargs()
-    if linearize:
-        space_kwargs["linearize"] = True
 
     # MRO: CombinedSolver -> space_mixin -> time_mixin -> SolverBase
     space_tag = space_mixin.__name__.replace("SpaceMixin", "")

@@ -6,6 +6,19 @@ from fisher_kolmogorov.utilities.print_utilities     import print_space_rates
 from fisher_kolmogorov.plots.plot_utilities          import plot_spatial_convergence
 from fisher_kolmogorov.configs.test_configs.base     import TestConfig
 
+def _resolve_N(N_ref, N_list):
+    """
+    Resolve mesh size parameter.
+
+    N_list takes priority over N_ref. If neither is provided the default
+    is used. N_ref is stored as-is in ConvergenceParams (the runner builds
+    the actual mesh sizes as 2**n internally); N_list bypasses that step.
+    """
+    if N_list is not None:
+        return N_list
+    else:
+        return [2 ** n for n in N_ref]
+
 
 def run_spatial_convergence(
     solver_class : type,
@@ -13,7 +26,6 @@ def run_spatial_convergence(
     tol          : float = 1e-11,
     max_it       : int   = 200,
     save_plot    : bool  = False,
-    **solver_kwargs,
 ) -> None:
     """
     Run a spatial (h-refinement) convergence study.
@@ -34,9 +46,6 @@ def run_spatial_convergence(
         Maximum nonlinear-solver iterations.
     save_plot    : bool
         Whether to save the convergence plot to disk.
-    **solver_kwargs : dict
-        Additional solver-specific keyword arguments (e.g., ``Linearize``) 
-        passed directly to the ``solver_class`` constructor.  
     """
     p = config.spatial
 
@@ -46,7 +55,7 @@ def run_spatial_convergence(
     D     = config.D_factory(d_ext, mesh=None)
     alpha = config.alpha
 
-    N_list        = [2 ** n for n in p.N_ref]
+    N_list        = _resolve_N(N_ref=p.N_ref, N_list=p.N_list)
     errors_base   = []
     errors_grad   = []
     hs            = []
@@ -65,7 +74,6 @@ def run_spatial_convergence(
 
             solver = solver_class(
                 mesh=mesh, D=D, alpha=alpha, c_0=config.c_exact,
-                **solver_kwargs,
             )
             E_c, E_grad, h = solver.ConvergenceTest(
                 t0=config.t0, dt=p.dt, T=p.T,

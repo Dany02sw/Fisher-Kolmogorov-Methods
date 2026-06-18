@@ -1,7 +1,7 @@
 from dolfin  import *
 from mshr    import *
 from pathlib import Path
-from typing  import Union, Optional
+from typing  import Union
 from dolfin  import plot as dolfin_plot
 
 import matplotlib.pyplot as plt

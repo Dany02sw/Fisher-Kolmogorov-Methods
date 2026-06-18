@@ -23,28 +23,12 @@ TOP_RIGHT    = Point((3.0, 1.0))
 _MESH_KWARGS = {"P1": BOTTOM_LEFT, "P2": TOP_RIGHT}
 
 
-# Helper ______________________________________________________________________________________________________________________________________
-def _resolve_N(N_ref, N_list, default):
-    """
-    Resolve mesh size parameter.
-
-    N_list takes priority over N_ref. If neither is provided the default
-    is used. N_ref is stored as-is in ConvergenceParams (the runner builds
-    the actual mesh sizes as 2**n internally); N_list bypasses that step.
-    """
-    if N_list is not None:
-        return N_list
-    if N_ref is not None:
-        return N_ref
-    return default
-
-
 # Factories ___________________________________________________________________________________________________________________________________
 ###############################
 # Spatial convergence factory #
 ###############################
 def make_wave_spatial(nu_or_tht=BdfOrder.BDF6, l_space=PolyDegree.P2,
-                      N_ref=None, N_list=None,
+                      N_ref=[2, 3, 4], N_list=None,
                       mesh_structure=MeshStructure.UNSTRUCTURED,
                       spatial_kwargs: dict = None,
                       config_kwargs: dict = None) -> TestConfig:
@@ -77,7 +61,8 @@ def make_wave_spatial(nu_or_tht=BdfOrder.BDF6, l_space=PolyDegree.P2,
     config_kwargs  : overrides for TestConfig fields
     """
     base_spatial = dict(
-        N_ref          = _resolve_N(N_ref, N_list, [3, 4, 5]),
+        N_ref          = N_ref,
+        N_list         = N_list,
         l_space        = l_space,
         T              = 1e-1,
         dt             = 1e-2,

@@ -96,6 +96,7 @@ def _build_model_params(solver_key: str, args: argparse.Namespace) -> object:
         "gamma"    : PenaltyType(args.gamma) if args.gamma is not None else None,
         "theta"    : args.theta,
         "smoothing": args.smoothing,
+        "linearize": True if args.linearize else None,  # None = don't override default
     }
     for field, value in overrides.items():
         if value is not None and hasattr(inst, field):
@@ -156,13 +157,11 @@ def main():
 
     space, time, full = _SOLVER_REGISTRY[args.solver]
     model_params      = _build_model_params(args.solver, args)
-    linearize         = args.linearize and time is TimeMethod.BDF
 
     solver_class = make_solver_class(
         space     = space,
         time      = time,
         params    = model_params,
-        linearize = linearize,
         full      = full,
     )
 

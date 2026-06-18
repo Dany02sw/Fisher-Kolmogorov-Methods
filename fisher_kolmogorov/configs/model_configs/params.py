@@ -9,41 +9,45 @@ from fisher_kolmogorov.utilities.enum_utilities import PenaltyType
 @dataclass
 class DgParams(ModelParams):
     """
-    Parameters for SolverDgBDF / SolverDgTheta.
+    Parameters for SpaceMixinDG.
 
     Attributes:
-        eta_0 : interior-penalty coefficient.
-        theta : penalty type (SIP=1, IIP=0, NIP=-1).
+        eta_0    : interior-penalty coefficient.
+        theta    : penalty type (SIP=1, IIP=0, NIP=-1).
+        linearize: boolean flat to activate(True)/deactivate(False) linearization(default = False)
     """
-    eta_0: float       = 10.0
-    gamma: PenaltyType = PenaltyType.SIP
+    eta_0    : float       = 10.0
+    gamma    : PenaltyType = PenaltyType.SIP
+    linearize: bool        = False
 
     def to_kwargs(self) -> dict:
-        return {"eta_0": self.eta_0, "gamma": self.gamma}
+        return {"eta_0": self.eta_0, "gamma": self.gamma, "linearize": self.linearize}
 
 
 # LDG ______________________________________________________________________________________________________________________________________
 @dataclass
 class LdgParams(ModelParams):
     """
-    Parameters for SolverLdgBDF / SolverLdgTheta.
+    Parameters for SpaceMixinLdg.
 
     Attributes:
-        C11: stabilisation coefficient(default = 1.0).
-        C12: normal flux coefficient(default = 0.5).
+        C11      : stabilisation coefficient(default = 1.0).
+        C12      : normal flux coefficient(default = 0.5).
+        linearize: boolean flat to activate(True)/deactivate(False) linearization(default = False)
     """
-    C11: float = 1.0
-    C12: float = 0.5
+    C11      : float = 1.0
+    C12      : float = 0.5
+    linearize: bool  = False
 
     def to_kwargs(self) -> dict:
-        return {"C11": self.C11, "C12": self.C12}
+        return {"C11": self.C11, "C12": self.C12, "linearize": self.linearize}
     
 
 # PPDG ____________________________________________________________________________________________________________________________________
 @dataclass
 class PpDgParams(ModelParams):
     """
-    Parameters for SolverPpDgBDF / SolverPpDgTheta.
+    Parameters for SpaceMixinPpDg.
 
     Attributes:
         eps      : stabilisation coeficient(useless).
@@ -62,12 +66,12 @@ class PpDgParams(ModelParams):
 @dataclass
 class SpLdgParams(ModelParams):
     """
-    Parameters for SolverSpLdgBDF / SolverSpLdgTheta.
+    Parameters for SpaceMixinSpLdg/SpLdgreduced.
 
     Attributes:
-        eps  : LDG form stabilisation coefficient(default = 0.0).
-        eta_0: penalty coefficient(default 1.0).
-        theta: SP-LDG averaging exponent(default = -1.0).
+        eps       : LDG form stabilisation coefficient(default = 0.0).
+        eta_0     : penalty coefficient(default 1.0).
+        theta     : SP-LDG averaging exponent(default = -1.0).
         smoothing : smoothing parameter for the structure-preserving-part operator(default = 0.0).
     """
     eps       : float = 0.0
